@@ -18,15 +18,19 @@ export const setPaymentLink = createServerFn({ method: "POST" })
       .eq("admin_pin", data.pin)
       .maybeSingle();
     if (!comp) throw new Error("Invalid admin PIN");
-    const col =
+    const update: {
+      stripe_link?: string;
+      revolut_link?: string;
+      payment_link?: string;
+    } =
       data.kind === "stripe"
-        ? "stripe_link"
+        ? { stripe_link: data.url }
         : data.kind === "revolut"
-          ? "revolut_link"
-          : "payment_link";
+          ? { revolut_link: data.url }
+          : { payment_link: data.url };
     const { error } = await supabaseAdmin
       .from("competitions")
-      .update({ [col]: data.url })
+      .update(update)
       .eq("id", data.competitionId);
     if (error) throw error;
     return { ok: true };
