@@ -139,6 +139,15 @@ export const submitPick = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw error;
+
+    // If this is the player's first pick, fire entry confirmation email.
+    if (!existing || existing.length === 0) {
+      try {
+        await sendEntryConfirmation(data.playerId, data.week);
+      } catch (e) {
+        console.error("[email] entry-confirmation failed", e);
+      }
+    }
     return pick;
   });
 
