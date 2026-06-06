@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as PickRouteImport } from './routes/pick'
 import { Route as PayRouteImport } from './routes/pay'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -25,6 +26,11 @@ import { Route as ApiPublicCronCheckRemindersRouteImport } from './routes/api/pu
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PickRoute = PickRouteImport.update({
+  id: '/pick',
+  path: '/pick',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PayRoute = PayRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
+  '/pick': typeof PickRoute
   '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
+  '/pick': typeof PickRoute
   '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
+  '/pick': typeof PickRoute
   '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/how-it-works'
     | '/pay'
+    | '/pick'
     | '/welcome'
     | '/admin/panel'
     | '/email/unsubscribe'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/how-it-works'
     | '/pay'
+    | '/pick'
     | '/welcome'
     | '/admin/panel'
     | '/email/unsubscribe'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/how-it-works'
     | '/pay'
+    | '/pick'
     | '/welcome'
     | '/admin/panel'
     | '/email/unsubscribe'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
   PayRoute: typeof PayRoute
+  PickRoute: typeof PickRoute
   WelcomeRoute: typeof WelcomeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -196,6 +209,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pick': {
+      id: '/pick'
+      path: '/pick'
+      fullPath: '/pick'
+      preLoaderRoute: typeof PickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pay': {
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
   PayRoute: PayRoute,
+  PickRoute: PickRoute,
   WelcomeRoute: WelcomeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
@@ -304,3 +325,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
