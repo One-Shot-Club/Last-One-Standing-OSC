@@ -68,7 +68,8 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); }
+  html { background-color: var(--color-background); color: var(--color-foreground); }
+  body { background-color: transparent; color: var(--color-foreground); }
   body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
   h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
   .eyebrow {
