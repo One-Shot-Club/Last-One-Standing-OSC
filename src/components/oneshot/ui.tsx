@@ -1,10 +1,17 @@
 import type { ReactNode, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
+import abbey from "@/assets/killeshin-abbey.png.asset.json";
 
 export function Shell({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("min-h-screen bg-background text-foreground", className)}>
-      <div className="mx-auto max-w-md px-5 pb-32 pt-6">{children}</div>
+    <div className={cn("relative min-h-screen bg-background text-foreground", className)}>
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center opacity-20 blur-sm"
+        style={{ backgroundImage: `url(${abbey.url})` }}
+      />
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-background/70" />
+      <div className="relative mx-auto max-w-md px-5 pb-32 pt-6">{children}</div>
     </div>
   );
 }
