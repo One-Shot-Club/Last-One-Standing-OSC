@@ -149,7 +149,6 @@ export async function sendElimination(opts: {
   const { data: picks } = await supabaseAdmin
     .from('picks').select('week, team').eq('player_id', opts.playerId).order('week', { ascending: true })
   const pickHistory = (picks ?? []).map((p) => ({ week: `GW${p.week}`, team: p.team }))
-  const weeksSurvived = pickHistory.filter((_, i, arr) => i < arr.length - 1).length + (opts.noPick ? 0 : (pickHistory.length > 0 ? 0 : 0))
   // weeks survived = number of weeks they made it through alive. If they were
   // just eliminated this week, weeks survived = picks_count - 1 (their last
   // pick was the losing one). If no pick, survived = picks before this week.
