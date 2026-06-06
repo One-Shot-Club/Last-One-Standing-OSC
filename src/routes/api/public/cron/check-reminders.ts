@@ -9,7 +9,7 @@ import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import {
   sendReminder,
 } from '@/lib/email/triggers.server'
-import { processGameweekResultsInternal } from '@/lib/gameweeks.functions'
+import { processGameweekResultsInternal } from '@/lib/results-engine.server'
 
 const REMINDER_24H_WINDOW_MIN = 15 // minutes before/after target
 const REMINDER_1H_WINDOW_MIN = 15
