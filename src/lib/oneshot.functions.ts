@@ -1,6 +1,37 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+export const setPaymentLink = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      pin: string;
+      kind: "stripe" | "revolut" | "payment";
+      url: string;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const { data: comp } = await supabaseAdmin
+      .from("competitions")
+      .select("id")
+      .eq("id", data.competitionId)
+      .eq("admin_pin", data.pin)
+      .maybeSingle();
+    if (!comp) throw new Error("Invalid admin PIN");
+    const col =
+      data.kind === "stripe"
+        ? "stripe_link"
+        : data.kind === "revolut"
+          ? "revolut_link"
+          : "payment_link";
+    const { error } = await supabaseAdmin
+      .from("competitions")
+      .update({ [col]: data.url })
+      .eq("id", data.competitionId);
+    if (error) throw error;
+    return { ok: true };
+  });
+
 export const getDemoCompetition = createServerFn({ method: "GET" }).handler(
   async () => {
     const { data, error } = await supabaseAdmin
