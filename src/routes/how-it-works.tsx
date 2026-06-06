@@ -21,6 +21,7 @@ const RULES = [
   "Pick one Premier League team each gameweek.",
   "If they win, you survive to next week. Lose/Draw = Elimination.",
   "You can't reuse a team for the rest of the comp.",
+  "If you forget to make your pick in any given GameWeek, you will automatically be assigned to the 1st team available to you alphabetically.",
   "Last person standing wins the pot.",
 ];
 
