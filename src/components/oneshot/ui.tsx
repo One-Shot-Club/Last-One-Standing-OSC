@@ -8,9 +8,16 @@ export function Shell({ children, className }: { children: ReactNode; className?
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
-        style={{ backgroundImage: `url(${abbey.url})`, filter: "blur(4px)", transform: "scale(1.05)" }}
+        style={{ backgroundImage: `url(${abbey.url})` }}
       />
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-background/75" />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(8,20,40,0.55) 0%, rgba(8,20,40,0.75) 55%, rgba(8,20,40,0.95) 100%)",
+        }}
+      />
       <div className="relative mx-auto max-w-md px-5 pb-32 pt-6">{children}</div>
     </div>
   );
