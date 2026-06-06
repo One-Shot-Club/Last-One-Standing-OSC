@@ -19,7 +19,7 @@ export const Route = createFileRoute("/how-it-works")({
 
 const RULES = [
   "Pick one Premier League team each gameweek.",
-  "If they win, you survive to next week.",
+  "If they win, you survive to next week. Lose/Draw = Elimination.",
   "You can't reuse a team for the rest of the comp.",
   "Last person standing wins the pot.",
 ];
