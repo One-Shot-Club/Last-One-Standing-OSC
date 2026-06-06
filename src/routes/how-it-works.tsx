@@ -19,7 +19,7 @@ export const Route = createFileRoute("/how-it-works")({
 
 const RULES = [
   "Pick one Premier League team each gameweek.",
-  "If they win, you survive to next week.",
+  "If they win, you survive to next week. Lose/Draw = Elimination.",
   "You can't reuse a team for the rest of the comp.",
   "Last person standing wins the pot.",
 ];
@@ -55,7 +55,7 @@ function HowItWorks() {
         </p>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-1.5">
         {fixtures.map((f, i) => (
           <FixtureCard
             key={i}
@@ -93,15 +93,15 @@ function FixtureCard({
   onSelect: (t: string) => void;
 }) {
   return (
-    <Card className="p-3">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+    <Card className="p-1.5">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
         <TeamBtn
           name={fixture.home}
           badge={fixture.homeBadge}
           selected={selected === fixture.home}
           onClick={() => onSelect(fixture.home)}
         />
-        <span className="display text-sm text-primary">vs</span>
+        <span className="display px-1 text-[10px] text-primary">vs</span>
         <TeamBtn
           name={fixture.away}
           badge={fixture.awayBadge}
@@ -129,13 +129,13 @@ function TeamBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition",
+        "flex items-center gap-2 rounded-md border px-2 py-1 text-center transition",
         "border-[color:var(--border)] bg-[color:var(--surface-elevated)]",
-        selected ? "border-primary ring-2 ring-primary" : "hover:border-primary/60",
+        selected ? "border-primary ring-1 ring-primary" : "hover:border-primary/60",
       )}
     >
-      <img src={badge} alt={name} className="h-10 w-10 object-contain" />
-      <span className="text-[11px] font-semibold leading-tight">{name}</span>
+      <img src={badge} alt={name} className="h-5 w-5 object-contain" />
+      <span className="text-[10px] font-semibold leading-tight">{name}</span>
     </button>
   );
 }
