@@ -56,9 +56,13 @@ function Landing() {
       </Card>
 
       <div className="mt-6">
-        <Link to="/join" search={{ c: comp?.id }} disabled={!comp}>
-          <Btn disabled={!comp}>Join the Comp →</Btn>
-        </Link>
+        {comp ? (
+          <Link to="/join" search={{ c: comp.id }}>
+            <Btn>Join the Comp →</Btn>
+          </Link>
+        ) : (
+          <Btn disabled>Loading…</Btn>
+        )}
       </div>
 
       <ol className="mt-10 space-y-3 text-sm text-muted-foreground">
