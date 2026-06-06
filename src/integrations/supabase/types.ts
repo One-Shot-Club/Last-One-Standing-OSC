@@ -149,6 +149,48 @@ export type Database = {
         }
         Relationships: []
       }
+      gameweeks: {
+        Row: {
+          competition_id: string
+          created_at: string
+          deadline_at: string
+          first_kickoff_at: string
+          id: string
+          last_match_ends_at: string
+          processed_at: string | null
+          results_locked: boolean
+          updated_at: string
+          week_label: string
+          week_number: number
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          deadline_at: string
+          first_kickoff_at: string
+          id?: string
+          last_match_ends_at: string
+          processed_at?: string | null
+          results_locked?: boolean
+          updated_at?: string
+          week_label: string
+          week_number: number
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          deadline_at?: string
+          first_kickoff_at?: string
+          id?: string
+          last_match_ends_at?: string
+          processed_at?: string | null
+          results_locked?: boolean
+          updated_at?: string
+          week_label?: string
+          week_number?: number
+        }
+        Relationships: []
+      }
       picks: {
         Row: {
           competition_id: string
@@ -238,6 +280,74 @@ export type Database = {
           },
         ]
       }
+      reminders_sent: {
+        Row: {
+          gameweek_id: string | null
+          id: string
+          kind: string
+          player_id: string
+          sent_at: string
+        }
+        Insert: {
+          gameweek_id?: string | null
+          id?: string
+          kind: string
+          player_id: string
+          sent_at?: string
+        }
+        Update: {
+          gameweek_id?: string | null
+          id?: string
+          kind?: string
+          player_id?: string
+          sent_at?: string
+        }
+        Relationships: []
+      }
+      results: {
+        Row: {
+          away_score: number | null
+          away_team: string
+          created_at: string
+          gameweek_id: string
+          home_score: number | null
+          home_team: string
+          id: string
+          updated_at: string
+          winner: string | null
+        }
+        Insert: {
+          away_score?: number | null
+          away_team: string
+          created_at?: string
+          gameweek_id: string
+          home_score?: number | null
+          home_team: string
+          id?: string
+          updated_at?: string
+          winner?: string | null
+        }
+        Update: {
+          away_score?: number | null
+          away_team?: string
+          created_at?: string
+          gameweek_id?: string
+          home_score?: number | null
+          home_team?: string
+          id?: string
+          updated_at?: string
+          winner?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "results_gameweek_id_fkey"
+            columns: ["gameweek_id"]
+            isOneToOne: false
+            referencedRelation: "gameweeks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -259,6 +369,33 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          badge_url: string | null
+          competition_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          badge_url?: string | null
+          competition_id: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          badge_url?: string | null
+          competition_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
