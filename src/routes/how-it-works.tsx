@@ -55,7 +55,7 @@ function HowItWorks() {
         </p>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-1.5">
         {fixtures.map((f, i) => (
           <FixtureCard
             key={i}
