@@ -77,7 +77,7 @@ function HowItWorks() {
             })
           }
         >
-          {selected ? `Lock in ${selected} →` : "Select a team"}
+          {selected ? `Confirm ${selected} — Pay Entry Fee →` : "Select a team"}
         </Btn>
       </StickyCTA>
     </Shell>
