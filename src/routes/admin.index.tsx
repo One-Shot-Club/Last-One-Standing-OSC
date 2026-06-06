@@ -4,7 +4,7 @@ import { useState } from "react";
 import { adminLogin } from "@/lib/oneshot.functions";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
 
-export const Route = createFileRoute("/admin")({ component: Admin });
+export const Route = createFileRoute("/admin/")({ component: Admin });
 
 function Admin() {
   const nav = useNavigate();
