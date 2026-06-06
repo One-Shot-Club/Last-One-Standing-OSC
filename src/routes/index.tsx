@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -26,12 +26,6 @@ function Landing() {
 
   return (
     <Shell>
-      <header className="flex items-center justify-end">
-        <Link to="/admin" className="text-xs uppercase tracking-widest text-muted-foreground">
-          Admin
-        </Link>
-      </header>
-
       <div className="mt-2">
         <ClubHeader clubName={comp?.club_name ?? "Killeshin GAA"} logoUrl={comp?.club_logo_url} />
       </div>
