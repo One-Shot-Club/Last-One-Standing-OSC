@@ -1,57 +1,127 @@
+## Email Automation Plan
 
-## Restructure the join flow — 4 pages, Killeshin GAA branded
+Use the **existing Lovable Emails infrastructure** (already set up on `notify.oneshotclub.ie`). Send from `picks@notify.oneshotclub.ie`. All scheduling runs through TanStack server routes + `pg_cron`. No Resend, no Edge Functions.
 
-Rework the existing flow into the 4 pages you described. Pull club branding (Killeshin GAA) from the referenced project. Keep existing design tokens, Supabase schema (minor additions), fixtures, and admin panel.
+---
 
-### Page 1 — Landing (`/`)
-Replaces current landing + `/join`.
+### 1. New database tables
 
-- **Header band**: Killeshin GAA crest + "Killeshin GAA" club name, "Powered by OneShotClub" lockup beneath. Crest copied from the Killeshin project (`src/assets/killeshin-crest.png.asset.json`) into this project's assets.
-- **Hero**: "€3,000 — Winner Takes All" as the dominant gold display number. "Entry €10" beneath. Pulled from `competitions.prize_pool` / `entry_fee`.
-- **Capture form (inline)**: Full name, Email, Mobile. Primary CTA "Enter the Comp →".
-- On submit, carry { name, email, phone } via search params to Page 2. No DB write yet.
+`**gameweeks**`
 
-### Page 2 — How It Works + Pick (`/how-it-works`)
-- 4 short rules (Pick one team each week / Win to survive / Can't reuse a team / Last one standing wins the pot).
-- Fixture list for Gameweek 1 — reuses the existing fixture-card UI. Sticky "LOCK IN [TEAM] →" CTA.
-- On lock-in, carry { name, email, phone, team } forward to Page 3 via search params. Still no DB write.
+- `id`, `competition_id`, `week_label` (e.g. "GW31"), `week_number` (int)
+- `first_kickoff_at`, `last_match_ends_at`, `deadline_at` (auto = first_kickoff_at − 2h via trigger)
+- `results_locked` (bool, default false), `processed_at` (nullable), timestamps
 
-### Page 3 — Payment (`/pay`)
-- Order summary: Killeshin GAA, entry €10, selected Week 1 team.
-- **Three payment buttons, always visible**: Stripe, Revolut, Payment Link.
-  - If the corresponding link is configured on the competition, the button opens it in a new tab.
-  - If not configured, the button opens a small inline "Set up payment link" panel where an admin PIN + URL can be entered; on submit, the link is saved to the competition row via a server fn and the button immediately becomes a live payment link. (No separate admin trip needed.)
-- "I've Paid — Continue →" ghost button enabled after any payment button is tapped. On confirm:
-  1. `joinCompetition` creates the player row (existing fn, unchanged).
-  2. `submitPick` writes the Week 1 pick (existing fn, unchanged).
-  3. Navigate to Page 4 with the player's `magic_token`.
+`**results**`
 
-### Page 4 — Thank You (`/welcome`)
-Replaces `/confirmed`.
-- Tick + "You're in, [first name]" + the team they locked in.
-- **Join the WhatsApp Community** — primary button linking to `competitions.whatsapp_link` (hidden if not set; otherwise opens in new tab).
-- Secondary: "Back to home".
-- **Referral block removed** as requested.
+- `id`, `gameweek_id`, `home_team`, `away_team`, `home_score`, `away_score`
+- `winner` ('home' | 'away' | 'draw'), timestamps
 
-### Database migration
-Add nullable columns to `competitions`:
-- `club_name text` (seed: "Killeshin GAA")
-- `club_logo_url text` (seed: CDN URL of the copied crest)
-- `revolut_link text`
-- `payment_link text`
-- `whatsapp_link text`
+`**teams**` (new, lightweight) — so admin can manage badge URLs once and reuse them
 
-Update Demo Comp 2 seed: `name = "Killeshin GAA World Cup Fundraiser"`, `prize_pool = 3000`, `entry_fee = 10`, `club_name = "Killeshin GAA"`, `club_logo_url = <crest>`.
+- `id`, `competition_id`, `name`, `badge_url`, timestamps
 
-### New server function
-- `setPaymentLink({ competitionId, pin, kind: "stripe"|"revolut"|"payment", url })` — PIN-protected update of one of the three link columns on `competitions`. Used by the inline "set up" panel on Page 3.
+`**reminders_sent**` — idempotency guard for the 24h / 1h reminders
 
-### Files
-- Copy: Killeshin crest asset into `src/assets/killeshin-crest.png.asset.json`.
-- New: `src/routes/how-it-works.tsx`, `src/routes/welcome.tsx`.
-- Rewrite: `src/routes/index.tsx` (landing + capture form), `src/routes/pay.tsx` (3 payment buttons + inline setup).
-- Delete: `src/routes/join.tsx`, `src/routes/pick.tsx`, `src/routes/confirmed.tsx`.
-- Extend: `src/lib/oneshot.functions.ts` with `setPaymentLink`.
-- Migration: 5 new columns + reseed of Demo Comp 2.
+- `id`, `player_id`, `gameweek_id`, `kind` ('24h' | '1h' | 'elim' | 'progress' | 'entry'), `sent_at`
+- Unique (`player_id`, `gameweek_id`, `kind`)
 
-Ready to build on approval.
+All deny-all RLS; server-only access via `supabaseAdmin`.
+
+---
+
+### 2. Email templates (React Email under `src/lib/email-templates/`)
+
+Branding: dark green background panel, gold accent, Barlow Condensed headings (with web-safe fallback), `Body` stays `#ffffff` per Lovable requirement. Footer/unsubscribe auto-appended.
+
+1. `entry-confirmation.tsx` — Email 1
+2. `elimination.tsx` — Email 2A
+3. `progression.tsx` — Email 2B
+4. `reminder-24h.tsx` — Email 3
+5. `reminder-1h.tsx` — Email 4
+
+Each registered in `src/lib/email-templates/registry.ts`.
+
+---
+
+### 3. Triggers
+
+
+| Email                          | Trigger                                                                            | Implementation                                                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1. Entry confirmation          | After `joinCompetition` server fn inserts player                                   | Call internal send helper at end of handler                                                                                          |
+| 2A/2B. Elimination/Progression | Admin clicks "Lock results" **or** auto via cron 70 min after `last_match_ends_at` | `processGameweekResults` server fn iterates alive players, updates `alive`, enqueues 2A or 2B per player                             |
+| 3. 24h reminder                | `pg_cron` every 10 min hits `/api/public/cron/check-reminders`                     | Finds gameweeks where `deadline_at` is 23h45m–24h15m away; for each alive player without a pick + no `reminders_sent` row, enqueue 2 |
+| 4. 1h reminder                 | Same cron route                                                                    | Same logic, 45–75 min window                                                                                                         |
+
+
+Idempotency: insert into `reminders_sent` before enqueue; unique constraint prevents duplicates.
+
+---
+
+### 4. Server-side code
+
+**Server functions** (`src/lib/`)
+
+- `gameweeks.functions.ts` — admin CRUD for gameweeks, fixtures, results, teams (PIN-gated)
+- `results.functions.ts` — `processGameweekResults({competitionId, gameweekId, pin})`
+- `email-triggers.server.ts` — internal helpers that render a template and call `/lovable/email/transactional/send` with an idempotency key like `entry-${playerId}` / `gw-${gameweekId}-${playerId}-elim`
+
+**Server route** (`src/routes/api/public/cron/check-reminders.ts`)
+
+- Auth via `apikey` header = Supabase anon key
+- Scans for due 24h reminders, 1h reminders, and overdue unprocessed gameweeks; enqueues sends and triggers `processGameweekResults` when due
+
+**pg_cron**
+
+- `* * * * *` (every minute) → POST to `/api/public/cron/check-reminders`
+- Existing email queue cron (`process-email-queue` every 5s) handles delivery
+
+---
+
+### 5. Pick screen updates (`/pick?token=...`)
+
+Server fn `getPickContext({token})` returns: player, alive status, previous picks, **current gameweek** (fixtures, deadline_at, last_match_ends_at), used teams.
+
+UI:
+
+- Countdown timer to `deadline_at`
+- Fixtures with home/away badges from `teams.badge_url`
+- Used teams greyed out + disabled
+- If `now > deadline_at`: "Picks are locked"
+- If `!alive`: "You've been eliminated" screen
+
+`submitPick` adds guard: reject if `now > deadline_at` or player not alive.
+
+---
+
+### 6. Admin panel additions
+
+- "Gameweeks" tab: add gameweek (week label, first kickoff, last match ends — deadline auto), add fixtures
+- "Results" tab: enter scores for current gameweek, "Lock results" button → calls `processGameweekResults`
+- "Teams" tab: add/edit team name + badge URL (one-time setup; reused across gameweeks)
+
+---
+
+### 7. Team badges
+
+Premier League fixtures aren't out yet and `premierleague.com` blocks scraping. Practical approach: admin pastes a badge URL per team once in the Teams tab. Suggested free source: `https://resources.premierleague.com/premierleague/badges/t<id>.png` (publicly hosted) — admin can paste these as fixtures are confirmed. Reused in emails and pick screen.
+
+---
+
+### 8. Out of scope (per your spec)
+
+SMS, WhatsApp, push, custom template builder, Resend.
+
+---
+
+### Order of build
+
+1. Migrations: `gameweeks`, `results`, `teams`, `reminders_sent` + deadline trigger
+2. Email templates + registry
+3. Internal email send helper
+4. `gameweeks` / `results` / `teams` server fns + admin UI tabs
+5. `processGameweekResults` + wire 2A/2B
+6. Update `joinCompetition` to send Email 1
+7. Cron route + pg_cron schedule + Emails 3/4
+8. Refactor pick screen to use new gameweek model + countdown + lockout
