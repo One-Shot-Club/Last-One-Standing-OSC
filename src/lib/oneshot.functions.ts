@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendEntryConfirmation } from "@/lib/email/triggers.server";
 
 export const setPaymentLink = createServerFn({ method: "POST" })
   .inputValidator(
