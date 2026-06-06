@@ -1,0 +1,1 @@
+UPDATE public.competitions SET name='Killeshin GAA - Last Man Standing Fundraiser' WHERE name='Killeshin GAA World Cup Fundraiser';
