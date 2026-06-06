@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PickRouteImport } from './routes/pick'
+import { Route as PayRouteImport } from './routes/pay'
+import { Route as JoinRouteImport } from './routes/join'
+import { Route as ConfirmedRouteImport } from './routes/confirmed'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PickRoute = PickRouteImport.update({
+  id: '/pick',
+  path: '/pick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayRoute = PayRouteImport.update({
+  id: '/pay',
+  path: '/pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmedRoute = ConfirmedRouteImport.update({
+  id: '/confirmed',
+  path: '/confirmed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,72 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/confirmed': typeof ConfirmedRoute
+  '/join': typeof JoinRoute
+  '/pay': typeof PayRoute
+  '/pick': typeof PickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/confirmed': typeof ConfirmedRoute
+  '/join': typeof JoinRoute
+  '/pay': typeof PayRoute
+  '/pick': typeof PickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/confirmed': typeof ConfirmedRoute
+  '/join': typeof JoinRoute
+  '/pay': typeof PayRoute
+  '/pick': typeof PickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/confirmed' | '/join' | '/pay' | '/pick'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/confirmed' | '/join' | '/pay' | '/pick'
+  id: '__root__' | '/' | '/confirmed' | '/join' | '/pay' | '/pick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfirmedRoute: typeof ConfirmedRoute
+  JoinRoute: typeof JoinRoute
+  PayRoute: typeof PayRoute
+  PickRoute: typeof PickRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/pick': {
+      id: '/pick'
+      path: '/pick'
+      fullPath: '/pick'
+      preLoaderRoute: typeof PickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay': {
+      id: '/pay'
+      path: '/pay'
+      fullPath: '/pay'
+      preLoaderRoute: typeof PayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirmed': {
+      id: '/confirmed'
+      path: '/confirmed'
+      fullPath: '/confirmed'
+      preLoaderRoute: typeof ConfirmedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,7 +121,21 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfirmedRoute: ConfirmedRoute,
+  JoinRoute: JoinRoute,
+  PayRoute: PayRoute,
+  PickRoute: PickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
