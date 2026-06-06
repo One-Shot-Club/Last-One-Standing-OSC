@@ -1,14 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getDemoCompetition } from "@/lib/oneshot.functions";
-import { Btn, Card, Eyebrow, Logo, Shell } from "@/components/oneshot/ui";
+import { Btn, Card, Field, Shell } from "@/components/oneshot/ui";
+import { ClubHeader } from "@/components/oneshot/ClubHeader";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OneShotClub — Last Man Standing" },
-      { name: "description", content: "Pick one team a week. Win and survive. Lose and you're out." },
+      { title: "Killeshin GAA — Last Man Standing" },
+      { name: "description", content: "Pick one Premier League team a week. Last one standing wins €3,000." },
     ],
   }),
   component: Landing,
@@ -17,59 +19,69 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const fetchComp = useServerFn(getDemoCompetition);
   const { data: comp } = useQuery({ queryKey: ["demo-comp"], queryFn: () => fetchComp() });
+  const nav = useNavigate();
+
+  const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
+  const valid = form.fullName.trim() && form.email.trim() && form.phone.trim() && comp;
 
   return (
     <Shell>
-      <header className="flex items-center justify-between">
-        <Logo />
+      <header className="flex items-center justify-end">
         <Link to="/admin" className="text-xs uppercase tracking-widest text-muted-foreground">
           Admin
         </Link>
       </header>
 
-      <section className="mt-10">
-        <Eyebrow>Last Man Standing</Eyebrow>
-        <h1 className="display mt-3 text-5xl text-foreground">
-          One pick.
-          <br />
-          <span className="text-primary">One shot.</span>
-        </h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Pick one Premier League team each week. Win to survive. Lose and
-          you're eliminated. Last person standing takes the pot.
-        </p>
-      </section>
+      <div className="mt-2">
+        <ClubHeader clubName={comp?.club_name ?? "Killeshin GAA"} logoUrl={comp?.club_logo_url} />
+      </div>
 
-      <Card className="mt-8">
-        <Eyebrow>Live competition</Eyebrow>
-        <h2 className="display mt-2 text-3xl">{comp?.name ?? "Loading…"}</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg bg-[color:var(--surface-elevated)] p-3">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Entry</div>
-            <div className="display mt-1 text-2xl text-primary">€{comp?.entry_fee ?? 0}</div>
-          </div>
-          <div className="rounded-lg bg-[color:var(--surface-elevated)] p-3">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Pot</div>
-            <div className="display mt-1 text-2xl text-primary">€{comp?.prize_pool ?? 0}</div>
-          </div>
+      <Card className="mt-8 text-center">
+        <p className="eyebrow">Winner Takes All</p>
+        <div className="display mt-2 text-6xl text-primary leading-none">
+          €{(comp?.prize_pool ?? 3000).toLocaleString()}
         </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Entry <span className="text-foreground font-semibold">€{comp?.entry_fee ?? 10}</span> · Last Man Standing
+        </p>
+      </Card>
+
+      <Card className="mt-6 space-y-4">
+        <p className="eyebrow">Enter the comp</p>
+        <Field
+          label="Full name"
+          placeholder="Tom Murphy"
+          value={form.fullName}
+          onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+        />
+        <Field
+          label="Email"
+          type="email"
+          placeholder="tom@example.com"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+        <Field
+          label="Mobile"
+          placeholder="087 123 4567"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+        />
       </Card>
 
       <div className="mt-6">
-        {comp ? (
-          <Link to="/join" search={{ c: comp.id }}>
-            <Btn>Join the Comp →</Btn>
-          </Link>
-        ) : (
-          <Btn disabled>Loading…</Btn>
-        )}
+        <Btn
+          disabled={!valid}
+          onClick={() =>
+            nav({
+              to: "/how-it-works",
+              search: { c: comp!.id, n: form.fullName, e: form.email, p: form.phone },
+            })
+          }
+        >
+          Enter the Comp →
+        </Btn>
       </div>
-
-      <ol className="mt-10 space-y-3 text-sm text-muted-foreground">
-        <li><span className="text-primary">1.</span> Pay your entry.</li>
-        <li><span className="text-primary">2.</span> Pick a team each gameweek.</li>
-        <li><span className="text-primary">3.</span> Can't reuse a team. Don't lose.</li>
-      </ol>
     </Shell>
   );
 }

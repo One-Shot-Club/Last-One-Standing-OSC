@@ -17,33 +17,48 @@ export type Database = {
       competitions: {
         Row: {
           admin_pin: string
+          club_logo_url: string | null
+          club_name: string | null
           created_at: string
           current_week: number
           entry_fee: number
           id: string
           name: string
+          payment_link: string | null
           prize_pool: number
+          revolut_link: string | null
           stripe_link: string | null
+          whatsapp_link: string | null
         }
         Insert: {
           admin_pin: string
+          club_logo_url?: string | null
+          club_name?: string | null
           created_at?: string
           current_week?: number
           entry_fee?: number
           id?: string
           name: string
+          payment_link?: string | null
           prize_pool?: number
+          revolut_link?: string | null
           stripe_link?: string | null
+          whatsapp_link?: string | null
         }
         Update: {
           admin_pin?: string
+          club_logo_url?: string | null
+          club_name?: string | null
           created_at?: string
           current_week?: number
           entry_fee?: number
           id?: string
           name?: string
+          payment_link?: string | null
           prize_pool?: number
+          revolut_link?: string | null
           stripe_link?: string | null
+          whatsapp_link?: string | null
         }
         Relationships: []
       }

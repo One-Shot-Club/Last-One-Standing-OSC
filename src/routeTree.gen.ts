@@ -9,17 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PickRouteImport } from './routes/pick'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as PayRouteImport } from './routes/pay'
-import { Route as JoinRouteImport } from './routes/join'
-import { Route as ConfirmedRouteImport } from './routes/confirmed'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
 
-const PickRoute = PickRouteImport.update({
-  id: '/pick',
-  path: '/pick',
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PayRoute = PayRouteImport.update({
@@ -27,14 +26,9 @@ const PayRoute = PayRouteImport.update({
   path: '/pay',
   getParentRoute: () => rootRouteImport,
 } as any)
-const JoinRoute = JoinRouteImport.update({
-  id: '/join',
-  path: '/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfirmedRoute = ConfirmedRouteImport.update({
-  id: '/confirmed',
-  path: '/confirmed',
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -56,29 +50,26 @@ const AdminPanelRoute = AdminPanelRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/confirmed': typeof ConfirmedRoute
-  '/join': typeof JoinRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
-  '/pick': typeof PickRoute
+  '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/confirmed': typeof ConfirmedRoute
-  '/join': typeof JoinRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
-  '/pick': typeof PickRoute
+  '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/confirmed': typeof ConfirmedRoute
-  '/join': typeof JoinRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
-  '/pick': typeof PickRoute
+  '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
 }
 export interface FileRouteTypes {
@@ -86,47 +77,37 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/confirmed'
-    | '/join'
+    | '/how-it-works'
     | '/pay'
-    | '/pick'
+    | '/welcome'
     | '/admin/panel'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/admin'
-    | '/confirmed'
-    | '/join'
-    | '/pay'
-    | '/pick'
-    | '/admin/panel'
+  to: '/' | '/admin' | '/how-it-works' | '/pay' | '/welcome' | '/admin/panel'
   id:
     | '__root__'
     | '/'
     | '/admin'
-    | '/confirmed'
-    | '/join'
+    | '/how-it-works'
     | '/pay'
-    | '/pick'
+    | '/welcome'
     | '/admin/panel'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  ConfirmedRoute: typeof ConfirmedRoute
-  JoinRoute: typeof JoinRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   PayRoute: typeof PayRoute
-  PickRoute: typeof PickRoute
+  WelcomeRoute: typeof WelcomeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/pick': {
-      id: '/pick'
-      path: '/pick'
-      fullPath: '/pick'
-      preLoaderRoute: typeof PickRouteImport
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pay': {
@@ -136,18 +117,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/join': {
-      id: '/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof JoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/confirmed': {
-      id: '/confirmed'
-      path: '/confirmed'
-      fullPath: '/confirmed'
-      preLoaderRoute: typeof ConfirmedRouteImport
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -187,21 +161,10 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  ConfirmedRoute: ConfirmedRoute,
-  JoinRoute: JoinRoute,
+  HowItWorksRoute: HowItWorksRoute,
   PayRoute: PayRoute,
-  PickRoute: PickRoute,
+  WelcomeRoute: WelcomeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
