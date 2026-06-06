@@ -152,15 +152,26 @@ export const submitPick = createServerFn({ method: "POST" })
   });
 
 // --- Admin ---
+// Single hardcoded admin credential. Change here in code to rotate.
+// Keep `competitions.admin_pin` in sync with ADMIN_PASSWORD so downstream
+// verifyAdmin(...) checks (which compare against admin_pin) keep working.
+const ADMIN_USERNAME = "EoinKilleshin@OSC.ie";
+const ADMIN_PASSWORD = "Ki11eshin2026LMS";
+
 export const adminLogin = createServerFn({ method: "POST" })
-  .inputValidator((d: { pin: string }) => d)
+  .inputValidator((d: { username: string; password: string }) => d)
   .handler(async ({ data }) => {
+    const u = (data.username ?? "").trim().toLowerCase();
+    const p = data.password ?? "";
+    if (u !== ADMIN_USERNAME.toLowerCase() || p !== ADMIN_PASSWORD) {
+      throw new Error("Invalid credentials");
+    }
     const { data: comp } = await supabaseAdmin
       .from("competitions")
       .select("*")
-      .eq("admin_pin", data.pin)
+      .eq("admin_pin", ADMIN_PASSWORD)
       .maybeSingle();
-    if (!comp) throw new Error("Invalid PIN");
+    if (!comp) throw new Error("No competition configured");
     return comp;
   });
 
