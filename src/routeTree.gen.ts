@@ -65,9 +65,9 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPanelRoute = AdminPanelRouteImport.update({
-  id: '/panel',
-  path: '/panel',
-  getParentRoute: () => AdminRoute,
+  id: '/admin/panel',
+  path: '/admin/panel',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
@@ -206,6 +206,7 @@ export interface RootRouteChildren {
   PickRoute: typeof PickRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
+  AdminPanelRoute: typeof AdminPanelRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   AdminIndexRoute: typeof AdminIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -275,10 +276,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/panel': {
       id: '/admin/panel'
-      path: '/panel'
+      path: '/admin/panel'
       fullPath: '/admin/panel'
       preLoaderRoute: typeof AdminPanelRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -325,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   PickRoute: PickRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
+  AdminPanelRoute: AdminPanelRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   AdminIndexRoute: AdminIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
