@@ -68,7 +68,16 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); }
+  html { background-color: var(--color-background); color: var(--color-foreground); }
+  body { background-color: transparent; color: var(--color-foreground); }
+  #app-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-size: cover; background-position: center;
+  }
+  #app-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(8,20,40,0.45) 0%, rgba(8,20,40,0.78) 60%, rgba(8,20,40,0.96) 100%);
+  }
   body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
   h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
   .eyebrow {
