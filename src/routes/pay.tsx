@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -21,6 +21,11 @@ export const Route = createFileRoute("/pay")({
     p: String(s.p ?? ""),
     t: String(s.t ?? ""),
   }),
+  beforeLoad: ({ search }) => {
+    if (!search.c || !search.t) {
+      throw redirect({ to: "/" });
+    }
+  },
   component: Pay,
 });
 
