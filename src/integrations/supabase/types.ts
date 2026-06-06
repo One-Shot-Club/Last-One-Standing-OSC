@@ -14,7 +14,128 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      competitions: {
+        Row: {
+          admin_pin: string
+          created_at: string
+          current_week: number
+          entry_fee: number
+          id: string
+          name: string
+          prize_pool: number
+          stripe_link: string | null
+        }
+        Insert: {
+          admin_pin: string
+          created_at?: string
+          current_week?: number
+          entry_fee?: number
+          id?: string
+          name: string
+          prize_pool?: number
+          stripe_link?: string | null
+        }
+        Update: {
+          admin_pin?: string
+          created_at?: string
+          current_week?: number
+          entry_fee?: number
+          id?: string
+          name?: string
+          prize_pool?: number
+          stripe_link?: string | null
+        }
+        Relationships: []
+      }
+      picks: {
+        Row: {
+          competition_id: string
+          created_at: string
+          id: string
+          player_id: string
+          result: string | null
+          team: string
+          week: number
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          id?: string
+          player_id: string
+          result?: string | null
+          team: string
+          week: number
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          id?: string
+          player_id?: string
+          result?: string | null
+          team?: string
+          week?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "picks_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "picks_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          alive: boolean
+          competition_id: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          magic_token: string
+          paid: boolean
+          phone: string | null
+        }
+        Insert: {
+          alive?: boolean
+          competition_id: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          magic_token?: string
+          paid?: boolean
+          phone?: string | null
+        }
+        Update: {
+          alive?: boolean
+          competition_id?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          magic_token?: string
+          paid?: boolean
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
