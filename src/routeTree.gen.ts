@@ -15,6 +15,7 @@ import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -46,6 +47,12 @@ const AdminPanelRoute = AdminPanelRouteImport.update({
   path: '/panel',
   getParentRoute: () => AdminRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/pay': typeof PayRoute
   '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +70,7 @@ export interface FileRoutesByTo {
   '/pay': typeof PayRoute
   '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +80,7 @@ export interface FileRoutesById {
   '/pay': typeof PayRoute
   '/welcome': typeof WelcomeRoute
   '/admin/panel': typeof AdminPanelRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +91,16 @@ export interface FileRouteTypes {
     | '/pay'
     | '/welcome'
     | '/admin/panel'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/how-it-works' | '/pay' | '/welcome' | '/admin/panel'
+  to:
+    | '/'
+    | '/admin'
+    | '/how-it-works'
+    | '/pay'
+    | '/welcome'
+    | '/admin/panel'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -91,6 +109,7 @@ export interface FileRouteTypes {
     | '/pay'
     | '/welcome'
     | '/admin/panel'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -99,6 +118,7 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   PayRoute: typeof PayRoute
   WelcomeRoute: typeof WelcomeRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -145,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPanelRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -164,7 +191,18 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   PayRoute: PayRoute,
   WelcomeRoute: WelcomeRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
