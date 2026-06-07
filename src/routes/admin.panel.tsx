@@ -2,26 +2,19 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import {
-  adminGetData,
-  lockWeek,
-  setPickResult,
-} from "@/lib/oneshot.functions";
+import { adminGetData } from "@/lib/oneshot.functions";
 import {
   listGameweeks,
   listTeams,
   upsertTeam,
   deleteTeam,
-  listResults,
-  upsertResult,
-  deleteResult,
   processGameweekResults,
   seedGameweek,
   setFixtureWinner,
   unlockGameweek,
-
 } from "@/lib/gameweeks.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
+
 
 import { Btn, Card, Eyebrow, Field, Logo, Shell } from "@/components/oneshot/ui";
 
