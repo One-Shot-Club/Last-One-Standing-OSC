@@ -13,11 +13,14 @@ import {
   upsertTeam,
   deleteTeam,
   listResults,
+  upsertResult,
+  deleteResult,
   processGameweekResults,
   seedGameweek,
   setFixtureWinner,
 } from "@/lib/gameweeks.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
+
 import { Btn, Card, Eyebrow, Field, Logo, Shell } from "@/components/oneshot/ui";
 
 import { cn } from "@/lib/utils";
