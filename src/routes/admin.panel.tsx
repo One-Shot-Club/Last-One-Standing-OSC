@@ -344,6 +344,8 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
   const setWinner = useServerFn(setFixtureWinner);
   const fetchResults = useServerFn(listResults);
   const processGw = useServerFn(processGameweekResults);
+  const unlockGw = useServerFn(unlockGameweek);
+
   const qc = useQueryClient();
 
   const [activeWeek, setActiveWeek] = useState<number>(GW_TABS[0] ?? 1);
