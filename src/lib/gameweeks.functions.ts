@@ -1,6 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { processGameweekResultsInternal } from '@/lib/results-engine.server'
+import { FIXTURES_BY_WEEK } from '@/lib/fixtures'
+
+
 
 async function verifyAdmin(competitionId: string, pin: string): Promise<void> {
   const { data } = await supabaseAdmin
