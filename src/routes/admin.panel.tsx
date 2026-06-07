@@ -18,6 +18,8 @@ import {
   processGameweekResults,
   seedGameweek,
   setFixtureWinner,
+  unlockGameweek,
+
 } from "@/lib/gameweeks.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
