@@ -1,6 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { processGameweekResultsInternal } from '@/lib/results-engine.server'
+import { FIXTURES_BY_WEEK } from '@/lib/fixtures'
+
+
 
 async function verifyAdmin(competitionId: string, pin: string): Promise<void> {
   const { data } = await supabaseAdmin
@@ -290,4 +293,58 @@ export const submitGw2Pick = createServerFn({ method: 'POST' })
     }).select('*').single()
     if (error) throw error
     return pick
+  })
+
+// ---- Tab-based gameweek admin (seed + set winner) ----
+
+export const seedGameweek = createServerFn({ method: 'POST' })
+  .inputValidator((d: { competitionId: string; pin: string; weekNumber: number }) => d)
+  .handler(async ({ data }) => {
+    await verifyAdmin(data.competitionId, data.pin)
+    let { data: gw } = await supabaseAdmin
+      .from('gameweeks').select('*')
+      .eq('competition_id', data.competitionId).eq('week_number', data.weekNumber).maybeSingle()
+    if (!gw) {
+      const kickoff = new Date(Date.now() + Math.max(1, data.weekNumber) * 7 * 86400000)
+      const ends = new Date(kickoff.getTime() + 2 * 86400000)
+      const { data: created, error } = await supabaseAdmin.from('gameweeks').insert({
+        competition_id: data.competitionId,
+        week_number: data.weekNumber,
+        week_label: `GW${data.weekNumber}`,
+        first_kickoff_at: kickoff.toISOString(),
+        last_match_ends_at: ends.toISOString(),
+        deadline_at: kickoff.toISOString(),
+      }).select('*').single()
+      if (error) throw error
+      gw = created
+    }
+    const fixtures = FIXTURES_BY_WEEK[data.weekNumber] ?? []
+    if (fixtures.length) {
+      const { data: existing } = await supabaseAdmin
+        .from('results').select('home_team, away_team').eq('gameweek_id', gw!.id)
+      const have = new Set((existing ?? []).map((r: any) => `${r.home_team}|${r.away_team}`))
+      const toInsert = fixtures
+        .filter((f) => !have.has(`${f.home}|${f.away}`))
+        .map((f) => ({ gameweek_id: gw!.id, home_team: f.home, away_team: f.away }))
+      if (toInsert.length) {
+        await supabaseAdmin.from('results').insert(toInsert)
+      }
+    }
+    return gw
+  })
+
+export const setFixtureWinner = createServerFn({ method: 'POST' })
+  .inputValidator((d: { competitionId: string; pin: string; resultId: string; winner: 'home' | 'away' | 'draw' }) => d)
+  .handler(async ({ data }) => {
+    await verifyAdmin(data.competitionId, data.pin)
+    const scores = data.winner === 'home'
+      ? { home_score: 1, away_score: 0 }
+      : data.winner === 'away'
+        ? { home_score: 0, away_score: 1 }
+        : { home_score: 1, away_score: 1 }
+    const { error } = await supabaseAdmin.from('results').update({
+      ...scores, winner: data.winner, updated_at: new Date().toISOString(),
+    }).eq('id', data.resultId)
+    if (error) throw error
+    return { ok: true }
   })
