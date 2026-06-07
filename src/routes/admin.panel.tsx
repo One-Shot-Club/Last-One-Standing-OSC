@@ -465,30 +465,54 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
             ))}
           </div>
 
-          <Btn
-            variant="danger"
-            disabled={
-              activeGw.results_locked ||
-              (results as any[]).length === 0 ||
-              (results as any[]).some((r) => !r.winner) ||
-              busy
-            }
-            onClick={async () => {
-              if (!confirm(`Lock ${activeGw.week_label}, eliminate losers, and email all alive players?`)) return;
-              setBusy(true);
-              try {
-                const out = await processGw({ data: { competitionId: compId, pin, gameweekId: activeGw.id } });
-                alert(`Locked. ${out.eliminated} eliminated · ${out.progressed} progressed.`);
-                await qc.invalidateQueries();
-                const next = GW_TABS.find((w) => w > activeWeek);
-                if (next) setActiveWeek(next);
-              } finally {
-                setBusy(false);
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Btn
+              variant="danger"
+              disabled={
+                activeGw.results_locked ||
+                (results as any[]).length === 0 ||
+                (results as any[]).some((r) => !r.winner) ||
+                busy
               }
-            }}
-          >
-            {activeGw.results_locked ? "Already locked" : "Lock gameweek & move on →"}
-          </Btn>
+              onClick={async () => {
+                if (!confirm(`Lock ${activeGw.week_label}, eliminate losers, and email all alive players?`)) return;
+                setBusy(true);
+                try {
+                  const out = await processGw({ data: { competitionId: compId, pin, gameweekId: activeGw.id } });
+                  alert(`Locked. ${out.eliminated} eliminated · ${out.progressed} progressed.`);
+                  await qc.invalidateQueries();
+                  const next = GW_TABS.find((w) => w > activeWeek);
+                  if (next) setActiveWeek(next);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {activeGw.results_locked ? "Locked ✓" : "Lock gameweek & move on →"}
+            </Btn>
+            {activeGw.results_locked && (
+              <Btn
+                disabled={busy}
+                onClick={async () => {
+                  if (!confirm(
+                    `Unlock ${activeGw.week_label}? Eliminated players will be revived and you can re-edit winners. ` +
+                    `Emails already sent cannot be recalled.`,
+                  )) return;
+                  setBusy(true);
+                  try {
+                    const out = await unlockGw({ data: { competitionId: compId, pin, gameweekId: activeGw.id } });
+                    alert(`Unlocked. ${out.revived} player(s) revived.`);
+                    await qc.invalidateQueries();
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Unlock & re-edit
+              </Btn>
+            )}
+          </div>
+
         </>
       )}
     </div>
