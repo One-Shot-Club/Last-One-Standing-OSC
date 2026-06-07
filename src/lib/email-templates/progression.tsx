@@ -13,6 +13,7 @@ interface Props {
   deadline?: string
   countdownCopy?: string
   magicLink?: string
+  usedTeams?: string[]
 }
 
 const Email = ({
@@ -25,6 +26,7 @@ const Email = ({
   deadline = 'TBC',
   countdownCopy = '',
   magicLink = '#',
+  usedTeams = [],
 }: Props) => (
   <Html lang="en">
     <Head />
@@ -54,6 +56,15 @@ const Email = ({
           <Text style={{ ...styles.text, fontSize: '18px', color: colors.gold, fontWeight: 700 }}>{deadline}</Text>
           {countdownCopy && <Text style={styles.text}>{countdownCopy}</Text>}
 
+          {usedTeams.length > 0 && (
+            <Section style={{ margin: '16px 0' }}>
+              <Text style={styles.meta}>Teams you've already used</Text>
+              <Text style={{ ...styles.text, fontSize: '14px', color: colors.gold, margin: '4px 0 0' }}>
+                {usedTeams.join(' · ')}
+              </Text>
+            </Section>
+          )}
+
           <Section style={styles.ctaWrap}>
             <a href={magicLink} style={styles.cta}>Make your {nextWeekLabel} pick →</a>
           </Section>
@@ -79,6 +90,7 @@ export const template = {
     deadline: 'Sat 30 Aug, 13:30',
     countdownCopy: 'You have 6 days 4 hours to make your pick',
     magicLink: 'https://example.com/pick?token=abc',
+    usedTeams: ['Liverpool', 'Arsenal', 'Man City'],
   },
 } satisfies TemplateEntry
 
