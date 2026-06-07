@@ -103,10 +103,8 @@ function Panel() {
         {tab === "picks" && <Picks data={data} />}
         {tab === "gameweeks" && <Gameweeks compId={compId!} pin={pin!} />}
         {tab === "teams" && <Teams compId={compId!} pin={pin!} />}
-        {tab === "results" && (
-          <Results data={data} pin={pin!} compId={compId!} onChange={refetch} />
-        )}
         {tab === "stats" && <Stats data={data} />}
+
       </div>
     </Shell>
   );
