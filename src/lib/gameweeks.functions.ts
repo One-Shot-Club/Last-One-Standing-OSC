@@ -234,3 +234,60 @@ export const submitPickV2 = createServerFn({ method: 'POST' })
     if (error) throw error
     return pick
   })
+
+// ---- GW2 hard-wired flow ----
+
+export const getGw2Context = createServerFn({ method: 'GET' })
+  .inputValidator((d: { token: string }) => d)
+  .handler(async ({ data }) => {
+    const { data: player } = await supabaseAdmin
+      .from('players').select('*').eq('magic_token', data.token).maybeSingle()
+    if (!player) return null
+
+    const { data: comp } = await supabaseAdmin
+      .from('competitions').select('*').eq('id', player.competition_id).maybeSingle()
+
+    const { data: picks } = await supabaseAdmin
+      .from('picks').select('*').eq('player_id', player.id).order('week')
+
+    const { data: gameweek } = await supabaseAdmin
+      .from('gameweeks').select('*')
+      .eq('competition_id', player.competition_id).eq('week_number', 2).maybeSingle()
+
+    return {
+      player: { id: player.id, full_name: player.full_name, alive: player.alive, email: player.email },
+      competition: comp,
+      picks: picks ?? [],
+      gameweek,
+      now: new Date().toISOString(),
+    }
+  })
+
+export const submitGw2Pick = createServerFn({ method: 'POST' })
+  .inputValidator((d: { token: string; team: string }) => d)
+  .handler(async ({ data }) => {
+    const { data: player } = await supabaseAdmin
+      .from('players').select('*').eq('magic_token', data.token).maybeSingle()
+    if (!player) throw new Error('Invalid link')
+    if (!player.alive) throw new Error("You've been eliminated")
+
+    const { data: gw } = await supabaseAdmin
+      .from('gameweeks').select('*')
+      .eq('competition_id', player.competition_id).eq('week_number', 2).maybeSingle()
+    if (!gw) throw new Error('Gameweek 2 not configured yet')
+    if (new Date(gw.deadline_at).getTime() <= Date.now()) throw new Error('Picks are locked for this gameweek')
+
+    const { data: existing } = await supabaseAdmin
+      .from('picks').select('team, week').eq('player_id', player.id)
+    if (existing?.some((p) => p.team === data.team)) throw new Error(`You already used ${data.team}`)
+    if (existing?.some((p) => p.week === gw.week_number)) throw new Error('You already picked this week')
+
+    const { data: pick, error } = await supabaseAdmin.from('picks').insert({
+      player_id: player.id,
+      competition_id: player.competition_id,
+      week: gw.week_number,
+      team: data.team,
+    }).select('*').single()
+    if (error) throw error
+    return pick
+  })
