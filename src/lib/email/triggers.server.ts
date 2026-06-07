@@ -189,13 +189,9 @@ export async function sendProgression(opts: {
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
 
-  // TESTING: hard-wire next week to GW2 so all progression emails point at the
-  // GW2 selection page regardless of which week was just processed.
-  const nextWeekLabel = 'GW2'
-  const { data: gw2 } = await supabaseAdmin
-    .from('gameweeks').select('deadline_at')
-    .eq('competition_id', player.competition_id).eq('week_number', 2).maybeSingle()
-  const nextDeadline = gw2?.deadline_at ?? opts.nextDeadline
+  const nextWeekLabel = opts.nextWeekLabel
+  const nextDeadline = opts.nextDeadline
+
 
   await enqueueTemplatedEmail({
     templateName: 'progression',
