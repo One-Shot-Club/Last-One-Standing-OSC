@@ -348,3 +348,36 @@ export const setFixtureWinner = createServerFn({ method: 'POST' })
     if (error) throw error
     return { ok: true }
   })
+
+export const unlockGameweek = createServerFn({ method: 'POST' })
+  .inputValidator((d: { competitionId: string; pin: string; gameweekId: string }) => d)
+  .handler(async ({ data }) => {
+    await verifyAdmin(data.competitionId, data.pin)
+    const { data: gw } = await supabaseAdmin
+      .from('gameweeks').select('*').eq('id', data.gameweekId).maybeSingle()
+    if (!gw) throw new Error('Gameweek not found')
+
+    // Revive players eliminated in this gameweek
+    const { data: elims } = await supabaseAdmin
+      .from('reminders_sent').select('player_id')
+      .eq('gameweek_id', data.gameweekId).eq('kind', 'elim')
+    const ids = (elims ?? []).map((r: any) => r.player_id)
+    if (ids.length) {
+      await supabaseAdmin.from('players').update({ alive: true }).in('id', ids)
+    }
+
+    // Clear handled markers so processing can run again
+    await supabaseAdmin.from('reminders_sent').delete()
+      .eq('gameweek_id', data.gameweekId).in('kind', ['elim', 'progress'])
+
+    // Unlock gameweek + roll back competition pointer
+    await supabaseAdmin.from('gameweeks').update({
+      results_locked: false, processed_at: null,
+    }).eq('id', data.gameweekId)
+
+    await supabaseAdmin.from('competitions').update({
+      current_week: gw.week_number,
+    }).eq('id', data.competitionId)
+
+    return { revived: ids.length }
+  })
