@@ -114,47 +114,152 @@ function Panel() {
 
 type Data = Awaited<ReturnType<typeof adminGetData>>;
 
+const WINDOW_SIZE = 8;
+
 function Players({ data }: { data: Data }) {
-  const [filter, setFilter] = useState<"all" | "alive" | "out">("all");
-  const players = data.players.filter((p) =>
-    filter === "all" ? true : filter === "alive" ? p.alive : !p.alive,
+  const compId = data.competition.id;
+  const fetchTeams = useServerFn(listTeams);
+  // pin is stored in sessionStorage; pull from there to avoid prop plumbing
+  const pin = typeof window !== "undefined" ? sessionStorage.getItem("osc_pin") ?? "" : "";
+  const { data: teams = [] } = useQuery({
+    queryKey: ["teams", compId, pin],
+    queryFn: () => fetchTeams({ data: { competitionId: compId, pin } }),
+    enabled: !!pin,
+  });
+
+  const badgeByName = useMemo(() => {
+    const m = new Map<string, string | null>();
+    for (const t of teams as any[]) m.set(t.name, t.badge_url ?? null);
+    return m;
+  }, [teams]);
+
+  // Build picks lookup: playerId -> week -> team
+  const picksByPlayer = useMemo(() => {
+    const m = new Map<string, Map<number, { team: string; result: string | null }>>();
+    for (const p of data.picks) {
+      if (!m.has(p.player_id)) m.set(p.player_id, new Map());
+      m.get(p.player_id)!.set(p.week, { team: p.team, result: p.result });
+    }
+    return m;
+  }, [data.picks]);
+
+  const maxWeek = Math.max(
+    data.competition.current_week ?? 1,
+    ...data.picks.map((p) => p.week),
+    WINDOW_SIZE,
   );
+
+  const [start, setStart] = useState(1);
+  const end = Math.min(start + WINDOW_SIZE - 1, maxWeek);
+  const weeks = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+
+  if (data.players.length === 0) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">No players yet.</p>;
+  }
+
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 rounded-lg border border-[color:var(--border)] bg-card p-1 text-xs uppercase tracking-widest">
-        {(["all", "alive", "out"] as const).map((f) => (
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-widest text-muted-foreground">
+          Showing GW{start}–GW{end}
+        </div>
+        <div className="flex gap-1">
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={cn(
-              "rounded-md py-2 font-semibold",
-              filter === f ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-            )}
+            onClick={() => setStart(Math.max(1, start - WINDOW_SIZE))}
+            disabled={start <= 1}
+            className="rounded-md border border-[color:var(--border)] px-3 py-1 text-xs font-semibold uppercase tracking-widest disabled:opacity-40"
           >
-            {f}
+            ◀ Prev
           </button>
-        ))}
+          <button
+            onClick={() => setStart(Math.min(maxWeek - WINDOW_SIZE + 1, start + WINDOW_SIZE))}
+            disabled={end >= maxWeek}
+            className="rounded-md border border-[color:var(--border)] px-3 py-1 text-xs font-semibold uppercase tracking-widest disabled:opacity-40"
+          >
+            Next ▶
+          </button>
+        </div>
       </div>
-      {players.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">No players yet.</p>
-      ) : (
-        players.map((p) => (
-          <Card key={p.id} className="flex items-center justify-between p-4">
-            <div>
-              <div className="font-semibold">{p.full_name}</div>
-              <div className="text-xs text-muted-foreground">{p.email}</div>
-            </div>
-            <span
-              className={cn(
-                "rounded-full px-2 py-1 text-[10px] uppercase tracking-wider",
-                p.alive ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive",
-              )}
-            >
-              {p.alive ? "Alive" : "Out"}
-            </span>
-          </Card>
-        ))
-      )}
+
+      <Card className="overflow-x-auto p-0">
+        <table className="w-full text-sm">
+          <thead className="border-b border-[color:var(--border)] bg-card">
+            <tr>
+              <th className="sticky left-0 z-10 bg-card px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Entrant
+              </th>
+              {weeks.map((w) => (
+                <th
+                  key={w}
+                  className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
+                >
+                  GW{w}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.players.map((p) => {
+              const picks = picksByPlayer.get(p.id);
+              return (
+                <tr key={p.id} className="border-b border-[color:var(--border)] last:border-0">
+                  <td className="sticky left-0 z-10 bg-background/95 px-3 py-2 align-middle">
+                    <div className="font-semibold leading-tight">{p.full_name}</div>
+                    <div className="text-[10px] text-muted-foreground">{p.email}</div>
+                  </td>
+                  {weeks.map((w) => {
+                    const pick = picks?.get(w);
+                    if (!pick) {
+                      return (
+                        <td key={w} className="px-2 py-2 text-center text-muted-foreground/40">
+                          —
+                        </td>
+                      );
+                    }
+                    const badge = badgeByName.get(pick.team) ?? null;
+                    const ring =
+                      pick.result === "W"
+                        ? "ring-2 ring-success"
+                        : pick.result === "L"
+                          ? "ring-2 ring-destructive opacity-60"
+                          : pick.result === "D"
+                            ? "ring-2 ring-muted"
+                            : "";
+                    return (
+                      <td key={w} className="px-2 py-2 text-center">
+                        <div className="mx-auto flex flex-col items-center gap-1">
+                          {badge ? (
+                            <img
+                              src={badge}
+                              alt={pick.team}
+                              title={pick.team}
+                              className={cn("h-7 w-7 rounded", ring)}
+                            />
+                          ) : (
+                            <span
+                              title={pick.team}
+                              className={cn(
+                                "flex h-7 w-7 items-center justify-center rounded bg-muted text-[10px] font-bold",
+                                ring,
+                              )}
+                            >
+                              {pick.team.slice(0, 3).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Card>
+
+      <p className="text-[11px] text-muted-foreground">
+        Green ring = won · red = lost · grey = draw. Empty cells mean no pick made yet.
+      </p>
     </div>
   );
 }
