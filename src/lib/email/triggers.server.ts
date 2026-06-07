@@ -13,7 +13,7 @@ function appBaseUrl(): string {
 }
 
 export function magicLinkFor(token: string): string {
-  return `${appBaseUrl()}/pick?token=${encodeURIComponent(token)}`
+  return `${appBaseUrl()}/gw2?token=${encodeURIComponent(token)}`
 }
 
 export function competitionShareUrl(competitionId: string): string {
