@@ -226,12 +226,9 @@ export async function sendReminder(kind: '24h' | '1h', opts: {
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
   const remaining = await countPlayers(player.competition_id, true)
 
-  // TESTING: force reminder copy to reference GW2.
-  const nextWeekLabel = 'GW2'
-  const { data: gw2 } = await supabaseAdmin
-    .from('gameweeks').select('deadline_at')
-    .eq('competition_id', player.competition_id).eq('week_number', 2).maybeSingle()
-  const deadline = gw2?.deadline_at ?? opts.gameweek.deadline_at
+  const nextWeekLabel = opts.gameweek.week_label
+  const deadline = opts.gameweek.deadline_at
+
 
   await enqueueTemplatedEmail({
     templateName: kind === '24h' ? 'reminder-24h' : 'reminder-1h',
