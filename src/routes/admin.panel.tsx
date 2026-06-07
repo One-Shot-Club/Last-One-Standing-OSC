@@ -330,92 +330,168 @@ function Picks({ data }: { data: Data }) {
   );
 }
 
-// ---- Gameweeks ----
+// ---- Gameweeks (tabbed fixtures + winner picker) ----
+
+const GW_TABS = Object.keys(FIXTURES_BY_WEEK)
+  .map((n) => Number(n))
+  .sort((a, b) => a - b);
 
 function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
   const fetchGws = useServerFn(listGameweeks);
-  const upsert = useServerFn(upsertGameweek);
-  const del = useServerFn(deleteGameweek);
+  const seed = useServerFn(seedGameweek);
+  const setWinner = useServerFn(setFixtureWinner);
+  const fetchResults = useServerFn(listResults);
+  const processGw = useServerFn(processGameweekResults);
   const qc = useQueryClient();
+
+  const [activeWeek, setActiveWeek] = useState<number>(GW_TABS[0] ?? 1);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
   const { data: gws = [] } = useQuery({
     queryKey: ["gws", compId, pin],
     queryFn: () => fetchGws({ data: { competitionId: compId, pin } }),
   });
 
-  const [weekNumber, setWeekNumber] = useState("");
-  const [weekLabel, setWeekLabel] = useState("");
-  const [firstKickoff, setFirstKickoff] = useState("");
-  const [lastEnds, setLastEnds] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const activeGw = (gws as any[]).find((g) => g.week_number === activeWeek) ?? null;
 
-  async function save() {
-    setBusy(true); setErr(null);
-    try {
-      await upsert({
-        data: {
-          competitionId: compId, pin,
-          weekNumber: Number(weekNumber),
-          weekLabel: weekLabel || `GW${weekNumber}`,
-          firstKickoffAt: new Date(firstKickoff).toISOString(),
-          lastMatchEndsAt: new Date(lastEnds).toISOString(),
-        },
-      });
-      setWeekNumber(""); setWeekLabel(""); setFirstKickoff(""); setLastEnds("");
-      await qc.invalidateQueries({ queryKey: ["gws", compId, pin] });
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed");
-    } finally { setBusy(false); }
-  }
+  // Auto-seed gameweek + fixtures when tab opens and they don't exist
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setErr(null);
+        await seed({ data: { competitionId: compId, pin, weekNumber: activeWeek } });
+        if (!cancelled) {
+          await qc.invalidateQueries({ queryKey: ["gws", compId, pin] });
+          await qc.invalidateQueries({ queryKey: ["results", "gw", activeWeek] });
+        }
+      } catch (e) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : "Failed to load gameweek");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeWeek, compId, pin]);
+
+  const { data: results = [] } = useQuery({
+    queryKey: ["results", "gw", activeWeek, activeGw?.id],
+    queryFn: () => fetchResults({ data: { competitionId: compId, pin, gameweekId: activeGw!.id } }),
+    enabled: !!activeGw,
+  });
 
   return (
-    <div className="space-y-3">
-      <Card className="space-y-3">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Add gameweek</p>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Week # (e.g. 1)" value={weekNumber} onChange={(e) => setWeekNumber(e.target.value)} />
-          <Field label="Label" placeholder="GW1" value={weekLabel} onChange={(e) => setWeekLabel(e.target.value)} />
-        </div>
-        <Field label="First kickoff (local time)" type="datetime-local" value={firstKickoff} onChange={(e) => setFirstKickoff(e.target.value)} />
-        <Field label="Last match ends (local time)" type="datetime-local" value={lastEnds} onChange={(e) => setLastEnds(e.target.value)} />
-        <Btn disabled={!weekNumber || !firstKickoff || !lastEnds || busy} onClick={save}>
-          {busy ? "Saving…" : "Add gameweek"}
-        </Btn>
-        {err && <p className="text-xs text-destructive">{err}</p>}
-        <p className="text-[11px] text-muted-foreground">Deadline is automatically set to 2 hours before first kickoff.</p>
-      </Card>
+    <div className="space-y-4">
+      <div className="flex gap-1 overflow-x-auto rounded-lg border border-[color:var(--border)] bg-card p-1">
+        {GW_TABS.map((w) => (
+          <button
+            key={w}
+            onClick={() => setActiveWeek(w)}
+            className={cn(
+              "min-w-[3.5rem] rounded-md px-3 py-2 text-[11px] font-semibold uppercase tracking-widest",
+              activeWeek === w ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+            )}
+          >
+            GW{w}
+          </button>
+        ))}
+      </div>
 
-      {gws.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No gameweeks yet.</p>
+      {err && <p className="text-xs text-destructive">{err}</p>}
+
+      {!activeGw ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">Loading GW{activeWeek}…</p>
       ) : (
-        gws.map((g: any) => (
-          <Card key={g.id} className="space-y-1 p-3 text-sm">
-            <div className="flex items-center justify-between">
-              <div className="display text-lg text-primary">{g.week_label}</div>
-              <button
-                className="text-xs text-destructive"
-                onClick={async () => {
-                  if (!confirm(`Delete ${g.week_label}?`)) return;
-                  await del({ data: { competitionId: compId, pin, id: g.id } });
-                  await qc.invalidateQueries({ queryKey: ["gws", compId, pin] });
-                }}
-              >
-                Delete
-              </button>
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="display text-lg text-primary">{activeGw.week_label}</div>
+              {activeGw.results_locked && (
+                <div className="text-xs text-success">Results locked ✓</div>
+              )}
             </div>
-            <div className="text-xs text-muted-foreground">
-              Deadline: {new Date(g.deadline_at).toLocaleString("en-IE", { timeZone: "Europe/Dublin" })}
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {(results as any[]).filter((r) => r.winner).length} / {(results as any[]).length} set
             </div>
-            <div className="text-xs text-muted-foreground">
-              Last match ends: {new Date(g.last_match_ends_at).toLocaleString("en-IE", { timeZone: "Europe/Dublin" })}
-            </div>
-            {g.results_locked && <div className="text-xs text-success">Results locked ✓</div>}
-          </Card>
-        ))
+          </div>
+
+          <div className="space-y-2">
+            {(results as any[]).length === 0 && (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                No fixtures for GW{activeWeek}.
+              </p>
+            )}
+            {(results as any[]).map((r) => (
+              <Card key={r.id} className="space-y-2 p-3">
+                <div className="flex items-center justify-between text-sm font-semibold">
+                  <span className="flex-1">{r.home_team}</span>
+                  <span className="px-2 text-muted-foreground">vs</span>
+                  <span className="flex-1 text-right">{r.away_team}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {(["home", "draw", "away"] as const).map((w) => {
+                    const label = w === "home" ? r.home_team : w === "away" ? r.away_team : "Draw";
+                    const active = r.winner === w;
+                    return (
+                      <button
+                        key={w}
+                        disabled={activeGw.results_locked || busy}
+                        onClick={async () => {
+                          setBusy(true);
+                          try {
+                            await setWinner({ data: { competitionId: compId, pin, resultId: r.id, winner: w } });
+                            await qc.invalidateQueries({ queryKey: ["results", "gw", activeWeek, activeGw.id] });
+                          } finally {
+                            setBusy(false);
+                          }
+                        }}
+                        className={cn(
+                          "rounded-md px-2 py-2 text-xs font-semibold uppercase tracking-widest",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-[color:var(--border)] text-muted-foreground hover:bg-muted",
+                          (activeGw.results_locked || busy) && "opacity-60",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <Btn
+            variant="danger"
+            disabled={
+              activeGw.results_locked ||
+              (results as any[]).length === 0 ||
+              (results as any[]).some((r) => !r.winner) ||
+              busy
+            }
+            onClick={async () => {
+              if (!confirm(`Lock ${activeGw.week_label}, eliminate losers, and email all alive players?`)) return;
+              setBusy(true);
+              try {
+                const out = await processGw({ data: { competitionId: compId, pin, gameweekId: activeGw.id } });
+                alert(`Locked. ${out.eliminated} eliminated · ${out.progressed} progressed.`);
+                await qc.invalidateQueries();
+                const next = GW_TABS.find((w) => w > activeWeek);
+                if (next) setActiveWeek(next);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {activeGw.results_locked ? "Already locked" : "Lock gameweek & move on →"}
+          </Btn>
+        </>
       )}
     </div>
   );
 }
+
+
 
 // ---- Teams ----
 
