@@ -22,6 +22,7 @@ function Welcome() {
   const { data: comp } = useQuery({
     queryKey: ["comp", c],
     queryFn: () => fetchComp({ data: { id: c } }),
+    enabled: !!c,
   });
 
   return (
