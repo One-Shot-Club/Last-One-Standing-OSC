@@ -79,8 +79,8 @@ function Panel() {
       </header>
 
       <div className="mt-6">
-        <Eyebrow>ADMIN CONTROL PANEL</Eyebrow>
-        <h1 className="display mt-1 text-3xl">{data.competition.name}</h1>
+        <Eyebrow>{data.competition.name}</Eyebrow>
+        <h1 className="display mt-1 text-3xl">ADMIN CONTROL PANEL</h1>
       </div>
 
       <nav className="mt-5 grid grid-cols-3 gap-1 rounded-lg border border-[color:var(--border)] bg-card p-1 text-[10px] uppercase tracking-widest sm:grid-cols-6">
