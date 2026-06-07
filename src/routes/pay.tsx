@@ -45,6 +45,7 @@ function Pay() {
   const { data: comp } = useQuery({
     queryKey: ["comp", c],
     queryFn: () => fetchComp({ data: { id: c } }),
+    enabled: !!c,
   });
   const join = useServerFn(joinCompetition);
   const pick = useServerFn(submitPick);
