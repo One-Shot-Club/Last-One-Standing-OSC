@@ -27,7 +27,7 @@ function Landing() {
   return (
     <Shell>
       <div className="mt-2">
-        <ClubHeader clubName={comp?.club_name ?? "Killeshin GAA"} logoUrl={comp?.club_logo_url} />
+        <ClubHeader clubName={comp?.club_name ?? "LAST MAN STANDING"} logoUrl={comp?.club_logo_url} />
       </div>
 
       <Card className="mt-8 text-center">
