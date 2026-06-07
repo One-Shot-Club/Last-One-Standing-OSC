@@ -185,6 +185,17 @@ export async function sendProgression(opts: {
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
   const remaining = await countPlayers(player.competition_id, true)
+  const { data: priorPicks } = await supabaseAdmin
+    .from('picks').select('team').eq('player_id', opts.playerId)
+  const usedTeams = (priorPicks ?? []).map((p) => p.team)
+
+  // TESTING: hard-wire next week to GW2 so all progression emails point at the
+  // GW2 selection page regardless of which week was just processed.
+  const nextWeekLabel = 'GW2'
+  const { data: gw2 } = await supabaseAdmin
+    .from('gameweeks').select('deadline_at')
+    .eq('competition_id', player.competition_id).eq('week_number', 2).maybeSingle()
+  const nextDeadline = gw2?.deadline_at ?? opts.nextDeadline
 
   await enqueueTemplatedEmail({
     templateName: 'progression',
@@ -194,12 +205,13 @@ export async function sendProgression(opts: {
       firstName: firstNameOf(player.full_name),
       clubName: comp.club_name ?? comp.name,
       weekLabel: opts.weekLabel,
-      nextWeekLabel: opts.nextWeekLabel,
+      nextWeekLabel,
       playersRemaining: remaining,
       prizePool: Number(comp.prize_pool ?? 0),
-      deadline: formatDeadline(opts.nextDeadline),
-      countdownCopy: opts.nextDeadline ? humanCountdown(opts.nextDeadline) : '',
+      deadline: formatDeadline(nextDeadline),
+      countdownCopy: nextDeadline ? humanCountdown(nextDeadline) : '',
       magicLink: magicLinkFor(player.magic_token),
+      usedTeams,
     },
   })
 }
@@ -218,6 +230,13 @@ export async function sendReminder(kind: '24h' | '1h', opts: {
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
   const remaining = await countPlayers(player.competition_id, true)
 
+  // TESTING: force reminder copy to reference GW2.
+  const nextWeekLabel = 'GW2'
+  const { data: gw2 } = await supabaseAdmin
+    .from('gameweeks').select('deadline_at')
+    .eq('competition_id', player.competition_id).eq('week_number', 2).maybeSingle()
+  const deadline = gw2?.deadline_at ?? opts.gameweek.deadline_at
+
   await enqueueTemplatedEmail({
     templateName: kind === '24h' ? 'reminder-24h' : 'reminder-1h',
     to: player.email,
@@ -225,8 +244,8 @@ export async function sendReminder(kind: '24h' | '1h', opts: {
     templateData: {
       firstName: firstNameOf(player.full_name),
       clubName: comp.club_name ?? comp.name,
-      nextWeekLabel: opts.gameweek.week_label,
-      deadline: formatDeadline(opts.gameweek.deadline_at),
+      nextWeekLabel,
+      deadline: formatDeadline(deadline),
       playersRemaining: remaining,
       magicLink: magicLinkFor(player.magic_token),
       usedTeams,
