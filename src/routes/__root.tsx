@@ -78,7 +78,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "OneShotClub — Last Man Standing" },
+      { title: "LAST MAN STANDING" },
       { name: "description", content: "Last Man Standing football competition for Irish GAA clubs." },
       { name: "author", content: "OneShotClub" },
       { property: "og:title", content: "Lovable App" },

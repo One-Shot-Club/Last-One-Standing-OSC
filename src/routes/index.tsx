@@ -9,7 +9,7 @@ import { ClubHeader } from "@/components/oneshot/ClubHeader";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Killeshin GAA — Last Man Standing" },
+      { title: "LAST MAN STANDING" },
       { name: "description", content: "Pick one Premier League team a week. Last one standing wins €3,000." },
     ],
   }),
@@ -27,7 +27,7 @@ function Landing() {
   return (
     <Shell>
       <div className="mt-2">
-        <ClubHeader clubName={comp?.club_name ?? "Killeshin GAA"} logoUrl={comp?.club_logo_url} />
+        <ClubHeader clubName={comp?.club_name ?? "LAST MAN STANDING"} logoUrl={comp?.club_logo_url} />
       </div>
 
       <Card className="mt-8 text-center">
