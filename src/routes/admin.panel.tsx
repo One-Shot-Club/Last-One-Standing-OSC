@@ -27,7 +27,7 @@ import {
 
 export const Route = createFileRoute("/admin/panel")({ component: Panel });
 
-type Tab = "players" | "picks" | "gameweeks" | "teams" | "results" | "stats";
+type Tab = "players" | "picks" | "gameweeks" | "teams" | "stats";
 
 function Panel() {
   const nav = useNavigate();
