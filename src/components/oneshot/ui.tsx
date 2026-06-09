@@ -2,14 +2,24 @@ import type { ReactNode, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import abbey from "@/assets/killeshin-abbey.png.asset.json";
 
-export function Shell({ children, className }: { children: ReactNode; className?: string }) {
+export function Shell({ children, className, bgUrl, bgBlur }: { children: ReactNode; className?: string; bgUrl?: string; bgBlur?: number }) {
+  const url = bgUrl ?? abbey.url;
   return (
     <div className={cn("relative min-h-screen text-foreground", className)}>
-      <div id="app-bg" aria-hidden style={{ backgroundImage: `url(${abbey.url})` }} />
+      <div
+        id="app-bg"
+        aria-hidden
+        style={{
+          backgroundImage: `url(${url})`,
+          filter: bgBlur ? `blur(${bgBlur}px)` : undefined,
+          transform: bgBlur ? "scale(1.05)" : undefined,
+        }}
+      />
       <div className="relative z-10 mx-auto max-w-md px-5 pb-32 pt-6">{children}</div>
     </div>
   );
 }
+
 
 export function Logo() {
   return (
