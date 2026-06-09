@@ -994,3 +994,194 @@ function Audit({ compId, pin }: { compId: string; pin: string }) {
     </div>
   );
 }
+
+function Tools({ compId, pin }: { compId: string; pin: string }) {
+  const importFn = useServerFn(importEntrants);
+  const broadcastFn = useServerFn(broadcastMessage);
+  const listMsgs = useServerFn(listMessages);
+
+  const [csv, setCsv] = useState("");
+  const [importResult, setImportResult] = useState<{ inserted: number; skipped: number; errors: Array<{ row: number; reason: string }> } | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const [audience, setAudience] = useState<"all" | "alive" | "eliminated" | "paid" | "unpaid">("alive");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<string | null>(null);
+
+  const { data: messages, refetch: refetchMsgs } = useQuery({
+    queryKey: ["admin-messages", compId],
+    queryFn: () => listMsgs({ data: { competitionId: compId, pin } }),
+  });
+
+  function parseCsv(text: string): Array<{ fullName: string; email: string; phone?: string; paid?: boolean }> {
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return [];
+    // Detect header
+    const first = lines[0].toLowerCase();
+    const hasHeader = first.includes("name") || first.includes("email");
+    const rows = hasHeader ? lines.slice(1) : lines;
+
+    // Determine column order from header if present
+    let cols = ["name", "email", "phone", "paid"];
+    if (hasHeader) {
+      cols = lines[0].split(",").map((c) => c.trim().toLowerCase());
+    }
+
+    return rows.map((line) => {
+      const parts = line.split(",").map((p) => p.trim());
+      const get = (key: string) => {
+        const idx = cols.indexOf(key);
+        return idx >= 0 ? parts[idx] : undefined;
+      };
+      const nameIdx = cols.findIndex((c) => c === "name" || c === "fullname" || c === "full_name");
+      return {
+        fullName: nameIdx >= 0 ? parts[nameIdx] ?? "" : parts[0] ?? "",
+        email: get("email") ?? parts[1] ?? "",
+        phone: get("phone") || undefined,
+        paid: /^(1|true|yes|y|paid)$/i.test(get("paid") ?? ""),
+      };
+    });
+  }
+
+  async function handleImport() {
+    const rows = parseCsv(csv);
+    if (rows.length === 0) {
+      setImportResult({ inserted: 0, skipped: 0, errors: [{ row: 0, reason: "no rows parsed" }] });
+      return;
+    }
+    setImporting(true);
+    try {
+      const res = await importFn({ data: { competitionId: compId, pin, rows } });
+      setImportResult({ inserted: res.inserted, skipped: res.skipped, errors: res.errors });
+    } catch (e: unknown) {
+      setImportResult({ inserted: 0, skipped: 0, errors: [{ row: 0, reason: (e as Error).message }] });
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleBroadcast() {
+    if (!subject.trim() || !body.trim()) {
+      setSendResult("Subject and body are required.");
+      return;
+    }
+    if (!confirm(`Send broadcast to "${audience}" players?`)) return;
+    setSending(true);
+    setSendResult(null);
+    try {
+      const res = await broadcastFn({ data: { competitionId: compId, pin, audience, subject, body } });
+      setSendResult(`Queued ${res.queued} of ${res.targeted} emails.`);
+      setSubject("");
+      setBody("");
+      refetchMsgs();
+    } catch (e: unknown) {
+      setSendResult(`Error: ${(e as Error).message}`);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <Eyebrow>Bulk CSV import</Eyebrow>
+        <h2 className="display mt-1 text-xl">IMPORT ENTRANTS</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Paste CSV with columns: <code>name, email, phone, paid</code>. Header row optional.
+          Duplicates (matching email in this competition) are skipped. Defaults to unpaid.
+        </p>
+        <textarea
+          value={csv}
+          onChange={(e) => setCsv(e.target.value)}
+          placeholder={"name,email,phone,paid\nTom Murphy,tom@example.com,0851234567,true\nMary Byrne,mary@example.com,,"}
+          className="mt-3 h-40 w-full rounded-md border border-[color:var(--border)] bg-background p-3 font-mono text-xs"
+        />
+        <div className="mt-3 flex items-center gap-3">
+          <Btn onClick={handleImport} disabled={importing || !csv.trim()}>
+            {importing ? "Importing…" : "Import rows"}
+          </Btn>
+          {importResult && (
+            <span className="text-xs text-muted-foreground">
+              Inserted {importResult.inserted} · Skipped {importResult.skipped}
+              {importResult.errors.length > 0 ? ` · ${importResult.errors.length} errors` : ""}
+            </span>
+          )}
+        </div>
+        {importResult && importResult.errors.length > 0 && (
+          <ul className="mt-2 max-h-32 overflow-auto text-xs text-destructive">
+            {importResult.errors.slice(0, 20).map((e, i) => (
+              <li key={i}>Row {e.row}: {e.reason}</li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card>
+        <Eyebrow>Broadcast</Eyebrow>
+        <h2 className="display mt-1 text-xl">SEND MESSAGE</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Audience">
+            <select
+              value={audience}
+              onChange={(e) => setAudience(e.target.value as typeof audience)}
+              className="w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
+            >
+              <option value="alive">Alive players</option>
+              <option value="eliminated">Eliminated players</option>
+              <option value="paid">Paid players</option>
+              <option value="unpaid">Unpaid players</option>
+              <option value="all">All players</option>
+            </select>
+          </Field>
+          <Field label="Subject">
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              maxLength={200}
+              className="w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
+            />
+          </Field>
+        </div>
+        <Field label="Body">
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={5000}
+            className="h-40 w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
+            placeholder="Use blank lines to separate paragraphs."
+          />
+        </Field>
+        <div className="mt-3 flex items-center gap-3">
+          <Btn onClick={handleBroadcast} disabled={sending}>
+            {sending ? "Sending…" : "Send broadcast"}
+          </Btn>
+          {sendResult && <span className="text-xs text-muted-foreground">{sendResult}</span>}
+        </div>
+      </Card>
+
+      <Card>
+        <Eyebrow>Recent broadcasts</Eyebrow>
+        <ul className="mt-3 divide-y divide-[color:var(--border)] text-sm">
+          {(messages ?? []).map((m) => (
+            <li key={m.id} className="py-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">{m.subject}</span>
+                <span className="text-xs text-muted-foreground">
+                  {m.audience} · {m.recipient_count ?? 0} sent
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {new Date(m.sent_at).toLocaleString()}
+              </div>
+            </li>
+          ))}
+          {(!messages || messages.length === 0) && (
+            <li className="py-4 text-xs text-muted-foreground">No broadcasts yet.</li>
+          )}
+        </ul>
+      </Card>
+    </div>
+  );
+}
