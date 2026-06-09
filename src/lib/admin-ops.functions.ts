@@ -643,3 +643,121 @@ export const getMyTenantAccess = createServerFn({ method: "POST" })
       };
     });
   });
+
+// List competitions the signed-in admin can manage.
+export const listMyAdminCompetitions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: Record<string, never>) => d)
+  .handler(async ({ context }) => {
+    const { userId } = context as { userId: string };
+
+    // Platform admin sees all tenants' competitions
+    const { data: isPlatform } = await supabaseAdmin
+      .from("platform_admins")
+      .select("user_id").eq("user_id", userId).maybeSingle();
+
+    let tenantIds: string[] = [];
+    if (isPlatform) {
+      const { data } = await supabaseAdmin.from("tenants").select("id");
+      tenantIds = (data ?? []).map((t) => t.id as string);
+    } else {
+      const { data } = await supabaseAdmin
+        .from("tenant_members")
+        .select("tenant_id, role")
+        .eq("user_id", userId)
+        .in("role", ["tenant_owner", "tenant_admin", "tenant_operator"]);
+      tenantIds = (data ?? []).map((m) => m.tenant_id as string);
+    }
+    if (tenantIds.length === 0) return [];
+
+    const { data: comps } = await supabaseAdmin
+      .from("competitions")
+      .select("id, name, tenant_id, tenants(slug, name)")
+      .in("tenant_id", tenantIds)
+      .order("created_at", { ascending: false });
+    return (comps ?? []).map((c) => {
+      const t = (c as { tenants: { slug: string; name: string } | null }).tenants;
+      return {
+        id: c.id as string,
+        name: c.name as string,
+        tenant_id: c.tenant_id as string,
+        tenant_slug: t?.slug ?? "",
+        tenant_name: t?.name ?? "",
+      };
+    });
+  });
+
+// ----- Tenant member management (owner/platform-admin only) -----
+async function assertTenantOwner(userId: string, tenantId: string) {
+  const { data: isPlatform } = await supabaseAdmin
+    .from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
+  if (isPlatform) return;
+  const { data: ok } = await supabaseAdmin.rpc("has_tenant_access", {
+    _user_id: userId, _tenant_id: tenantId, _min_role: "tenant_owner",
+  });
+  if (ok !== true) throw new Error("Forbidden: tenant owner required");
+}
+
+export const listTenantMembers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { tenantId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertTenantOwner(userId, data.tenantId);
+    const { data: members } = await supabaseAdmin
+      .from("tenant_members")
+      .select("user_id, role, created_at")
+      .eq("tenant_id", data.tenantId);
+    if (!members || members.length === 0) return [];
+    const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const byId = new Map((list?.users ?? []).map((u) => [u.id, u.email ?? "—"]));
+    return members.map((m) => ({
+      user_id: m.user_id as string,
+      email: byId.get(m.user_id as string) ?? "(unknown)",
+      role: m.role as string,
+      created_at: m.created_at as string,
+    }));
+  });
+
+export const addTenantMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: {
+    tenantId: string;
+    email: string;
+    role: "tenant_owner" | "tenant_admin" | "tenant_operator" | "tenant_viewer";
+  }) => {
+    if (!d.email?.includes("@")) throw new Error("Valid email required");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertTenantOwner(userId, data.tenantId);
+    const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const target = (list?.users ?? []).find(
+      (u) => u.email?.toLowerCase() === data.email.toLowerCase(),
+    );
+    if (!target) throw new Error("No registered user with that email. Ask them to sign up first.");
+    const { error } = await supabaseAdmin
+      .from("tenant_members")
+      .upsert(
+        { tenant_id: data.tenantId, user_id: target.id, role: data.role },
+        { onConflict: "tenant_id,user_id" },
+      );
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const removeTenantMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { tenantId: string; userId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { userId: actor } = context as { userId: string };
+    await assertTenantOwner(actor, data.tenantId);
+    const { error } = await supabaseAdmin
+      .from("tenant_members")
+      .delete()
+      .eq("tenant_id", data.tenantId)
+      .eq("user_id", data.userId);
+    if (error) throw error;
+    return { ok: true };
+  });
