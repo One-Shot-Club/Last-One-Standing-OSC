@@ -28,6 +28,7 @@ export type Database = {
           prize_pool: number
           revolut_link: string | null
           stripe_link: string | null
+          tenant_id: string | null
           whatsapp_link: string | null
         }
         Insert: {
@@ -43,6 +44,7 @@ export type Database = {
           prize_pool?: number
           revolut_link?: string | null
           stripe_link?: string | null
+          tenant_id?: string | null
           whatsapp_link?: string | null
         }
         Update: {
@@ -58,9 +60,18 @@ export type Database = {
           prize_pool?: number
           revolut_link?: string | null
           stripe_link?: string | null
+          tenant_id?: string | null
           whatsapp_link?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "competitions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_send_log: {
         Row: {
@@ -159,6 +170,7 @@ export type Database = {
           last_match_ends_at: string
           processed_at: string | null
           results_locked: boolean
+          tenant_id: string | null
           updated_at: string
           week_label: string
           week_number: number
@@ -172,6 +184,7 @@ export type Database = {
           last_match_ends_at: string
           processed_at?: string | null
           results_locked?: boolean
+          tenant_id?: string | null
           updated_at?: string
           week_label: string
           week_number: number
@@ -185,11 +198,20 @@ export type Database = {
           last_match_ends_at?: string
           processed_at?: string | null
           results_locked?: boolean
+          tenant_id?: string | null
           updated_at?: string
           week_label?: string
           week_number?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gameweeks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       picks: {
         Row: {
@@ -199,6 +221,7 @@ export type Database = {
           player_id: string
           result: string | null
           team: string
+          tenant_id: string | null
           week: number
         }
         Insert: {
@@ -208,6 +231,7 @@ export type Database = {
           player_id: string
           result?: string | null
           team: string
+          tenant_id?: string | null
           week: number
         }
         Update: {
@@ -217,6 +241,7 @@ export type Database = {
           player_id?: string
           result?: string | null
           team?: string
+          tenant_id?: string | null
           week?: number
         }
         Relationships: [
@@ -234,7 +259,29 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "picks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       players: {
         Row: {
@@ -247,6 +294,7 @@ export type Database = {
           magic_token: string
           paid: boolean
           phone: string | null
+          tenant_id: string | null
         }
         Insert: {
           alive?: boolean
@@ -258,6 +306,7 @@ export type Database = {
           magic_token?: string
           paid?: boolean
           phone?: string | null
+          tenant_id?: string | null
         }
         Update: {
           alive?: boolean
@@ -269,6 +318,7 @@ export type Database = {
           magic_token?: string
           paid?: boolean
           phone?: string | null
+          tenant_id?: string | null
         }
         Relationships: [
           {
@@ -276,6 +326,13 @@ export type Database = {
             columns: ["competition_id"]
             isOneToOne: false
             referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -287,6 +344,7 @@ export type Database = {
           kind: string
           player_id: string
           sent_at: string
+          tenant_id: string | null
         }
         Insert: {
           gameweek_id?: string | null
@@ -294,6 +352,7 @@ export type Database = {
           kind: string
           player_id: string
           sent_at?: string
+          tenant_id?: string | null
         }
         Update: {
           gameweek_id?: string | null
@@ -301,8 +360,17 @@ export type Database = {
           kind?: string
           player_id?: string
           sent_at?: string
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reminders_sent_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       results: {
         Row: {
@@ -379,6 +447,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -387,6 +456,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -395,6 +465,127 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["tenant_role"]
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["tenant_role"]
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_settings: {
+        Row: {
+          accent_color: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          intro_copy: string | null
+          logo_url: string | null
+          primary_color: string | null
+          reminder_offsets: Json
+          sponsor_assets: Json
+          tenant_id: string
+          updated_at: string
+          whatsapp_link: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          intro_copy?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          reminder_offsets?: Json
+          sponsor_assets?: Json
+          tenant_id: string
+          updated_at?: string
+          whatsapp_link?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          intro_copy?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          reminder_offsets?: Json
+          sponsor_assets?: Json
+          tenant_id?: string
+          updated_at?: string
+          whatsapp_link?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -412,6 +603,15 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      has_tenant_access: {
+        Args: {
+          _min_role: Database["public"]["Enums"]["tenant_role"]
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -429,9 +629,18 @@ export type Database = {
           read_ct: number
         }[]
       }
+      tenant_role_for: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["tenant_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      tenant_role:
+        | "platform_super_admin"
+        | "tenant_owner"
+        | "tenant_admin"
+        | "tenant_operator"
+        | "tenant_viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -558,6 +767,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      tenant_role: [
+        "platform_super_admin",
+        "tenant_owner",
+        "tenant_admin",
+        "tenant_operator",
+        "tenant_viewer",
+      ],
+    },
   },
 } as const
