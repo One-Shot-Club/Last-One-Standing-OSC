@@ -81,7 +81,7 @@ export const joinCompetition = createServerFn({ method: "POST" })
         phone: data.phone,
         paid: true,
         alive: true,
-      })
+      } as never)
       .select("*")
       .single();
     if (error) throw error;
@@ -135,7 +135,7 @@ export const submitPick = createServerFn({ method: "POST" })
         competition_id: data.competitionId,
         week: data.week,
         team: data.team,
-      })
+      } as never)
       .select("*")
       .single();
     if (error) throw error;
