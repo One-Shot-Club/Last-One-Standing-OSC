@@ -15,10 +15,13 @@ import { Route as PickRouteImport } from './routes/pick'
 import { Route as PayRouteImport } from './routes/pay'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as Gw2RouteImport } from './routes/gw2'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -55,6 +58,15 @@ const Gw2Route = Gw2RouteImport.update({
   path: '/gw2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -74,6 +86,11 @@ const AdminPanelRoute = AdminPanelRouteImport.update({
   id: '/admin/panel',
   path: '/admin/panel',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
@@ -107,12 +124,14 @@ const ApiPublicCronCheckRemindersRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/gw2': typeof Gw2Route
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
@@ -124,12 +143,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/gw2': typeof Gw2Route
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin': typeof AdminIndexRoute
@@ -142,12 +163,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/gw2': typeof Gw2Route
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
@@ -161,12 +185,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/gw2'
     | '/how-it-works'
     | '/pay'
     | '/pick'
     | '/unsubscribe'
     | '/welcome'
+    | '/dashboard'
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/admin/'
@@ -178,12 +204,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/gw2'
     | '/how-it-works'
     | '/pay'
     | '/pick'
     | '/unsubscribe'
     | '/welcome'
+    | '/dashboard'
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/admin'
@@ -195,12 +223,15 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/auth'
     | '/gw2'
     | '/how-it-works'
     | '/pay'
     | '/pick'
     | '/unsubscribe'
     | '/welcome'
+    | '/_authenticated/dashboard'
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/admin/'
@@ -213,6 +244,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   Gw2Route: typeof Gw2Route
   HowItWorksRoute: typeof HowItWorksRoute
   PayRoute: typeof PayRoute
@@ -273,6 +306,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Gw2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -300,6 +347,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/panel'
       preLoaderRoute: typeof AdminPanelRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -339,8 +393,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   Gw2Route: Gw2Route,
   HowItWorksRoute: HowItWorksRoute,
   PayRoute: PayRoute,
@@ -359,13 +426,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
