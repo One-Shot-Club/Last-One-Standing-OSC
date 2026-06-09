@@ -13,13 +13,7 @@ export const setPaymentLink = createServerFn({ method: "POST" })
     }) => d,
   )
   .handler(async ({ data }) => {
-    const { data: comp } = await supabaseAdmin
-      .from("competitions")
-      .select("id")
-      .eq("id", data.competitionId)
-      .eq("admin_pin", data.pin)
-      .maybeSingle();
-    if (!comp) throw new Error("Invalid admin PIN");
+    await verifyAdmin(data.competitionId, data.pin);
     const update: {
       stripe_link?: string;
       revolut_link?: string;
