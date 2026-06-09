@@ -21,6 +21,9 @@ import {
   recordPayment,
   setEntryPaid,
   listAdminActions,
+  setPlayerAlive,
+  overridePick,
+  deletePick,
 } from "@/lib/admin-ops.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
@@ -107,9 +110,9 @@ function Panel() {
       </nav>
 
       <div className="mt-6">
-        {tab === "players" && <Players data={data} />}
+        {tab === "players" && <Players data={data} compId={compId!} pin={pin!} onChange={refetch} />}
         {tab === "entries" && <Entries compId={compId!} pin={pin!} onChange={refetch} />}
-        {tab === "picks" && <Picks data={data} />}
+        {tab === "picks" && <Picks data={data} compId={compId!} pin={pin!} onChange={refetch} />}
         {tab === "gameweeks" && <Gameweeks compId={compId!} pin={pin!} />}
         {tab === "teams" && <Teams compId={compId!} pin={pin!} />}
         {tab === "stats" && <Stats data={data} />}
@@ -125,11 +128,12 @@ type Data = Awaited<ReturnType<typeof adminGetData>>;
 
 const WINDOW_SIZE = 8;
 
-function Players({ data }: { data: Data }) {
-  const compId = data.competition.id;
+function Players({ data, compId, pin, onChange }: { data: Data; compId: string; pin: string; onChange: () => void }) {
   const fetchTeams = useServerFn(listTeams);
-  // pin is stored in sessionStorage; pull from there to avoid prop plumbing
-  const pin = typeof window !== "undefined" ? sessionStorage.getItem("osc_pin") ?? "" : "";
+  const togglePlayer = useServerFn(setPlayerAlive);
+  const overrideP = useServerFn(overridePick);
+  const removeP = useServerFn(deletePick);
+  const qc = useQueryClient();
   const { data: teams = [] } = useQuery({
     queryKey: ["teams", compId, pin],
     queryFn: () => fetchTeams({ data: { competitionId: compId, pin } }),
@@ -211,17 +215,65 @@ function Players({ data }: { data: Data }) {
             {data.players.map((p) => {
               const picks = picksByPlayer.get(p.id);
               return (
-                <tr key={p.id} className="border-b border-[color:var(--border)] last:border-0">
+                <tr key={p.id} className={cn("border-b border-[color:var(--border)] last:border-0", !p.alive && "opacity-60")}>
                   <td className="sticky left-0 z-10 bg-background/95 px-3 py-2 align-middle">
-                    <div className="font-semibold leading-tight">{p.full_name}</div>
-                    <div className="text-[10px] text-muted-foreground">{p.email}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold leading-tight">{p.full_name}</div>
+                        <div className="truncate text-[10px] text-muted-foreground">{p.email}</div>
+                      </div>
+                      <button
+                        title={p.alive ? "Eliminate" : "Reinstate"}
+                        className={cn(
+                          "shrink-0 rounded-md border border-[color:var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+                          p.alive ? "text-destructive" : "text-success",
+                        )}
+                        onClick={async () => {
+                          const verb = p.alive ? "Eliminate" : "Reinstate";
+                          const reason = window.prompt(`${verb} ${p.full_name}? Optional reason:`, "");
+                          if (reason === null) return;
+                          await togglePlayer({
+                            data: { competitionId: compId, pin, playerId: p.id, alive: !p.alive, reason: reason || null },
+                          });
+                          await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+                          onChange();
+                        }}
+                      >
+                        {p.alive ? "Elim" : "Reinst"}
+                      </button>
+                    </div>
                   </td>
                   {weeks.map((w) => {
                     const pick = picks?.get(w);
+                    const handleCellClick = async () => {
+                      const teamNames = (teams as any[]).map((t) => t.name);
+                      const current = pick?.team ?? "";
+                      const next = window.prompt(
+                        `${pick ? "Override" : "Set"} pick for ${p.full_name} — GW${w}\n\nTeams: ${teamNames.join(", ")}\n\nEnter team name (blank to clear):`,
+                        current,
+                      );
+                      if (next === null) return;
+                      const trimmed = next.trim();
+                      if (!trimmed) {
+                        if (!pick) return;
+                        if (!window.confirm("Delete this pick?")) return;
+                        await removeP({ data: { competitionId: compId, pin, playerId: p.id, week: w } });
+                      } else {
+                        if (!teamNames.includes(trimmed)) {
+                          alert(`Unknown team: ${trimmed}`);
+                          return;
+                        }
+                        await overrideP({
+                          data: { competitionId: compId, pin, playerId: p.id, week: w, team: trimmed },
+                        });
+                      }
+                      await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+                      onChange();
+                    };
                     if (!pick) {
                       return (
                         <td key={w} className="px-2 py-2 text-center text-muted-foreground/40">
-                          —
+                          <button onClick={handleCellClick} className="rounded px-2 py-1 hover:bg-muted/40">—</button>
                         </td>
                       );
                     }
@@ -236,17 +288,17 @@ function Players({ data }: { data: Data }) {
                             : "";
                     return (
                       <td key={w} className="px-2 py-2 text-center">
-                        <div className="mx-auto flex flex-col items-center gap-1">
+                        <button onClick={handleCellClick} className="mx-auto flex flex-col items-center gap-1">
                           {badge ? (
                             <img
                               src={badge}
                               alt={pick.team}
-                              title={pick.team}
+                              title={`${pick.team} — click to override`}
                               className={cn("h-7 w-7 rounded", ring)}
                             />
                           ) : (
                             <span
-                              title={pick.team}
+                              title={`${pick.team} — click to override`}
                               className={cn(
                                 "flex h-7 w-7 items-center justify-center rounded bg-muted text-[10px] font-bold",
                                 ring,
@@ -255,7 +307,7 @@ function Players({ data }: { data: Data }) {
                               {pick.team.slice(0, 3).toUpperCase()}
                             </span>
                           )}
-                        </div>
+                        </button>
                       </td>
                     );
                   })}
@@ -273,7 +325,9 @@ function Players({ data }: { data: Data }) {
   );
 }
 
-function Picks({ data }: { data: Data }) {
+function Picks({ data, compId, pin, onChange }: { data: Data; compId: string; pin: string; onChange: () => void }) {
+  const overrideP = useServerFn(overridePick);
+  const qc = useQueryClient();
   const weeks = Array.from(new Set(data.picks.map((p) => p.week))).sort();
   const [week, setWeek] = useState<number>(weeks[weeks.length - 1] ?? data.competition.current_week);
 
@@ -327,7 +381,23 @@ function Picks({ data }: { data: Data }) {
           return (
             <Card key={p.id} className="flex items-center justify-between p-3">
               <span className="text-sm">{player?.full_name ?? "?"}</span>
-              <span className="display text-lg text-primary">{p.team}</span>
+              <div className="flex items-center gap-3">
+                <span className="display text-lg text-primary">{p.team}</span>
+                <button
+                  className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[10px] uppercase tracking-widest"
+                  onClick={async () => {
+                    const next = window.prompt(`Override pick for ${player?.full_name} — GW${week}`, p.team);
+                    if (!next) return;
+                    await overrideP({
+                      data: { competitionId: compId, pin, playerId: p.player_id, week, team: next.trim() },
+                    });
+                    await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+                    onChange();
+                  }}
+                >
+                  Override
+                </button>
+              </div>
             </Card>
           );
         })}
