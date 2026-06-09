@@ -335,20 +335,26 @@ function TenantCard({
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          <button
+            className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
+            onClick={onActivate}
+          >
+            {tenant.competitions > 0 ? "Re-run setup" : "Activate"}
+          </button>
           <button className="text-xs underline" onClick={onEdit}>
-            Edit
+            Edit branding
           </button>
           <button className="text-xs underline" onClick={() => setOpen((v) => !v)}>
             {open ? "Hide members" : "Members"}
           </button>
-          {tenant.status !== "active" && (
-            <button className="text-xs underline" onClick={() => onStatus("active")}>
-              Activate
-            </button>
-          )}
           {tenant.status !== "paused" && (
             <button className="text-xs underline" onClick={() => onStatus("paused")}>
               Pause
+            </button>
+          )}
+          {tenant.status === "paused" && (
+            <button className="text-xs underline" onClick={() => onStatus("active")}>
+              Resume
             </button>
           )}
           {tenant.status !== "archived" && (
