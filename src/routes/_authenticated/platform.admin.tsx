@@ -18,6 +18,7 @@ import {
   removeTenantMember,
 } from "@/lib/admin-ops.functions";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
+import { EditTenantPanel } from "@/components/platform/EditTenantPanel";
 
 export const Route = createFileRoute("/_authenticated/platform/admin")({
   component: PlatformAdmin,
