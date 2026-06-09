@@ -214,3 +214,123 @@ export const listPlatformAdmins = createServerFn({ method: "POST" })
       created_at: a.created_at as string,
     }));
   });
+
+export const getTenantForEdit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { tenantId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertPlatformAdmin(userId);
+
+    const { data: tenant, error: tErr } = await supabaseAdmin
+      .from("tenants")
+      .select("id, slug, name, status")
+      .eq("id", data.tenantId)
+      .single();
+    if (tErr) throw tErr;
+
+    const { data: settings } = await supabaseAdmin
+      .from("tenant_settings")
+      .select(
+        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link",
+      )
+      .eq("tenant_id", data.tenantId)
+      .maybeSingle();
+
+    return {
+      tenant,
+      settings: settings ?? {
+        logo_url: null,
+        primary_color: null,
+        accent_color: null,
+        intro_copy: null,
+        contact_email: null,
+        contact_phone: null,
+        whatsapp_link: null,
+      },
+    };
+  });
+
+export const updateTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      tenantId: string;
+      name: string;
+      slug: string;
+      settings: {
+        logo_url?: string | null;
+        primary_color?: string | null;
+        accent_color?: string | null;
+        intro_copy?: string | null;
+        contact_email?: string | null;
+        contact_phone?: string | null;
+        whatsapp_link?: string | null;
+      };
+    }) => {
+      if (!d.tenantId) throw new Error("tenantId required");
+      if (!d.name?.trim()) throw new Error("Name required");
+      if (!d.slug || !/^[a-z0-9-]+$/.test(d.slug)) {
+        throw new Error("Slug must be lowercase letters, numbers, and dashes only");
+      }
+      return d;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertPlatformAdmin(userId);
+
+    // Slug uniqueness when changed
+    const { data: existing } = await supabaseAdmin
+      .from("tenants")
+      .select("id, slug, name")
+      .eq("id", data.tenantId)
+      .single();
+    if (!existing) throw new Error("Tenant not found");
+
+    if (existing.slug !== data.slug) {
+      const { data: clash } = await supabaseAdmin
+        .from("tenants")
+        .select("id")
+        .eq("slug", data.slug)
+        .neq("id", data.tenantId)
+        .maybeSingle();
+      if (clash) throw new Error("Slug already in use");
+    }
+
+    const { error: tErr } = await supabaseAdmin
+      .from("tenants")
+      .update({ name: data.name.trim(), slug: data.slug })
+      .eq("id", data.tenantId);
+    if (tErr) throw tErr;
+
+    const s = data.settings;
+    const settingsRow = {
+      tenant_id: data.tenantId,
+      logo_url: s.logo_url ?? null,
+      primary_color: s.primary_color ?? null,
+      accent_color: s.accent_color ?? null,
+      intro_copy: s.intro_copy ?? null,
+      contact_email: s.contact_email ?? null,
+      contact_phone: s.contact_phone ?? null,
+      whatsapp_link: s.whatsapp_link ?? null,
+    };
+    const { error: sErr } = await supabaseAdmin
+      .from("tenant_settings")
+      .upsert(settingsRow, { onConflict: "tenant_id" });
+    if (sErr) throw sErr;
+
+    await supabaseAdmin.from("audit_logs").insert({
+      tenant_id: data.tenantId,
+      actor_id: userId,
+      op: "update",
+      table_name: "tenants",
+      row_id: data.tenantId,
+      diff: {
+        before: { name: existing.name, slug: existing.slug },
+        after: { name: data.name, slug: data.slug, settings: s },
+      },
+    });
+
+    return { ok: true };
+  });
