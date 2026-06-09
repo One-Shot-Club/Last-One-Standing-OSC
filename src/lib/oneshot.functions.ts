@@ -155,8 +155,8 @@ export const submitPick = createServerFn({ method: "POST" })
 // Single hardcoded admin credential. Change here in code to rotate.
 // Keep `competitions.admin_pin` in sync with ADMIN_PASSWORD so downstream
 // verifyAdmin(...) checks (which compare against admin_pin) keep working.
-const ADMIN_USERNAME = "EoinKilleshin@OSC.ie";
-const ADMIN_PASSWORD = "Ki11eshin2026LMS";
+const ADMIN_USERNAME = "Demo@Demo.ie";
+const ADMIN_PASSWORD = "123!@£POL";
 
 export const adminLogin = createServerFn({ method: "POST" })
   .inputValidator((d: { username: string; password: string }) => d)
