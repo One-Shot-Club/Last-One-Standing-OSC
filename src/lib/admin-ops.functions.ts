@@ -268,3 +268,127 @@ export const listAdminActions = createServerFn({ method: "POST" })
       .limit(data.limit ?? 100);
     return rows ?? [];
   });
+
+// --- Eliminate / reinstate a player (admin override) ---
+export const setPlayerAlive = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: { competitionId: string; pin: string; playerId: string; alive: boolean; reason?: string | null }) => d,
+  )
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+
+    const { data: player } = await supabaseAdmin
+      .from("players")
+      .select("id, competition_id, alive, full_name")
+      .eq("id", data.playerId)
+      .maybeSingle();
+    if (!player || player.competition_id !== data.competitionId) {
+      throw new Error("Player not found");
+    }
+
+    const { error } = await supabaseAdmin
+      .from("players")
+      .update({ alive: data.alive })
+      .eq("id", data.playerId);
+    if (error) throw error;
+
+    await logAction(
+      comp.tenant_id,
+      data.alive ? "player.reinstate" : "player.eliminate",
+      "admin",
+      "player",
+      data.playerId,
+      { full_name: player.full_name, previous: player.alive, reason: data.reason ?? null },
+    );
+    return { ok: true };
+  });
+
+// --- Override / set a pick on behalf of a player (admin) ---
+export const overridePick = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      pin: string;
+      playerId: string;
+      week: number;
+      team: string;
+      reason?: string | null;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+
+    const { data: player } = await supabaseAdmin
+      .from("players")
+      .select("id, competition_id, full_name")
+      .eq("id", data.playerId)
+      .maybeSingle();
+    if (!player || player.competition_id !== data.competitionId) {
+      throw new Error("Player not found");
+    }
+
+    // Capture previous pick for audit
+    const { data: prior } = await supabaseAdmin
+      .from("picks")
+      .select("id, team, result")
+      .eq("player_id", data.playerId)
+      .eq("week", data.week)
+      .maybeSingle();
+
+    const { error } = await supabaseAdmin
+      .from("picks")
+      .upsert(
+        {
+          player_id: data.playerId,
+          competition_id: data.competitionId,
+          week: data.week,
+          team: data.team,
+        } as never,
+        { onConflict: "player_id,week" },
+      );
+    if (error) throw error;
+
+    await logAction(
+      comp.tenant_id,
+      prior ? "pick.override" : "pick.create",
+      "admin",
+      "player",
+      data.playerId,
+      {
+        full_name: player.full_name,
+        week: data.week,
+        team: data.team,
+        previous_team: prior?.team ?? null,
+        previous_result: prior?.result ?? null,
+        reason: data.reason ?? null,
+      },
+    );
+    return { ok: true };
+  });
+
+// --- Delete a pick (admin) ---
+export const deletePick = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: { competitionId: string; pin: string; playerId: string; week: number; reason?: string | null }) => d,
+  )
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+
+    const { data: prior } = await supabaseAdmin
+      .from("picks")
+      .select("id, team")
+      .eq("player_id", data.playerId)
+      .eq("week", data.week)
+      .maybeSingle();
+    if (!prior) return { ok: true };
+
+    const { error } = await supabaseAdmin.from("picks").delete().eq("id", prior.id);
+    if (error) throw error;
+
+    await logAction(comp.tenant_id, "pick.delete", "admin", "player", data.playerId, {
+      week: data.week,
+      previous_team: prior.team,
+      reason: data.reason ?? null,
+    });
+    return { ok: true };
+  });
