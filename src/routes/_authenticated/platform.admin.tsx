@@ -12,6 +12,11 @@ import {
   addPlatformAdmin,
   listPlatformAdmins,
 } from "@/lib/platform-admin.functions";
+import {
+  listTenantMembers,
+  addTenantMember,
+  removeTenantMember,
+} from "@/lib/admin-ops.functions";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
 
 export const Route = createFileRoute("/_authenticated/platform/admin")({
@@ -216,44 +221,11 @@ function PlatformAdmin() {
       <Card className="mt-3 space-y-2">
         {tenants.length === 0 && <p className="text-sm text-muted-foreground">No tenants yet.</p>}
         {tenants.map((t) => (
-          <div key={t.id} className="rounded-md border border-border p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="font-medium">
-                  {t.name} <span className="text-xs text-muted-foreground">/{t.slug}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {t.competitions} comps · {t.entries} entries · {t.members} members · {t.status}
-                </div>
-              </div>
-              <div className="flex gap-1">
-                {t.status !== "active" && (
-                  <button
-                    className="text-xs underline"
-                    onClick={() => handleStatus(t.id, "active")}
-                  >
-                    Activate
-                  </button>
-                )}
-                {t.status !== "paused" && (
-                  <button
-                    className="text-xs underline"
-                    onClick={() => handleStatus(t.id, "paused")}
-                  >
-                    Pause
-                  </button>
-                )}
-                {t.status !== "archived" && (
-                  <button
-                    className="text-xs underline"
-                    onClick={() => handleStatus(t.id, "archived")}
-                  >
-                    Archive
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+          <TenantCard
+            key={t.id}
+            tenant={t}
+            onStatus={(s) => handleStatus(t.id, s)}
+          />
         ))}
       </Card>
 
@@ -308,6 +280,146 @@ function Stat({ label, value }: { label: string; value: number }) {
     <div>
       <div className="display text-2xl">{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+type Member = { user_id: string; email: string; role: string; created_at: string };
+type Role = "tenant_owner" | "tenant_admin" | "tenant_operator" | "tenant_viewer";
+
+function TenantCard({
+  tenant,
+  onStatus,
+}: {
+  tenant: TenantRow;
+  onStatus: (s: "active" | "paused" | "archived") => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-md border border-border p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-medium">
+            {tenant.name}{" "}
+            <span className="text-xs text-muted-foreground">/{tenant.slug}</span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {tenant.competitions} comps · {tenant.entries} entries · {tenant.members} members ·{" "}
+            {tenant.status}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-start gap-2">
+          <button className="text-xs underline" onClick={() => setOpen((v) => !v)}>
+            {open ? "Hide members" : "Members"}
+          </button>
+          {tenant.status !== "active" && (
+            <button className="text-xs underline" onClick={() => onStatus("active")}>
+              Activate
+            </button>
+          )}
+          {tenant.status !== "paused" && (
+            <button className="text-xs underline" onClick={() => onStatus("paused")}>
+              Pause
+            </button>
+          )}
+          {tenant.status !== "archived" && (
+            <button className="text-xs underline" onClick={() => onStatus("archived")}>
+              Archive
+            </button>
+          )}
+        </div>
+      </div>
+      {open && <TenantMembersPanel tenantId={tenant.id} />}
+    </div>
+  );
+}
+
+function TenantMembersPanel({ tenantId }: { tenantId: string }) {
+  const listFn = useServerFn(listTenantMembers);
+  const addFn = useServerFn(addTenantMember);
+  const removeFn = useServerFn(removeTenantMember);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Role>("tenant_admin");
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const m = (await listFn({ data: { tenantId } })) as Member[];
+      setMembers(m);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to load members");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
+
+  async function handleAdd() {
+    setErr(null);
+    try {
+      await addFn({ data: { tenantId, email: email.trim(), role } });
+      setEmail("");
+      await refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Add failed");
+    }
+  }
+
+  async function handleRemove(uid: string) {
+    setErr(null);
+    try {
+      await removeFn({ data: { tenantId, userId: uid } });
+      await refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Remove failed");
+    }
+  }
+
+  return (
+    <div className="mt-3 space-y-2 rounded-md bg-muted/30 p-3">
+      {loading && <p className="text-xs text-muted-foreground">Loading members…</p>}
+      {err && <p className="text-xs text-destructive">{err}</p>}
+      {members.map((m) => (
+        <div key={m.user_id} className="flex items-center justify-between gap-2 text-sm">
+          <div>
+            {m.email} <span className="text-xs text-muted-foreground">· {m.role}</span>
+          </div>
+          <button
+            className="text-xs text-destructive underline"
+            onClick={() => handleRemove(m.user_id)}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <div className="grid grid-cols-[1fr_auto_auto] items-end gap-2 pt-2">
+        <Field
+          label="Add by email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="user@example.com"
+        />
+        <select
+          className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+          value={role}
+          onChange={(e) => setRole(e.target.value as Role)}
+        >
+          <option value="tenant_owner">owner</option>
+          <option value="tenant_admin">admin</option>
+          <option value="tenant_operator">operator</option>
+          <option value="tenant_viewer">viewer</option>
+        </select>
+        <Btn disabled={!email} onClick={handleAdd}>
+          Add
+        </Btn>
+      </div>
     </div>
   );
 }

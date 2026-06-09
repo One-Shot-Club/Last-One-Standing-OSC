@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { getMyTenantAccess } from "@/lib/admin-ops.functions";
+import { getMyTenantAccess, listMyAdminCompetitions } from "@/lib/admin-ops.functions";
 import { Btn, Card, Logo, Shell } from "@/components/oneshot/ui";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -15,19 +15,38 @@ type TenantRow = {
   tenant_name: string;
   role: string;
 };
+type CompRow = {
+  id: string;
+  name: string;
+  tenant_id: string;
+  tenant_slug: string;
+  tenant_name: string;
+};
 
 function Dashboard() {
+  const nav = useNavigate();
   const fetchAccess = useServerFn(getMyTenantAccess);
+  const fetchComps = useServerFn(listMyAdminCompetitions);
   const [email, setEmail] = useState<string | null>(null);
-  const [rows, setRows] = useState<TenantRow[] | null>(null);
+  const [tenants, setTenants] = useState<TenantRow[] | null>(null);
+  const [comps, setComps] = useState<CompRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
-    fetchAccess({ data: {} })
-      .then((r: unknown) => setRows(r as TenantRow[]))
+    Promise.all([fetchAccess({ data: {} }), fetchComps({ data: {} })])
+      .then(([t, c]) => {
+        setTenants(t as TenantRow[]);
+        setComps(c as CompRow[]);
+      })
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : "Failed to load"));
-  }, [fetchAccess]);
+  }, [fetchAccess, fetchComps]);
+
+  function openPanel(c: CompRow) {
+    sessionStorage.setItem("osc_comp", c.id);
+    sessionStorage.setItem("osc_pin", ""); // auth-based, no PIN
+    nav({ to: "/admin/panel" });
+  }
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -38,19 +57,43 @@ function Dashboard() {
     <Shell>
       <Logo />
       <div className="mt-12">
-        <h1 className="display text-3xl">Your tenants</h1>
+        <h1 className="display text-3xl">Admin dashboard</h1>
         <p className="mt-2 text-sm text-muted-foreground">Signed in as {email}</p>
       </div>
-      <Card className="mt-6 space-y-3">
-        {err && <p className="text-sm text-destructive">{err}</p>}
-        {rows === null && !err && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {rows && rows.length === 0 && (
+
+      {err && (
+        <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive">
+          {err}
+        </p>
+      )}
+
+      <h2 className="mt-6 display text-lg">Your competitions</h2>
+      <Card className="mt-3 space-y-2">
+        {comps === null && !err && (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        )}
+        {comps && comps.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            You don't have admin access to any tenants yet. Ask a tenant owner to add you, or use the
-            legacy <Link to="/admin" className="underline">PIN sign-in</Link>.
+            No competitions yet. Tenant owners can grant you access from the platform admin page.
           </p>
         )}
-        {rows?.map((r) => (
+        {comps?.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => openPanel(c)}
+            className="block w-full rounded-md border border-border p-3 text-left hover:bg-muted/40"
+          >
+            <div className="font-medium">{c.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {c.tenant_name} ({c.tenant_slug})
+            </div>
+          </button>
+        ))}
+      </Card>
+
+      <h2 className="mt-6 display text-lg">Your tenants</h2>
+      <Card className="mt-3 space-y-2">
+        {tenants?.map((r) => (
           <div key={r.tenant_id} className="rounded-md border border-border p-3">
             <div className="font-medium">{r.tenant_name}</div>
             <div className="text-xs text-muted-foreground">
@@ -58,13 +101,16 @@ function Dashboard() {
             </div>
           </div>
         ))}
+      </Card>
+
+      <div className="mt-6 space-y-3">
         <Btn onClick={signOut}>Sign out</Btn>
-        <div className="pt-2 text-center">
+        <div className="text-center">
           <Link to="/_authenticated/platform/admin" className="text-xs underline">
             Platform admin →
           </Link>
         </div>
-      </Card>
+      </div>
     </Shell>
   );
 }
