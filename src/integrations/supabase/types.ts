@@ -28,7 +28,7 @@ export type Database = {
           prize_pool: number
           revolut_link: string | null
           stripe_link: string | null
-          tenant_id: string | null
+          tenant_id: string
           whatsapp_link: string | null
         }
         Insert: {
@@ -44,7 +44,7 @@ export type Database = {
           prize_pool?: number
           revolut_link?: string | null
           stripe_link?: string | null
-          tenant_id?: string | null
+          tenant_id: string
           whatsapp_link?: string | null
         }
         Update: {
@@ -60,7 +60,7 @@ export type Database = {
           prize_pool?: number
           revolut_link?: string | null
           stripe_link?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
           whatsapp_link?: string | null
         }
         Relationships: [
@@ -170,7 +170,7 @@ export type Database = {
           last_match_ends_at: string
           processed_at: string | null
           results_locked: boolean
-          tenant_id: string | null
+          tenant_id: string
           updated_at: string
           week_label: string
           week_number: number
@@ -184,7 +184,7 @@ export type Database = {
           last_match_ends_at: string
           processed_at?: string | null
           results_locked?: boolean
-          tenant_id?: string | null
+          tenant_id: string
           updated_at?: string
           week_label: string
           week_number: number
@@ -198,7 +198,7 @@ export type Database = {
           last_match_ends_at?: string
           processed_at?: string | null
           results_locked?: boolean
-          tenant_id?: string | null
+          tenant_id?: string
           updated_at?: string
           week_label?: string
           week_number?: number
@@ -221,7 +221,7 @@ export type Database = {
           player_id: string
           result: string | null
           team: string
-          tenant_id: string | null
+          tenant_id: string
           week: number
         }
         Insert: {
@@ -231,7 +231,7 @@ export type Database = {
           player_id: string
           result?: string | null
           team: string
-          tenant_id?: string | null
+          tenant_id: string
           week: number
         }
         Update: {
@@ -241,7 +241,7 @@ export type Database = {
           player_id?: string
           result?: string | null
           team?: string
-          tenant_id?: string | null
+          tenant_id?: string
           week?: number
         }
         Relationships: [
@@ -294,7 +294,7 @@ export type Database = {
           magic_token: string
           paid: boolean
           phone: string | null
-          tenant_id: string | null
+          tenant_id: string
         }
         Insert: {
           alive?: boolean
@@ -306,7 +306,7 @@ export type Database = {
           magic_token?: string
           paid?: boolean
           phone?: string | null
-          tenant_id?: string | null
+          tenant_id: string
         }
         Update: {
           alive?: boolean
@@ -318,7 +318,7 @@ export type Database = {
           magic_token?: string
           paid?: boolean
           phone?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -344,7 +344,7 @@ export type Database = {
           kind: string
           player_id: string
           sent_at: string
-          tenant_id: string | null
+          tenant_id: string
         }
         Insert: {
           gameweek_id?: string | null
@@ -352,7 +352,7 @@ export type Database = {
           kind: string
           player_id: string
           sent_at?: string
-          tenant_id?: string | null
+          tenant_id: string
         }
         Update: {
           gameweek_id?: string | null
@@ -360,7 +360,7 @@ export type Database = {
           kind?: string
           player_id?: string
           sent_at?: string
-          tenant_id?: string | null
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -447,7 +447,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          tenant_id: string | null
+          tenant_id: string
           updated_at: string
         }
         Insert: {
@@ -456,7 +456,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          tenant_id?: string | null
+          tenant_id: string
           updated_at?: string
         }
         Update: {
@@ -465,7 +465,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          tenant_id?: string | null
+          tenant_id?: string
           updated_at?: string
         }
         Relationships: [
