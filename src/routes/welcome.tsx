@@ -27,7 +27,7 @@ function Welcome() {
 
   return (
     <Shell>
-      <ClubHeader clubName={comp?.club_name ?? "Killeshin GAA"} logoUrl={comp?.club_logo_url} />
+      <ClubHeader clubName={comp?.club_name ?? "Last Man Standing"} logoUrl={comp?.club_logo_url} />
 
       <div className="mt-12 text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-primary text-primary">
