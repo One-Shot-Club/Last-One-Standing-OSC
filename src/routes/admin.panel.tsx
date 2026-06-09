@@ -129,10 +129,11 @@ type Data = Awaited<ReturnType<typeof adminGetData>>;
 const WINDOW_SIZE = 8;
 
 function Players({ data, compId, pin, onChange }: { data: Data; compId: string; pin: string; onChange: () => void }) {
-  const compId = data.competition.id;
   const fetchTeams = useServerFn(listTeams);
-  // pin is stored in sessionStorage; pull from there to avoid prop plumbing
-  const pin = typeof window !== "undefined" ? sessionStorage.getItem("osc_pin") ?? "" : "";
+  const togglePlayer = useServerFn(setPlayerAlive);
+  const overrideP = useServerFn(overridePick);
+  const removeP = useServerFn(deletePick);
+  const qc = useQueryClient();
   const { data: teams = [] } = useQuery({
     queryKey: ["teams", compId, pin],
     queryFn: () => fetchTeams({ data: { competitionId: compId, pin } }),
