@@ -15,6 +15,13 @@ import {
   unlockGameweek,
 
 } from "@/lib/gameweeks.functions";
+import {
+  addManualEntrant,
+  listEntries,
+  recordPayment,
+  setEntryPaid,
+  listAdminActions,
+} from "@/lib/admin-ops.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
 
@@ -27,7 +34,8 @@ import {
 
 export const Route = createFileRoute("/admin/panel")({ component: Panel });
 
-type Tab = "players" | "picks" | "gameweeks" | "teams" | "stats";
+type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit";
+
 
 function Panel() {
   const nav = useNavigate();
@@ -61,7 +69,7 @@ function Panel() {
     );
   }
 
-  const tabs: Tab[] = ["players", "picks", "gameweeks", "teams", "stats"];
+  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats", "audit"];
 
   return (
     <Shell>
@@ -83,7 +91,7 @@ function Panel() {
         <h1 className="display mt-1 text-3xl">ADMIN CONTROL PANEL</h1>
       </div>
 
-      <nav className="mt-5 grid grid-cols-3 gap-1 rounded-lg border border-[color:var(--border)] bg-card p-1 text-[10px] uppercase tracking-widest sm:grid-cols-6">
+      <nav className="mt-5 grid grid-cols-4 gap-1 rounded-lg border border-[color:var(--border)] bg-card p-1 text-[10px] uppercase tracking-widest sm:grid-cols-7">
         {tabs.map((t) => (
           <button
             key={t}
@@ -100,15 +108,18 @@ function Panel() {
 
       <div className="mt-6">
         {tab === "players" && <Players data={data} />}
+        {tab === "entries" && <Entries compId={compId!} pin={pin!} onChange={refetch} />}
         {tab === "picks" && <Picks data={data} />}
         {tab === "gameweeks" && <Gameweeks compId={compId!} pin={pin!} />}
         {tab === "teams" && <Teams compId={compId!} pin={pin!} />}
         {tab === "stats" && <Stats data={data} />}
+        {tab === "audit" && <Audit compId={compId!} pin={pin!} />}
 
       </div>
     </Shell>
   );
 }
+
 
 type Data = Awaited<ReturnType<typeof adminGetData>>;
 
