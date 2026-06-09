@@ -392,3 +392,156 @@ export const deletePick = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+// --- Bulk CSV import of entrants ---
+// Rows: { fullName, email, phone?, paid? }
+export const importEntrants = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      pin: string;
+      rows: Array<{
+        fullName: string;
+        email: string;
+        phone?: string | null;
+        paid?: boolean;
+      }>;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+
+    let inserted = 0;
+    let skipped = 0;
+    const errors: Array<{ row: number; reason: string }> = [];
+
+    for (let i = 0; i < data.rows.length; i++) {
+      const row = data.rows[i];
+      const fullName = (row.fullName ?? "").trim();
+      const email = (row.email ?? "").trim().toLowerCase();
+      if (!fullName || !email) {
+        errors.push({ row: i + 1, reason: "missing name or email" });
+        skipped++;
+        continue;
+      }
+      // Skip duplicates within this competition by email
+      const { data: existing } = await supabaseAdmin
+        .from("players")
+        .select("id")
+        .eq("competition_id", data.competitionId)
+        .ilike("email", email)
+        .maybeSingle();
+      if (existing) {
+        skipped++;
+        continue;
+      }
+      const { error } = await supabaseAdmin.from("players").insert({
+        competition_id: data.competitionId,
+        full_name: fullName,
+        email,
+        phone: row.phone || null,
+        paid: !!row.paid,
+        alive: true,
+      } as never);
+      if (error) {
+        errors.push({ row: i + 1, reason: error.message });
+        skipped++;
+      } else {
+        inserted++;
+      }
+    }
+
+    await logAction(comp.tenant_id, "entrants.bulk_import", "admin", null, null, {
+      total: data.rows.length,
+      inserted,
+      skipped,
+      errors: errors.slice(0, 25),
+    });
+    return { ok: true, inserted, skipped, errors };
+  });
+
+// --- Broadcast message to all / alive / eliminated players ---
+export const broadcastMessage = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      pin: string;
+      audience: "all" | "alive" | "eliminated" | "paid" | "unpaid";
+      subject: string;
+      body: string;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+    const subject = data.subject.trim();
+    const body = data.body.trim();
+    if (!subject || !body) throw new Error("Subject and body required");
+
+    let query = supabaseAdmin
+      .from("players")
+      .select("id, full_name, email, alive, paid, magic_token")
+      .eq("competition_id", data.competitionId);
+
+    if (data.audience === "alive") query = query.eq("alive", true);
+    else if (data.audience === "eliminated") query = query.eq("alive", false);
+    else if (data.audience === "paid") query = query.eq("paid", true);
+    else if (data.audience === "unpaid") query = query.eq("paid", false);
+
+    const { data: recipients, error } = await query;
+    if (error) throw error;
+
+    const { enqueueTemplatedEmail } = await import("@/lib/email/send.server");
+    const broadcastId = crypto.randomUUID();
+    const clubName = "Killeshin GAA";
+    let queued = 0;
+    for (const r of recipients ?? []) {
+      if (!r.email) continue;
+      const firstName = (r.full_name ?? "Player").split(/\s+/)[0];
+      const res = await enqueueTemplatedEmail({
+        templateName: "broadcast",
+        to: r.email,
+        idempotencyKey: `${broadcastId}:${r.id}`,
+        templateData: {
+          firstName,
+          clubName,
+          subject,
+          bodyText: body,
+          magicLink: `https://last-one-standing.oneshotclub.ie/pick?token=${r.magic_token}`,
+        },
+      });
+      if (res.ok) queued++;
+    }
+
+    await supabaseAdmin.from("messages").insert({
+      tenant_id: comp.tenant_id,
+      competition_id: data.competitionId,
+      audience: data.audience,
+      template: "broadcast",
+      subject,
+      body,
+      recipient_count: queued,
+    } as never);
+
+    await logAction(comp.tenant_id, "broadcast.send", "admin", null, null, {
+      audience: data.audience,
+      subject,
+      recipient_count: queued,
+      total_targeted: recipients?.length ?? 0,
+    });
+
+    return { ok: true, queued, targeted: recipients?.length ?? 0 };
+  });
+
+// --- List recent broadcast messages ---
+export const listMessages = createServerFn({ method: "POST" })
+  .inputValidator((d: { competitionId: string; pin: string }) => d)
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+    const { data: rows } = await supabaseAdmin
+      .from("messages")
+      .select("id, audience, subject, body, recipient_count, sent_at")
+      .eq("tenant_id", comp.tenant_id)
+      .order("sent_at", { ascending: false })
+      .limit(50);
+    return rows ?? [];
+  });
