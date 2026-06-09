@@ -1,48 +1,53 @@
-# Edit Tenant UI
+## Goal
 
-Lets platform admins edit any tenant's name, slug, branding, and contact info from the platform admin panel — no DB edits needed.
+Replace the multi-page "go fiddle in 4 different screens" activation process with a single **Activate tenant** wizard launched from `/platform/admin`. After it finishes, the tenant's public URL (e.g. `/st-josephs-afc`) is fully playable.
 
-## What you'll be able to edit
+## Where it lives
 
-From `/platform/admin`, click an "Edit" button on any tenant row to open an edit panel with:
+- New button **Activate** on each tenant row in `/platform/admin` (next to **Edit**). For tenants that already have a competition + gameweek 1 seeded + payment link, the button reads **Re-run setup**.
+- Opens a single modal/sheet with 5 steps and a progress bar. Back/Next, no page reloads.
 
-**Identity (tenants table)**
-- Name
-- Slug (with format validation `^[a-z0-9-]+$`, uniqueness check)
+## Wizard steps
 
-**Branding & contact (tenant_settings table)**
-- Logo URL
-- Primary color, accent color (color pickers + hex input)
-- Intro copy (textarea)
-- Contact email, contact phone, WhatsApp link
+```text
+1 Brand           2 Competition     3 Fixtures        4 Payments        5 Go live
+  logo + colours    name, fee,        seed GW1          stripe / revolut    review + launch
+  intro copy        prize, PIN        (one click)       / bank link
+```
 
-Status (active/paused/archived) stays on the existing row buttons.
+1. **Brand** — logo URL, primary + accent colour, intro copy, contact email/phone, WhatsApp link. Pre-filled from `tenant_settings` if present.
+2. **Competition** — name (default `"{Tenant} Last Man Standing"`), entry fee (default `10`), prize pool (optional), club name + logo (defaulted from step 1), 4-digit admin PIN (auto-generated, copy-to-clipboard, editable). Creates the `competitions` row if missing; otherwise updates it.
+3. **Fixtures** — single button **Seed Gameweek 1** that calls the existing `seedGameweek` server fn with the PIN from step 2. Shows the seeded fixtures inline; success tick when done.
+4. **Payments** — three optional inputs (Stripe link, Revolut link, bank transfer text). Must have at least one to continue. Saved onto the `competitions` row.
+5. **Go live** — read-only summary + checklist (brand ✓, competition ✓, GW1 ✓, ≥1 payment link ✓) + **Launch** button. Launch sets `tenants.status = 'active'`, opens the public URL in a new tab, and closes the wizard.
 
-## How it works
+Steps the wizard already detects as complete are pre-ticked and skippable.
 
-1. **New server functions** in `src/lib/platform-admin.functions.ts`:
-   - `getTenantForEdit({ tenantId })` — returns tenant + tenant_settings joined.
-   - `updateTenant({ tenantId, name, slug, settings })` — validates slug, updates both tables, writes an `audit_logs` entry with the diff.
-   - Both gated by `assertPlatformAdmin`.
+## Server functions (new, in `src/lib/platform-admin.functions.ts`)
 
-2. **New component** `src/components/platform/EditTenantPanel.tsx`:
-   - Modal/drawer (using existing `Card`/`Btn`/`Field` primitives from `@/components/oneshot/ui`).
-   - Loads current values, lets you edit, saves, then triggers `refresh()` on the parent.
-   - Color fields render a swatch preview; logo URL shows a small preview image.
+All gated by `assertPlatformAdmin`, all return JSON the wizard can use to refresh state.
 
-3. **Wire-up in `platform.admin.tsx`**:
-   - Add an "Edit" button next to each tenant row's existing status controls.
-   - Manages `editingTenantId` state to open the panel.
+- `getTenantActivation({ tenantId })` — returns `{ tenant, settings, competition, hasGameweek1, paymentLinks }` so the wizard can pre-tick completed steps.
+- `upsertCompetition({ tenantId, name, entryFee, prizePool, clubName, clubLogoUrl, adminPin })` — creates or updates the tenant's primary competition; if PIN omitted on create, generates a 4-digit one and returns it.
+- `setPaymentLinks({ competitionId, stripeLink?, revolutLink?, paymentLink? })` — updates the three columns on `competitions`.
+- `launchTenant({ tenantId })` — re-checks all prerequisites server-side, then sets `tenants.status = 'active'` and writes an `audit_logs` row.
 
-## Technical notes
+Fixtures step reuses the existing `seedGameweek` server function — no new endpoint.
 
-- Slug-change safety: if slug is used in URLs or links anywhere, updating it changes those URLs. The migration just updates the `tenants.slug` field; existing competition links remain valid because they're keyed by tenant_id, not slug. Magic tokens unchanged.
-- `tenant_settings` row is upserted (some older tenants may lack one).
-- All writes go through `supabaseAdmin` server-side; no client RLS changes needed.
-- No new tables or columns — uses existing schema.
+## UI files
 
-## Out of scope (can do later if you want)
+- `src/components/platform/ActivateTenantWizard.tsx` — the modal/sheet, step state machine, step components inline.
+- Edit `src/routes/_authenticated/platform.admin.tsx` — add **Activate** button per row, mount the wizard.
+- Edit `EditTenantPanel.tsx` only to share the brand form fields (extract to `BrandFormFields.tsx` so both the wizard and the existing edit panel use the same inputs — no duplication).
 
-- Logo file upload to Storage (this version takes a URL — paste a hosted image link).
-- Editing `reminder_offsets` or `sponsor_assets` JSON (kept as DB-only for now).
-- Tenant deletion.
+## What stays the same
+
+- `/admin/panel` (PIN-protected per-tenant admin) is untouched — it remains for ongoing weekly admin (seed GW2+, set winners, manage entrants).
+- Existing `createTenant`, `updateTenant`, `seedGameweek` behaviour unchanged; the wizard composes them.
+- No schema changes.
+
+## Out of scope
+
+- Tenant member invitation UI.
+- Editing the wizard's steps after launch (use existing screens).
+- Uploading logos (still URL-based, same as today).
