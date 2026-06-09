@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { verifyAdmin, getOptionalUserId } from "@/lib/admin-auth.server";
-
-export { verifyAdmin, getOptionalUserId };
+import { verifyAdmin } from "@/lib/admin-auth.server";
 
 
 async function logAction(

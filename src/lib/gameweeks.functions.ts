@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { processGameweekResultsInternal } from '@/lib/results-engine.server'
 import { FIXTURES_BY_WEEK } from '@/lib/fixtures'
-import { verifyAdmin as verifyAdminAuth } from '@/lib/admin-ops.functions'
+import { verifyAdmin as verifyAdminAuth } from '@/lib/admin-auth.server'
 
 
 
