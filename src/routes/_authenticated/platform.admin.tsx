@@ -221,44 +221,11 @@ function PlatformAdmin() {
       <Card className="mt-3 space-y-2">
         {tenants.length === 0 && <p className="text-sm text-muted-foreground">No tenants yet.</p>}
         {tenants.map((t) => (
-          <div key={t.id} className="rounded-md border border-border p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="font-medium">
-                  {t.name} <span className="text-xs text-muted-foreground">/{t.slug}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {t.competitions} comps · {t.entries} entries · {t.members} members · {t.status}
-                </div>
-              </div>
-              <div className="flex gap-1">
-                {t.status !== "active" && (
-                  <button
-                    className="text-xs underline"
-                    onClick={() => handleStatus(t.id, "active")}
-                  >
-                    Activate
-                  </button>
-                )}
-                {t.status !== "paused" && (
-                  <button
-                    className="text-xs underline"
-                    onClick={() => handleStatus(t.id, "paused")}
-                  >
-                    Pause
-                  </button>
-                )}
-                {t.status !== "archived" && (
-                  <button
-                    className="text-xs underline"
-                    onClick={() => handleStatus(t.id, "archived")}
-                  >
-                    Archive
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+          <TenantCard
+            key={t.id}
+            tenant={t}
+            onStatus={(s) => handleStatus(t.id, s)}
+          />
         ))}
       </Card>
 
