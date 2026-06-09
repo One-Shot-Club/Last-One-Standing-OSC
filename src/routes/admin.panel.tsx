@@ -15,6 +15,13 @@ import {
   unlockGameweek,
 
 } from "@/lib/gameweeks.functions";
+import {
+  addManualEntrant,
+  listEntries,
+  recordPayment,
+  setEntryPaid,
+  listAdminActions,
+} from "@/lib/admin-ops.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
 
@@ -27,7 +34,8 @@ import {
 
 export const Route = createFileRoute("/admin/panel")({ component: Panel });
 
-type Tab = "players" | "picks" | "gameweeks" | "teams" | "stats";
+type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit";
+
 
 function Panel() {
   const nav = useNavigate();
@@ -61,7 +69,7 @@ function Panel() {
     );
   }
 
-  const tabs: Tab[] = ["players", "picks", "gameweeks", "teams", "stats"];
+  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats", "audit"];
 
   return (
     <Shell>
@@ -83,7 +91,7 @@ function Panel() {
         <h1 className="display mt-1 text-3xl">ADMIN CONTROL PANEL</h1>
       </div>
 
-      <nav className="mt-5 grid grid-cols-3 gap-1 rounded-lg border border-[color:var(--border)] bg-card p-1 text-[10px] uppercase tracking-widest sm:grid-cols-6">
+      <nav className="mt-5 grid grid-cols-4 gap-1 rounded-lg border border-[color:var(--border)] bg-card p-1 text-[10px] uppercase tracking-widest sm:grid-cols-7">
         {tabs.map((t) => (
           <button
             key={t}
@@ -100,15 +108,18 @@ function Panel() {
 
       <div className="mt-6">
         {tab === "players" && <Players data={data} />}
+        {tab === "entries" && <Entries compId={compId!} pin={pin!} onChange={refetch} />}
         {tab === "picks" && <Picks data={data} />}
         {tab === "gameweeks" && <Gameweeks compId={compId!} pin={pin!} />}
         {tab === "teams" && <Teams compId={compId!} pin={pin!} />}
         {tab === "stats" && <Stats data={data} />}
+        {tab === "audit" && <Audit compId={compId!} pin={pin!} />}
 
       </div>
     </Shell>
   );
 }
+
 
 type Data = Awaited<ReturnType<typeof adminGetData>>;
 
@@ -641,6 +652,271 @@ function Stats({ data }: { data: Data }) {
           ))}
         </div>
       </Card>
+    </div>
+  );
+}
+
+// ---- Entries (manual add + payments) ----
+
+const PAYMENT_METHODS: Array<{ value: string; label: string }> = [
+  { value: "cash", label: "Cash" },
+  { value: "online_revolut", label: "Revolut" },
+  { value: "online_stripe", label: "Stripe" },
+  { value: "bank_transfer", label: "Bank transfer" },
+  { value: "online_other", label: "Online (other)" },
+  { value: "manual_other", label: "Manual (other)" },
+];
+
+function Entries({ compId, pin, onChange }: { compId: string; pin: string; onChange: () => void }) {
+  const fetchEntries = useServerFn(listEntries);
+  const addEntrant = useServerFn(addManualEntrant);
+  const recordPay = useServerFn(recordPayment);
+  const setPaid = useServerFn(setEntryPaid);
+  const qc = useQueryClient();
+
+  const { data: entries = [], refetch } = useQuery({
+    queryKey: ["entries", compId, pin],
+    queryFn: () => fetchEntries({ data: { competitionId: compId, pin } }),
+  });
+
+  const refresh = async () => {
+    await refetch();
+    await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+    onChange();
+  };
+
+  // Manual add form
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [paid, setPaidForm] = useState(true);
+  const [method, setMethod] = useState<string>("cash");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  // Per-row record payment state
+  const [openRow, setOpenRow] = useState<string | null>(null);
+  const [rowMethod, setRowMethod] = useState("cash");
+  const [rowAmount, setRowAmount] = useState("");
+  const [rowNote, setRowNote] = useState("");
+
+  return (
+    <div className="space-y-4">
+      <Card className="space-y-3">
+        <Eyebrow>Add entrant manually</Eyebrow>
+        <Field label="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <Field label="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field label="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={paid} onChange={(e) => setPaidForm(e.target.checked)} />
+          <span>Mark as paid</span>
+        </label>
+
+        {paid && (
+          <div className="space-y-3 rounded-md border border-[color:var(--border)] p-3">
+            <label className="block text-xs uppercase tracking-widest text-muted-foreground">
+              Payment method
+              <select
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm"
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </label>
+            <Field label="Amount (EUR)" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Field label="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+        )}
+
+        {err && <p className="text-xs text-destructive">{err}</p>}
+
+        <Btn
+          disabled={!fullName || busy}
+          onClick={async () => {
+            setBusy(true);
+            setErr(null);
+            try {
+              await addEntrant({
+                data: {
+                  competitionId: compId,
+                  pin,
+                  fullName,
+                  email: email || null,
+                  phone: phone || null,
+                  paid,
+                  paymentMethod: paid ? (method as never) : null,
+                  paymentAmount: paid && amount ? Number(amount) : null,
+                  paymentNote: paid ? (note || null) : null,
+                },
+              });
+              setFullName(""); setEmail(""); setPhone("");
+              setAmount(""); setNote(""); setPaidForm(true); setMethod("cash");
+              await refresh();
+            } catch (e) {
+              setErr(e instanceof Error ? e.message : "Failed to add entrant");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Adding…" : "Add entrant"}
+        </Btn>
+      </Card>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Eyebrow>All entries ({entries.length})</Eyebrow>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            {entries.filter((e: any) => e.paid).length} paid · {entries.filter((e: any) => !e.paid).length} unpaid
+          </div>
+        </div>
+
+        {entries.length === 0 && (
+          <p className="py-6 text-center text-sm text-muted-foreground">No entries yet.</p>
+        )}
+
+        {entries.map((e: any) => (
+          <Card key={e.id} className="space-y-2 p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate font-semibold">{e.entrant?.full_name ?? "—"}</div>
+                <div className="truncate text-[11px] text-muted-foreground">
+                  {e.entrant?.email ?? e.entrant?.phone ?? "no contact"} · {e.entrant?.source ?? "—"}
+                </div>
+                {e.payments.length > 0 && (
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    last: €{Number(e.payments[0].amount).toFixed(2)} · {e.payments[0].method}
+                  </div>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+                    e.paid ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive",
+                  )}
+                >
+                  {e.paid ? "Paid" : "Unpaid"}
+                </span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+                    e.alive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {e.alive ? "Alive" : "Out"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {!e.paid && (
+                <button
+                  className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[11px] uppercase tracking-widest"
+                  onClick={() => {
+                    setOpenRow(openRow === e.id ? null : e.id);
+                    setRowMethod("cash"); setRowAmount(""); setRowNote("");
+                  }}
+                >
+                  {openRow === e.id ? "Cancel" : "Record payment"}
+                </button>
+              )}
+              <button
+                className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[11px] uppercase tracking-widest"
+                onClick={async () => {
+                  await setPaid({ data: { competitionId: compId, pin, entryId: e.id, paid: !e.paid } });
+                  await refresh();
+                }}
+              >
+                Mark {e.paid ? "unpaid" : "paid"}
+              </button>
+            </div>
+
+            {openRow === e.id && (
+              <div className="space-y-2 rounded-md border border-[color:var(--border)] p-3">
+                <label className="block text-xs uppercase tracking-widest text-muted-foreground">
+                  Method
+                  <select
+                    value={rowMethod}
+                    onChange={(ev) => setRowMethod(ev.target.value)}
+                    className="mt-1 block w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm"
+                  >
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <Field label="Amount (EUR)" type="number" value={rowAmount} onChange={(ev) => setRowAmount(ev.target.value)} />
+                <Field label="Note (optional)" value={rowNote} onChange={(ev) => setRowNote(ev.target.value)} />
+                <Btn
+                  onClick={async () => {
+                    await recordPay({
+                      data: {
+                        competitionId: compId,
+                        pin,
+                        entryId: e.id,
+                        method: rowMethod as never,
+                        amount: Number(rowAmount || 0),
+                        note: rowNote || null,
+                      },
+                    });
+                    setOpenRow(null);
+                    await refresh();
+                  }}
+                >
+                  Save payment
+                </Btn>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- Audit log ----
+
+function Audit({ compId, pin }: { compId: string; pin: string }) {
+  const fetchActions = useServerFn(listAdminActions);
+  const { data: rows = [] } = useQuery({
+    queryKey: ["audit", compId, pin],
+    queryFn: () => fetchActions({ data: { competitionId: compId, pin, limit: 200 } }),
+    refetchInterval: 10_000,
+  });
+
+  if (rows.length === 0) {
+    return <p className="py-8 text-center text-sm text-muted-foreground">No admin actions yet.</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      <Eyebrow>Recent admin actions</Eyebrow>
+      {rows.map((r: any) => (
+        <Card key={r.id} className="space-y-1 p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="display text-sm text-primary">{r.action}</span>
+            <span className="text-[10px] text-muted-foreground">
+              {new Date(r.created_at).toLocaleString()}
+            </span>
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            by {r.actor_label ?? "—"}
+            {r.target_type ? ` · ${r.target_type}` : ""}
+          </div>
+          {r.payload && Object.keys(r.payload).length > 0 && (
+            <pre className="overflow-x-auto rounded bg-muted/30 p-2 text-[10px] text-muted-foreground">
+              {JSON.stringify(r.payload, null, 2)}
+            </pre>
+          )}
+        </Card>
+      ))}
     </div>
   );
 }
