@@ -74,3 +74,70 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
     };
   });
 
+export type TenantEntryContext = {
+  tenant: TenantBranding;
+  competition: {
+    id: string;
+    name: string;
+    entry_fee: number | string | null;
+    prize_pool: number | string | null;
+    club_name: string | null;
+    club_logo_url: string | null;
+  } | null;
+};
+
+export const getTenantEntryContext = createServerFn({ method: "GET" })
+  .inputValidator((d: { slug: string }) => d)
+  .handler(async ({ data }): Promise<TenantEntryContext> => {
+    const { data: tenant, error } = await supabaseAdmin
+      .from("tenants")
+      .select("id, slug, name, status")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (error) throw error;
+    if (!tenant) throw new Error("Tenant not found");
+
+    const { data: settings } = await supabaseAdmin
+      .from("tenant_settings")
+      .select(
+        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+      )
+      .eq("tenant_id", tenant.id)
+      .maybeSingle();
+
+    const { data: comp } = await supabaseAdmin
+      .from("competitions")
+      .select("id, name, entry_fee, prize_pool, club_name, club_logo_url")
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    return {
+      tenant: {
+        id: tenant.id as string,
+        slug: tenant.slug as string,
+        name: tenant.name as string,
+        status: tenant.status as string,
+        logo_url: (settings?.logo_url as string | null) ?? null,
+        primary_color: (settings?.primary_color as string | null) ?? null,
+        accent_color: (settings?.accent_color as string | null) ?? null,
+        intro_copy: (settings?.intro_copy as string | null) ?? null,
+        contact_email: (settings?.contact_email as string | null) ?? null,
+        contact_phone: (settings?.contact_phone as string | null) ?? null,
+        whatsapp_link: (settings?.whatsapp_link as string | null) ?? null,
+        sponsor_assets: (settings?.sponsor_assets as Json) ?? ([] as Json),
+      },
+      competition: comp
+        ? {
+            id: comp.id as string,
+            name: comp.name as string,
+            entry_fee: (comp.entry_fee as number | string | null) ?? null,
+            prize_pool: (comp.prize_pool as number | string | null) ?? null,
+            club_name: (comp.club_name as string | null) ?? null,
+            club_logo_url: (comp.club_logo_url as string | null) ?? null,
+          }
+        : null,
+    };
+  });
+
