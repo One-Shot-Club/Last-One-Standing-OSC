@@ -144,6 +144,7 @@ export const createTenant = createServerFn({ method: "POST" })
     await supabaseAdmin.from("audit_logs").insert({
       tenant_id: tenant.id,
       actor_id: userId,
+      op: "create",
       table_name: "tenants",
       row_id: tenant.id,
       diff: { created: { slug: data.slug, name: data.name } },

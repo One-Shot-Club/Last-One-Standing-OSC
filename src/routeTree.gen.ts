@@ -23,6 +23,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as AuthenticatedPlatformAdminRouteImport } from './routes/_authenticated/platform.admin'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -97,6 +98,12 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedPlatformAdminRoute =
+  AuthenticatedPlatformAdminRouteImport.update({
+    id: '/platform/admin',
+    path: '/platform/admin',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
+  '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin': typeof AdminIndexRoute
+  '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -175,6 +184,7 @@ export interface FileRoutesById {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
+  '/_authenticated/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/admin/'
+    | '/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
     | '/lovable/email/queue/process'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/admin'
+    | '/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
     | '/lovable/email/queue/process'
@@ -235,6 +247,7 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/admin/'
+    | '/_authenticated/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
     | '/lovable/email/queue/process'
@@ -362,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/platform/admin': {
+      id: '/_authenticated/platform/admin'
+      path: '/platform/admin'
+      fullPath: '/platform/admin'
+      preLoaderRoute: typeof AuthenticatedPlatformAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -395,10 +415,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPlatformAdminRoute: typeof AuthenticatedPlatformAdminRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPlatformAdminRoute: AuthenticatedPlatformAdminRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
