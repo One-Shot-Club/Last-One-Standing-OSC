@@ -191,7 +191,7 @@ export function EditTenantPanel({
               <Btn onClick={handleSave} disabled={saving || !name || !slug}>
                 {saving ? "Saving…" : "Save changes"}
               </Btn>
-              <Btn variant="secondary" onClick={onClose}>
+              <Btn variant="ghost" onClick={onClose}>
                 Cancel
               </Btn>
             </div>
