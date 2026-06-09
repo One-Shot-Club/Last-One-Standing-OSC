@@ -25,8 +25,8 @@ function Dashboard() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
     fetchAccess({ data: {} })
-      .then((r) => setRows(r as TenantRow[]))
-      .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"));
+      .then((r: unknown) => setRows(r as TenantRow[]))
+      .catch((e: unknown) => setErr(e instanceof Error ? e.message : "Failed to load"));
   }, [fetchAccess]);
 
   async function signOut() {
