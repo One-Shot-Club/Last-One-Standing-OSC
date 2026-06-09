@@ -1,17 +1,73 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
+import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Database } from "@/integrations/supabase/types";
 
-// Verify admin PIN against the competition and return tenant_id.
+// Resolve current user from the request bearer token, if present.
+// Returns null when no token / invalid token (does NOT throw).
+async function getOptionalUserId(): Promise<string | null> {
+  try {
+    const req = getRequest();
+    const authHeader = req?.headers?.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    const token = authHeader.slice(7).trim();
+    if (!token) return null;
+    const url = process.env.SUPABASE_URL!;
+    const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
+    const sb = createClient<Database>(url, key, {
+      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await sb.auth.getClaims(token);
+    if (error || !data?.claims?.sub) return null;
+    return data.claims.sub as string;
+  } catch {
+    return null;
+  }
+}
+
+// Verify admin access against a competition.
+// Accepts EITHER a valid Supabase Auth session with tenant_admin+ access,
+// OR the legacy shared admin PIN. Returns competition + tenant_id + actor.
 async function verifyAdmin(competitionId: string, pin: string) {
   const { data: comp } = await supabaseAdmin
     .from("competitions")
-    .select("id, tenant_id")
+    .select("id, tenant_id, admin_pin")
     .eq("id", competitionId)
-    .eq("admin_pin", pin)
     .maybeSingle();
   if (!comp) throw new Error("Unauthorized");
-  return comp as { id: string; tenant_id: string };
+
+  // 1) Prefer Supabase Auth session
+  const userId = await getOptionalUserId();
+  if (userId) {
+    const { data: ok } = await supabaseAdmin.rpc("has_tenant_access", {
+      _user_id: userId,
+      _tenant_id: comp.tenant_id as string,
+      _min_role: "tenant_admin",
+    });
+    if (ok === true) {
+      return {
+        id: comp.id as string,
+        tenant_id: comp.tenant_id as string,
+        actorId: userId,
+        actorLabel: `auth:${userId}`,
+      };
+    }
+  }
+
+  // 2) Legacy shared PIN fallback
+  if (pin && pin === (comp.admin_pin as string | null)) {
+    return {
+      id: comp.id as string,
+      tenant_id: comp.tenant_id as string,
+      actorId: null as string | null,
+      actorLabel: "pin",
+    };
+  }
+
+  throw new Error("Unauthorized");
 }
+
 
 async function logAction(
   tenantId: string,
