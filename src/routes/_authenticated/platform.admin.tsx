@@ -19,6 +19,7 @@ import {
 } from "@/lib/admin-ops.functions";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
 import { EditTenantPanel } from "@/components/platform/EditTenantPanel";
+import { ActivateTenantWizard } from "@/components/platform/ActivateTenantWizard";
 
 export const Route = createFileRoute("/_authenticated/platform/admin")({
   component: PlatformAdmin,
@@ -53,6 +54,7 @@ function PlatformAdmin() {
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
+  const [activatingTenantId, setActivatingTenantId] = useState<string | null>(null);
 
   const [newSlug, setNewSlug] = useState("");
   const [newName, setNewName] = useState("");
@@ -228,6 +230,7 @@ function PlatformAdmin() {
             tenant={t}
             onStatus={(s) => handleStatus(t.id, s)}
             onEdit={() => setEditingTenantId(t.id)}
+            onActivate={() => setActivatingTenantId(t.id)}
           />
         ))}
       </Card>
@@ -236,6 +239,14 @@ function PlatformAdmin() {
         <EditTenantPanel
           tenantId={editingTenantId}
           onClose={() => setEditingTenantId(null)}
+          onSaved={refresh}
+        />
+      )}
+
+      {activatingTenantId && (
+        <ActivateTenantWizard
+          tenantId={activatingTenantId}
+          onClose={() => setActivatingTenantId(null)}
           onSaved={refresh}
         />
       )}
@@ -302,10 +313,12 @@ function TenantCard({
   tenant,
   onStatus,
   onEdit,
+  onActivate,
 }: {
   tenant: TenantRow;
   onStatus: (s: "active" | "paused" | "archived") => void;
   onEdit: () => void;
+  onActivate: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -322,20 +335,26 @@ function TenantCard({
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          <button
+            className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
+            onClick={onActivate}
+          >
+            {tenant.competitions > 0 ? "Re-run setup" : "Activate"}
+          </button>
           <button className="text-xs underline" onClick={onEdit}>
-            Edit
+            Edit branding
           </button>
           <button className="text-xs underline" onClick={() => setOpen((v) => !v)}>
             {open ? "Hide members" : "Members"}
           </button>
-          {tenant.status !== "active" && (
-            <button className="text-xs underline" onClick={() => onStatus("active")}>
-              Activate
-            </button>
-          )}
           {tenant.status !== "paused" && (
             <button className="text-xs underline" onClick={() => onStatus("paused")}>
               Pause
+            </button>
+          )}
+          {tenant.status === "paused" && (
+            <button className="text-xs underline" onClick={() => onStatus("active")}>
+              Resume
             </button>
           )}
           {tenant.status !== "archived" && (
