@@ -27,45 +27,33 @@ async function getOptionalUserId(): Promise<string | null> {
 }
 
 // Verify admin access against a competition.
-// Accepts EITHER a valid Supabase Auth session with tenant_admin+ access,
-// OR the legacy shared admin PIN. Returns competition + tenant_id + actor.
-async function verifyAdmin(competitionId: string, pin: string) {
+// Auth-only: requires a Supabase Auth session with tenant_admin+ access on
+// the competition's tenant. The `pin` arg is accepted for backwards-compat
+// but ignored — the legacy admin_pin column has been dropped.
+export async function verifyAdmin(competitionId: string, _pin?: string) {
   const { data: comp } = await supabaseAdmin
     .from("competitions")
-    .select("id, tenant_id, admin_pin")
+    .select("id, tenant_id")
     .eq("id", competitionId)
     .maybeSingle();
   if (!comp) throw new Error("Unauthorized");
 
-  // 1) Prefer Supabase Auth session
   const userId = await getOptionalUserId();
-  if (userId) {
-    const { data: ok } = await supabaseAdmin.rpc("has_tenant_access", {
-      _user_id: userId,
-      _tenant_id: comp.tenant_id as string,
-      _min_role: "tenant_admin",
-    });
-    if (ok === true) {
-      return {
-        id: comp.id as string,
-        tenant_id: comp.tenant_id as string,
-        actorId: userId,
-        actorLabel: `auth:${userId}`,
-      };
-    }
-  }
+  if (!userId) throw new Error("Unauthorized");
 
-  // 2) Legacy shared PIN fallback
-  if (pin && pin === (comp.admin_pin as string | null)) {
-    return {
-      id: comp.id as string,
-      tenant_id: comp.tenant_id as string,
-      actorId: null as string | null,
-      actorLabel: "pin",
-    };
-  }
+  const { data: ok } = await supabaseAdmin.rpc("has_tenant_access", {
+    _user_id: userId,
+    _tenant_id: comp.tenant_id as string,
+    _min_role: "tenant_admin",
+  });
+  if (ok !== true) throw new Error("Unauthorized");
 
-  throw new Error("Unauthorized");
+  return {
+    id: comp.id as string,
+    tenant_id: comp.tenant_id as string,
+    actorId: userId,
+    actorLabel: `auth:${userId}`,
+  };
 }
 
 
