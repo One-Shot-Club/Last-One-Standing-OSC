@@ -37,7 +37,7 @@ import {
 
 export const Route = createFileRoute("/admin/panel")({ component: Panel });
 
-type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit";
+type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit" | "tools";
 
 
 function Panel() {
@@ -72,7 +72,7 @@ function Panel() {
     );
   }
 
-  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats", "audit"];
+  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats", "tools", "audit"];
 
   return (
     <Shell>
@@ -94,7 +94,7 @@ function Panel() {
         <h1 className="display mt-1 text-3xl">ADMIN CONTROL PANEL</h1>
       </div>
 
-      <nav className="mt-5 grid grid-cols-4 gap-1 rounded-lg border border-[color:var(--border)] bg-card p-1 text-[10px] uppercase tracking-widest sm:grid-cols-7">
+      <nav className="mt-5 grid grid-cols-4 gap-1 rounded-lg border border-[color:var(--border)] bg-card p-1 text-[10px] uppercase tracking-widest sm:grid-cols-8">
         {tabs.map((t) => (
           <button
             key={t}
@@ -117,6 +117,7 @@ function Panel() {
         {tab === "teams" && <Teams compId={compId!} pin={pin!} />}
         {tab === "stats" && <Stats data={data} />}
         {tab === "audit" && <Audit compId={compId!} pin={pin!} />}
+        {tab === "tools" && <Tools compId={compId!} pin={pin!} />}
 
       </div>
     </Shell>
