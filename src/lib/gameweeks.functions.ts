@@ -2,13 +2,12 @@ import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { processGameweekResultsInternal } from '@/lib/results-engine.server'
 import { FIXTURES_BY_WEEK } from '@/lib/fixtures'
+import { verifyAdmin as verifyAdminAuth } from '@/lib/admin-ops.functions'
 
 
 
 async function verifyAdmin(competitionId: string, pin: string): Promise<void> {
-  const { data } = await supabaseAdmin
-    .from('competitions').select('id').eq('id', competitionId).eq('admin_pin', pin).maybeSingle()
-  if (!data) throw new Error('Unauthorized')
+  await verifyAdminAuth(competitionId, pin)
 }
 
 // ---- Gameweeks ----

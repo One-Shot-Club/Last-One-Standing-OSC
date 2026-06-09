@@ -1,0 +1,1 @@
+ALTER TABLE public.competitions DROP COLUMN IF EXISTS admin_pin;
