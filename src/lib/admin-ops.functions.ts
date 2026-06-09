@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { verifyAdmin } from "@/lib/admin-auth.server";
-import { logAction, type PaymentMethod } from "@/lib/admin-ops.server";
+import { logAction, assertTenantOwner, type PaymentMethod } from "@/lib/admin-ops.server";
 
 // --- Add a manual entrant (admin-entered, offline source) ---
 export const addManualEntrant = createServerFn({ method: "POST" })
