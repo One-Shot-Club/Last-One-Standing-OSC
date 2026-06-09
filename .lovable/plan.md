@@ -1,53 +1,65 @@
 ## Goal
 
-Replace the multi-page "go fiddle in 4 different screens" activation process with a single **Activate tenant** wizard launched from `/platform/admin`. After it finishes, the tenant's public URL (e.g. `/st-josephs-afc`) is fully playable.
+One canonical "Last Man Standing" entry experience, rendered per tenant. Every tenant — Killeshin, St. Joseph's AFC, and any future club — uses the **same template**, just branded and scoped to its own competition. No more parallel half-built tenant page.
 
-## Where it lives
+## Current state (the "half setup")
 
-- New button **Activate** on each tenant row in `/platform/admin` (next to **Edit**). For tenants that already have a competition + gameweek 1 seeded + payment link, the button reads **Re-run setup**.
-- Opens a single modal/sheet with 5 steps and a progress bar. Back/Next, no page reloads.
+- `/` — full working funnel (hero → name/email/phone → how-it-works → pick → pay), but hardcoded to a "demo competition" (Killeshin) via `getDemoCompetition()`.
+- `/$tenantSlug/` — different page: branding header + a competitions list card. **No entry form.** That's why St. Joseph's looks broken.
 
-## Wizard steps
+Two parallel implementations, only one of which actually lets people enter.
+
+## Target architecture
 
 ```text
-1 Brand           2 Competition     3 Fixtures        4 Payments        5 Go live
-  logo + colours    name, fee,        seed GW1          stripe / revolut    review + launch
-  intro copy        prize, PIN        (one click)       / bank link
+/                 → 302 redirect to /killeshin (default tenant)
+/{tenantSlug}/    → THE entry template (same hero, same form, same flow)
+                     - branding: tenant.logo_url, tenant.name, tenant colors
+                     - competition: tenant's primary active competition
+                     - submit → /how-it-works?c={compId}&n=&e=&p= (already tenant-agnostic)
 ```
 
-1. **Brand** — logo URL, primary + accent colour, intro copy, contact email/phone, WhatsApp link. Pre-filled from `tenant_settings` if present.
-2. **Competition** — name (default `"{Tenant} Last Man Standing"`), entry fee (default `10`), prize pool (optional), club name + logo (defaulted from step 1), 4-digit admin PIN (auto-generated, copy-to-clipboard, editable). Creates the `competitions` row if missing; otherwise updates it.
-3. **Fixtures** — single button **Seed Gameweek 1** that calls the existing `seedGameweek` server fn with the PIN from step 2. Shows the seeded fixtures inline; success tick when done.
-4. **Payments** — three optional inputs (Stripe link, Revolut link, bank transfer text). Must have at least one to continue. Saved onto the `competitions` row.
-5. **Go live** — read-only summary + checklist (brand ✓, competition ✓, GW1 ✓, ≥1 payment link ✓) + **Launch** button. Launch sets `tenants.status = 'active'`, opens the public URL in a new tab, and closes the wizard.
+Killeshin loses its "special" status at `/` and just lives at `/killeshin`. St. Joseph's at `/st-josephs-afc` automatically gets the identical experience.
 
-Steps the wizard already detects as complete are pre-ticked and skippable.
+## Changes
 
-## Server functions (new, in `src/lib/platform-admin.functions.ts`)
+### 1. New server function: `getTenantEntryContext({ slug })`
+In `src/lib/tenant.functions.ts`. Returns `{ tenant, competition }` where `competition` is the tenant's primary active competition (single competition assumption matches today's data — one comp per tenant). Same shape `getDemoCompetition` returns today so the template can consume it uniformly.
 
-All gated by `assertPlatformAdmin`, all return JSON the wizard can use to refresh state.
+### 2. Rewrite `src/routes/$tenantSlug.index.tsx`
+Replace the current branded-list layout with a **copy of `src/routes/index.tsx`'s `Landing` component**, but:
+- Data source: `getTenantEntryContext({ slug: params.tenantSlug })` instead of `getDemoCompetition()`.
+- `ClubHeader` driven by `tenant.name` + `tenant.logo_url` (falls back to competition's `club_name`/`club_logo_url`).
+- Apply `useTenantBranding(tenant)` so colors theme the page.
+- `head()` uses tenant name + competition prize for proper OG/share metadata.
+- `notFound` if slug doesn't resolve.
 
-- `getTenantActivation({ tenantId })` — returns `{ tenant, settings, competition, hasGameweek1, paymentLinks }` so the wizard can pre-tick completed steps.
-- `upsertCompetition({ tenantId, name, entryFee, prizePool, clubName, clubLogoUrl, adminPin })` — creates or updates the tenant's primary competition; if PIN omitted on create, generates a 4-digit one and returns it.
-- `setPaymentLinks({ competitionId, stripeLink?, revolutLink?, paymentLink? })` — updates the three columns on `competitions`.
-- `launchTenant({ tenantId })` — re-checks all prerequisites server-side, then sets `tenants.status = 'active'` and writes an `audit_logs` row.
+### 3. Convert `/` into a redirect
+`src/routes/index.tsx` becomes a tiny route that `throw redirect({ to: "/$tenantSlug/", params: { tenantSlug: "killeshin" } })` in `beforeLoad`. Delete the inline `Landing` component (it's now lifted into the tenant route, or extracted as a shared `<TenantEntry tenant comp />` component if cleaner).
 
-Fixtures step reuses the existing `seedGameweek` server function — no new endpoint.
+**Cleaner variant (recommended):** extract the funnel UI into `src/components/oneshot/TenantEntry.tsx` and have **both** `$tenantSlug.index.tsx` render it. `index.tsx` is just the redirect. Single source of truth for the funnel — fixing a bug or restyling the hero updates every tenant at once.
 
-## UI files
+### 4. Downstream flow already works
+`/how-it-works`, team picker, and payment pages already take a `c=competitionId` search param and are tenant-agnostic. No changes needed there.
 
-- `src/components/platform/ActivateTenantWizard.tsx` — the modal/sheet, step state machine, step components inline.
-- Edit `src/routes/_authenticated/platform.admin.tsx` — add **Activate** button per row, mount the wizard.
-- Edit `EditTenantPanel.tsx` only to share the brand form fields (extract to `BrandFormFields.tsx` so both the wizard and the existing edit panel use the same inputs — no duplication).
+### 5. Keep `getDemoCompetition` for now
+Don't delete it in this pass — it may be referenced elsewhere. Mark for follow-up after verifying no other call sites.
 
-## What stays the same
+## What does NOT change
 
-- `/admin/panel` (PIN-protected per-tenant admin) is untouched — it remains for ongoing weekly admin (seed GW2+, set winners, manage entrants).
-- Existing `createTenant`, `updateTenant`, `seedGameweek` behaviour unchanged; the wizard composes them.
-- No schema changes.
+- DB schema. No migrations.
+- `/platform/admin` and the Activate Tenant wizard. Once a tenant has a competition + branding, `/{slug}` just works.
+- Auth/RLS posture. Still deny-all + server functions.
+- Admin pages, magic-token flows, payment provider integrations.
 
-## Out of scope
+## Verification
 
-- Tenant member invitation UI.
-- Editing the wizard's steps after launch (use existing screens).
-- Uploading logos (still URL-based, same as today).
+1. Visit `/` → lands on `/killeshin` showing the existing Killeshin hero/form (identical to today's `/`).
+2. Visit `/st-josephs-afc` → same template, St. Joseph's branding, St. Joseph's competition (`6b149c5a-…`), prize pool / entry fee from that comp.
+3. Submit form on `/st-josephs-afc` → continues into `/how-it-works?c=6b149c5a-…` and through to pick/pay.
+4. Visit `/does-not-exist` → tenant-not-found state.
+
+## Open items (small, can decide while building)
+
+- Where to extract the shared funnel component (`src/components/oneshot/TenantEntry.tsx` vs inline duplication). I'll go with extraction unless you prefer otherwise.
+- Whether `/killeshin` should keep its current `club_name`/`club_logo_url` from the competitions row, or switch to the tenants row. Plan: prefer tenant row, fall back to competition row, so nothing visually changes for Killeshin.
