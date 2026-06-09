@@ -46,7 +46,7 @@ export const upsertGameweek = createServerFn({ method: 'POST' })
       deadline_at: data.firstKickoffAt,
     }
     const { data: saved, error } = await supabaseAdmin
-      .from('gameweeks').upsert(row, { onConflict: 'id' }).select('*').single()
+      .from('gameweeks').upsert(row as never, { onConflict: 'id' }).select('*').single()
     if (error) throw error
     return saved
   })
@@ -82,7 +82,7 @@ export const upsertTeam = createServerFn({ method: 'POST' })
       badge_url: data.badgeUrl ?? null,
     }
     const { data: saved, error } = await supabaseAdmin
-      .from('teams').upsert(row, { onConflict: 'competition_id,name' }).select('*').single()
+      .from('teams').upsert(row as never, { onConflict: 'competition_id,name' }).select('*').single()
     if (error) throw error
     return saved
   })
@@ -233,7 +233,7 @@ export const submitPickV2 = createServerFn({ method: 'POST' })
       competition_id: player.competition_id,
       week: gw.week_number,
       team: data.team,
-    }).select('*').single()
+    } as never).select('*').single()
     if (error) throw error
     return pick
   })
@@ -290,7 +290,7 @@ export const submitGw2Pick = createServerFn({ method: 'POST' })
       competition_id: player.competition_id,
       week: gw.week_number,
       team: data.team,
-    }).select('*').single()
+    } as never).select('*').single()
     if (error) throw error
     return pick
   })
@@ -314,7 +314,7 @@ export const seedGameweek = createServerFn({ method: 'POST' })
         first_kickoff_at: kickoff.toISOString(),
         last_match_ends_at: ends.toISOString(),
         deadline_at: kickoff.toISOString(),
-      }).select('*').single()
+      } as never).select('*').single()
       if (error) throw error
       gw = created
     }

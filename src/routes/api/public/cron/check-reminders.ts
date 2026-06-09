@@ -72,7 +72,7 @@ export const Route = createFileRoute('/api/public/cron/check-reminders')({
             if (sentIds.has(p.id)) continue
             // Best-effort reservation to avoid duplicate sends across concurrent runs
             const { error: insErr } = await supabaseAdmin
-              .from('reminders_sent').insert({ player_id: p.id, gameweek_id: gw.id, kind })
+              .from('reminders_sent').insert({ player_id: p.id, gameweek_id: gw.id, kind } as never)
             if (insErr) continue // unique violation = another worker got it
             await sendReminder(kind, { playerId: p.id, gameweek: gw as any })
             reminders.push({ kind, player_id: p.id, gameweek_id: gw.id })

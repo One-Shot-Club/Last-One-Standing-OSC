@@ -63,7 +63,7 @@ export async function processGameweekResultsInternal(
       toEliminate.push(p.id)
       await supabaseAdmin.from('reminders_sent').insert({
         player_id: p.id, gameweek_id: gameweekId, kind: 'elim',
-      })
+      } as never)
       await sendElimination({
         playerId: p.id, gameweekId, weekLabel: gw.week_label,
         pickedTeam: null, resultLine: null, noPick: true,
@@ -73,7 +73,7 @@ export async function processGameweekResultsInternal(
       toEliminate.push(p.id)
       await supabaseAdmin.from('reminders_sent').insert({
         player_id: p.id, gameweek_id: gameweekId, kind: 'elim',
-      })
+      } as never)
       await sendElimination({
         playerId: p.id, gameweekId, weekLabel: gw.week_label,
         pickedTeam: team, resultLine: outcome?.line ?? null,
@@ -82,7 +82,7 @@ export async function processGameweekResultsInternal(
     } else {
       await supabaseAdmin.from('reminders_sent').insert({
         player_id: p.id, gameweek_id: gameweekId, kind: 'progress',
-      })
+      } as never)
       await sendProgression({
         playerId: p.id, gameweekId, weekLabel: gw.week_label,
         nextWeekLabel: nextGw?.week_label ?? `GW${gw.week_number + 1}`,
