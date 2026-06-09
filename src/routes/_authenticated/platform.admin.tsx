@@ -12,6 +12,11 @@ import {
   addPlatformAdmin,
   listPlatformAdmins,
 } from "@/lib/platform-admin.functions";
+import {
+  listTenantMembers,
+  addTenantMember,
+  removeTenantMember,
+} from "@/lib/admin-ops.functions";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
 
 export const Route = createFileRoute("/_authenticated/platform/admin")({
