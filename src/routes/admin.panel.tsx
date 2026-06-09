@@ -50,9 +50,10 @@ function Panel() {
   const [tab, setTab] = useState<Tab>("players");
 
   useEffect(() => {
-    const p = sessionStorage.getItem("osc_pin");
+    const p = sessionStorage.getItem("osc_pin") ?? "";
     const c = sessionStorage.getItem("osc_comp");
-    if (!p || !c) nav({ to: "/admin" });
+    // Allow either: legacy PIN flow OR Supabase Auth flow (osc_comp present, pin may be empty).
+    if (!c) nav({ to: "/admin" });
     else {
       setPin(p);
       setCompId(c);
