@@ -80,14 +80,7 @@ function TenantLanding() {
         {data.competitions.map((c) => (
           <div key={c.id} className="rounded-md border border-border p-3">
             <div className="font-medium">{c.name}</div>
-            {c.slug && (
-              <a
-                href={`/${data.tenant.slug}/${c.slug}/join`}
-                className="text-xs underline text-primary"
-              >
-                Join →
-              </a>
-            )}
+            <div className="text-xs text-muted-foreground">{c.id}</div>
           </div>
         ))}
       </Card>
