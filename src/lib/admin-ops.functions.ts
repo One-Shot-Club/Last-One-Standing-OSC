@@ -545,3 +545,45 @@ export const listMessages = createServerFn({ method: "POST" })
       .limit(50);
     return rows ?? [];
   });
+
+// ----- Phase 4d: Supabase Auth tenant access -----
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export const getMyTenantAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: Record<string, never>) => d)
+  .handler(async ({ context }) => {
+    const { userId } = context as { userId: string };
+    const { data: isPlatform } = await supabaseAdmin
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (isPlatform) {
+      const { data: all } = await supabaseAdmin
+        .from("tenants")
+        .select("id, slug, name")
+        .order("name");
+      return (all ?? []).map((t) => ({
+        tenant_id: t.id as string,
+        tenant_slug: t.slug as string,
+        tenant_name: t.name as string,
+        role: "platform_super_admin" as string,
+      }));
+    }
+
+    const { data: members } = await supabaseAdmin
+      .from("tenant_members")
+      .select("tenant_id, role, tenants(id, slug, name)")
+      .eq("user_id", userId);
+    return (members ?? []).map((m) => {
+      const t = (m as { tenants: { id: string; slug: string; name: string } | null }).tenants;
+      return {
+        tenant_id: t?.id ?? (m.tenant_id as string),
+        tenant_slug: t?.slug ?? "",
+        tenant_name: t?.name ?? "",
+        role: m.role as string,
+      };
+    });
+  });
