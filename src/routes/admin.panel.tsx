@@ -63,8 +63,8 @@ function Panel() {
   const fetchData = useServerFn(adminGetData);
   const { data, refetch } = useQuery({
     queryKey: ["admin", compId, pin],
-    queryFn: () => fetchData({ data: { competitionId: compId!, pin: pin! } }),
-    enabled: !!pin && !!compId,
+    queryFn: () => fetchData({ data: { competitionId: compId!, pin: pin ?? "" } }),
+    enabled: !!compId,
   });
 
   if (!data) {
