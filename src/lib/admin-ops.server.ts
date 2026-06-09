@@ -25,3 +25,13 @@ export async function logAction(
     payload,
   } as never);
 }
+
+export async function assertTenantOwner(userId: string, tenantId: string) {
+  const { data: isPlatform } = await supabaseAdmin
+    .from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle();
+  if (isPlatform) return;
+  const { data: ok } = await supabaseAdmin.rpc("has_tenant_access", {
+    _user_id: userId, _tenant_id: tenantId, _min_role: "tenant_owner",
+  });
+  if (ok !== true) throw new Error("Forbidden: tenant owner required");
+}
