@@ -128,7 +128,7 @@ type Data = Awaited<ReturnType<typeof adminGetData>>;
 
 const WINDOW_SIZE = 8;
 
-function Players({ data }: { data: Data }) {
+function Players({ data, compId, pin, onChange }: { data: Data; compId: string; pin: string; onChange: () => void }) {
   const compId = data.competition.id;
   const fetchTeams = useServerFn(listTeams);
   // pin is stored in sessionStorage; pull from there to avoid prop plumbing
