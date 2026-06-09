@@ -14,6 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          created_at: string
+          id: string
+          payload: Json
+          target_id: string | null
+          target_type: string | null
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_id?: string | null
+          target_type?: string | null
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_id?: string | null
+          target_type?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          diff: Json
+          id: string
+          op: string
+          row_id: string | null
+          table_name: string
+          tenant_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          diff?: Json
+          id?: string
+          op: string
+          row_id?: string | null
+          table_name: string
+          tenant_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          diff?: Json
+          id?: string
+          op?: string
+          row_id?: string | null
+          table_name?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_entries: {
+        Row: {
+          alive: boolean
+          competition_id: string
+          created_at: string
+          entrant_id: string
+          id: string
+          magic_token: string
+          paid: boolean
+          player_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          alive?: boolean
+          competition_id: string
+          created_at?: string
+          entrant_id: string
+          id?: string
+          magic_token?: string
+          paid?: boolean
+          player_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          alive?: boolean
+          competition_id?: string
+          created_at?: string
+          entrant_id?: string
+          id?: string
+          magic_token?: string
+          paid?: boolean
+          player_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_entries_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_entries_entrant_id_fkey"
+            columns: ["entrant_id"]
+            isOneToOne: false
+            referencedRelation: "entrants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitions: {
         Row: {
           admin_pin: string
@@ -160,6 +306,47 @@ export type Database = {
         }
         Relationships: []
       }
+      entrants: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          source: Database["public"]["Enums"]["entrant_source"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          source?: Database["public"]["Enums"]["entrant_source"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          source?: Database["public"]["Enums"]["entrant_source"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gameweeks: {
         Row: {
           competition_id: string
@@ -206,6 +393,124 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "gameweeks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          audience: string
+          body: string | null
+          competition_id: string | null
+          id: string
+          recipient_count: number | null
+          sent_at: string
+          sent_by: string | null
+          subject: string | null
+          template: string
+          tenant_id: string
+        }
+        Insert: {
+          audience: string
+          body?: string | null
+          competition_id?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string | null
+          template: string
+          tenant_id: string
+        }
+        Update: {
+          audience?: string
+          body?: string | null
+          competition_id?: string | null
+          id?: string
+          recipient_count?: number | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string | null
+          template?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          competition_id: string
+          created_at: string
+          currency: string
+          entry_id: string
+          external_ref: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          note: string | null
+          recorded_by: string | null
+          tenant_id: string
+        }
+        Insert: {
+          amount: number
+          competition_id: string
+          created_at?: string
+          currency?: string
+          entry_id: string
+          external_ref?: string | null
+          id?: string
+          method: Database["public"]["Enums"]["payment_method"]
+          note?: string | null
+          recorded_by?: string | null
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          competition_id?: string
+          created_at?: string
+          currency?: string
+          entry_id?: string
+          external_ref?: string | null
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          note?: string | null
+          recorded_by?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -635,6 +940,14 @@ export type Database = {
       }
     }
     Enums: {
+      entrant_source: "online" | "offline" | "import"
+      payment_method:
+        | "online_stripe"
+        | "online_revolut"
+        | "online_other"
+        | "cash"
+        | "bank_transfer"
+        | "manual_other"
       tenant_role:
         | "platform_super_admin"
         | "tenant_owner"
@@ -768,6 +1081,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      entrant_source: ["online", "offline", "import"],
+      payment_method: [
+        "online_stripe",
+        "online_revolut",
+        "online_other",
+        "cash",
+        "bank_transfer",
+        "manual_other",
+      ],
       tenant_role: [
         "platform_super_admin",
         "tenant_owner",
