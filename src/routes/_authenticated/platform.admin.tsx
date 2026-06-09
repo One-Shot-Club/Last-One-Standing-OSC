@@ -52,6 +52,7 @@ function PlatformAdmin() {
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
 
   const [newSlug, setNewSlug] = useState("");
   const [newName, setNewName] = useState("");
