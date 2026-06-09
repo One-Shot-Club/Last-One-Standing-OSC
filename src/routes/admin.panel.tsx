@@ -381,7 +381,23 @@ function Picks({ data, compId, pin, onChange }: { data: Data; compId: string; pi
           return (
             <Card key={p.id} className="flex items-center justify-between p-3">
               <span className="text-sm">{player?.full_name ?? "?"}</span>
-              <span className="display text-lg text-primary">{p.team}</span>
+              <div className="flex items-center gap-3">
+                <span className="display text-lg text-primary">{p.team}</span>
+                <button
+                  className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[10px] uppercase tracking-widest"
+                  onClick={async () => {
+                    const next = window.prompt(`Override pick for ${player?.full_name} — GW${week}`, p.team);
+                    if (!next) return;
+                    await overrideP({
+                      data: { competitionId: compId, pin, playerId: p.player_id, week, team: next.trim() },
+                    });
+                    await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+                    onChange();
+                  }}
+                >
+                  Override
+                </button>
+              </div>
             </Card>
           );
         })}
