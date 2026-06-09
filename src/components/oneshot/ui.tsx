@@ -1,6 +1,6 @@
 import type { ReactNode, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
-import abbey from "@/assets/pl-lion-bg.jpeg.asset.json";
+import abbey from "@/assets/pl-lion-bg-sharp.jpeg.asset.json";
 
 export function Shell({ children, className, bgUrl, bgBlur }: { children: ReactNode; className?: string; bgUrl?: string; bgBlur?: number }) {
   const url = bgUrl ?? abbey.url;
