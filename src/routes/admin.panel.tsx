@@ -215,17 +215,65 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
             {data.players.map((p) => {
               const picks = picksByPlayer.get(p.id);
               return (
-                <tr key={p.id} className="border-b border-[color:var(--border)] last:border-0">
+                <tr key={p.id} className={cn("border-b border-[color:var(--border)] last:border-0", !p.alive && "opacity-60")}>
                   <td className="sticky left-0 z-10 bg-background/95 px-3 py-2 align-middle">
-                    <div className="font-semibold leading-tight">{p.full_name}</div>
-                    <div className="text-[10px] text-muted-foreground">{p.email}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold leading-tight">{p.full_name}</div>
+                        <div className="truncate text-[10px] text-muted-foreground">{p.email}</div>
+                      </div>
+                      <button
+                        title={p.alive ? "Eliminate" : "Reinstate"}
+                        className={cn(
+                          "shrink-0 rounded-md border border-[color:var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+                          p.alive ? "text-destructive" : "text-success",
+                        )}
+                        onClick={async () => {
+                          const verb = p.alive ? "Eliminate" : "Reinstate";
+                          const reason = window.prompt(`${verb} ${p.full_name}? Optional reason:`, "");
+                          if (reason === null) return;
+                          await togglePlayer({
+                            data: { competitionId: compId, pin, playerId: p.id, alive: !p.alive, reason: reason || null },
+                          });
+                          await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+                          onChange();
+                        }}
+                      >
+                        {p.alive ? "Elim" : "Reinst"}
+                      </button>
+                    </div>
                   </td>
                   {weeks.map((w) => {
                     const pick = picks?.get(w);
+                    const handleCellClick = async () => {
+                      const teamNames = (teams as any[]).map((t) => t.name);
+                      const current = pick?.team ?? "";
+                      const next = window.prompt(
+                        `${pick ? "Override" : "Set"} pick for ${p.full_name} — GW${w}\n\nTeams: ${teamNames.join(", ")}\n\nEnter team name (blank to clear):`,
+                        current,
+                      );
+                      if (next === null) return;
+                      const trimmed = next.trim();
+                      if (!trimmed) {
+                        if (!pick) return;
+                        if (!window.confirm("Delete this pick?")) return;
+                        await removeP({ data: { competitionId: compId, pin, playerId: p.id, week: w } });
+                      } else {
+                        if (!teamNames.includes(trimmed)) {
+                          alert(`Unknown team: ${trimmed}`);
+                          return;
+                        }
+                        await overrideP({
+                          data: { competitionId: compId, pin, playerId: p.id, week: w, team: trimmed },
+                        });
+                      }
+                      await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+                      onChange();
+                    };
                     if (!pick) {
                       return (
                         <td key={w} className="px-2 py-2 text-center text-muted-foreground/40">
-                          —
+                          <button onClick={handleCellClick} className="rounded px-2 py-1 hover:bg-muted/40">—</button>
                         </td>
                       );
                     }
@@ -240,17 +288,17 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
                             : "";
                     return (
                       <td key={w} className="px-2 py-2 text-center">
-                        <div className="mx-auto flex flex-col items-center gap-1">
+                        <button onClick={handleCellClick} className="mx-auto flex flex-col items-center gap-1">
                           {badge ? (
                             <img
                               src={badge}
                               alt={pick.team}
-                              title={pick.team}
+                              title={`${pick.team} — click to override`}
                               className={cn("h-7 w-7 rounded", ring)}
                             />
                           ) : (
                             <span
-                              title={pick.team}
+                              title={`${pick.team} — click to override`}
                               className={cn(
                                 "flex h-7 w-7 items-center justify-center rounded bg-muted text-[10px] font-bold",
                                 ring,
@@ -259,7 +307,7 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
                               {pick.team.slice(0, 3).toUpperCase()}
                             </span>
                           )}
-                        </div>
+                        </button>
                       </td>
                     );
                   })}
