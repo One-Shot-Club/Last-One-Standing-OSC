@@ -456,7 +456,7 @@ export const broadcastMessage = createServerFn({ method: "POST" })
 
     const { enqueueTemplatedEmail } = await import("@/lib/email/send.server");
     const broadcastId = crypto.randomUUID();
-    const clubName = "Killeshin GAA";
+    const clubName = "Last Man Standing";
     let queued = 0;
     for (const r of recipients ?? []) {
       if (!r.email) continue;

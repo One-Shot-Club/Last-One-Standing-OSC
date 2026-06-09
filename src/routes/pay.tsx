@@ -86,7 +86,7 @@ function Pay() {
 
   return (
     <Shell>
-      <ClubHeader clubName={comp?.club_name ?? "Killeshin GAA"} logoUrl={comp?.club_logo_url} />
+      <ClubHeader clubName={comp?.club_name ?? "Last Man Standing"} logoUrl={comp?.club_logo_url} />
 
       <div className="mt-8">
         <Eyebrow>Step 3 of 3</Eyebrow>

@@ -17,7 +17,7 @@ interface Props {
 
 const Email = ({
   firstName = 'Player',
-  clubName = 'Killeshin GAA',
+  clubName = 'Last Man Standing',
   weekLabel = 'GW1',
   pickedTeam = '',
   resultLine = '',
@@ -85,7 +85,7 @@ export const template = {
   displayName: 'Elimination',
   previewData: {
     firstName: 'Tom',
-    clubName: 'Killeshin GAA',
+    clubName: 'Last Man Standing',
     weekLabel: 'GW3',
     pickedTeam: 'Arsenal',
     resultLine: 'Arsenal 1 – 2 Brighton',

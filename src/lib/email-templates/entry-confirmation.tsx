@@ -18,7 +18,7 @@ interface Props {
 
 const Email = ({
   firstName = 'Player',
-  clubName = 'Killeshin GAA',
+  clubName = 'Last Man Standing',
   competitionName = 'Last Man Standing',
   team = 'Your team',
   teamBadgeUrl,
@@ -71,11 +71,11 @@ const Email = ({
 export const template = {
   component: Email,
   subject: (d: Record<string, any>) =>
-    `You're in, ${d.firstName ?? 'Player'} — ${d.clubName ?? 'Killeshin GAA'} Last Man Standing`,
+    `You're in, ${d.firstName ?? 'Player'} — ${d.clubName ?? 'Last Man Standing'}`,
   displayName: 'Entry Confirmation',
   previewData: {
     firstName: 'Tom',
-    clubName: 'Killeshin GAA',
+    clubName: 'Last Man Standing',
     competitionName: 'Last Man Standing 2026',
     team: 'Liverpool',
     weekLabel: 'GW1',
