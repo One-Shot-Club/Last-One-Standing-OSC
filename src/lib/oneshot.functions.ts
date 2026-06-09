@@ -147,37 +147,26 @@ export const submitPick = createServerFn({ method: "POST" })
   });
 
 // --- Admin ---
-// Single hardcoded admin credential. Change here in code to rotate.
-// Keep `competitions.admin_pin` in sync with ADMIN_PASSWORD so downstream
-// verifyAdmin(...) checks (which compare against admin_pin) keep working.
-const ADMIN_USERNAME = "Demo@Demo.ie";
-const ADMIN_PASSWORD = "123!@£POL";
-
+// Legacy username/password admin login. Removed in Phase 7: tenant admins
+// now sign in via Supabase Auth at /auth and access competitions via the
+// dashboard. Kept as a hard-error stub so any stale client gets a clear
+// message.
 export const adminLogin = createServerFn({ method: "POST" })
   .inputValidator((d: { username: string; password: string }) => d)
-  .handler(async ({ data }) => {
-    const u = (data.username ?? "").trim().toLowerCase();
-    const p = data.password ?? "";
-    if (u !== ADMIN_USERNAME.toLowerCase() || p !== ADMIN_PASSWORD) {
-      throw new Error("Invalid credentials");
-    }
-    const { data: comp } = await supabaseAdmin
-      .from("competitions")
-      .select("*")
-      .eq("admin_pin", ADMIN_PASSWORD)
-      .maybeSingle();
-    if (!comp) throw new Error("No competition configured");
-    return comp;
+  .handler(async () => {
+    throw new Error(
+      "The legacy admin login has been removed. Please sign in at /auth.",
+    );
   });
 
 export const adminGetData = createServerFn({ method: "POST" })
   .inputValidator((d: { competitionId: string; pin: string }) => d)
   .handler(async ({ data }) => {
+    await verifyAdmin(data.competitionId, data.pin);
     const { data: comp } = await supabaseAdmin
       .from("competitions")
       .select("*")
       .eq("id", data.competitionId)
-      .eq("admin_pin", data.pin)
       .maybeSingle();
     if (!comp) throw new Error("Unauthorized");
     const { data: players } = await supabaseAdmin
@@ -197,13 +186,7 @@ export const setPickResult = createServerFn({ method: "POST" })
     (d: { competitionId: string; pin: string; pickId: string; result: "W" | "L" | "D" }) => d,
   )
   .handler(async ({ data }) => {
-    const { data: comp } = await supabaseAdmin
-      .from("competitions")
-      .select("id")
-      .eq("id", data.competitionId)
-      .eq("admin_pin", data.pin)
-      .maybeSingle();
-    if (!comp) throw new Error("Unauthorized");
+    await verifyAdmin(data.competitionId, data.pin);
     await supabaseAdmin.from("picks").update({ result: data.result }).eq("id", data.pickId);
     return { ok: true };
   });
@@ -211,13 +194,7 @@ export const setPickResult = createServerFn({ method: "POST" })
 export const lockWeek = createServerFn({ method: "POST" })
   .inputValidator((d: { competitionId: string; pin: string; week: number }) => d)
   .handler(async ({ data }) => {
-    const { data: comp } = await supabaseAdmin
-      .from("competitions")
-      .select("id, current_week")
-      .eq("id", data.competitionId)
-      .eq("admin_pin", data.pin)
-      .maybeSingle();
-    if (!comp) throw new Error("Unauthorized");
+    await verifyAdmin(data.competitionId, data.pin);
 
     // Eliminate players whose pick this week lost, or who didn't pick.
     const { data: players } = await supabaseAdmin
