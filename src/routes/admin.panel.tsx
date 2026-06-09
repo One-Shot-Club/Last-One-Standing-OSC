@@ -21,6 +21,9 @@ import {
   recordPayment,
   setEntryPaid,
   listAdminActions,
+  setPlayerAlive,
+  overridePick,
+  deletePick,
 } from "@/lib/admin-ops.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
