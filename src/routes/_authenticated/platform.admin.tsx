@@ -313,10 +313,12 @@ function TenantCard({
   tenant,
   onStatus,
   onEdit,
+  onActivate,
 }: {
   tenant: TenantRow;
   onStatus: (s: "active" | "paused" | "archived") => void;
   onEdit: () => void;
+  onActivate: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
