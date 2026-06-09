@@ -110,9 +110,9 @@ function Panel() {
       </nav>
 
       <div className="mt-6">
-        {tab === "players" && <Players data={data} />}
+        {tab === "players" && <Players data={data} compId={compId!} pin={pin!} onChange={refetch} />}
         {tab === "entries" && <Entries compId={compId!} pin={pin!} onChange={refetch} />}
-        {tab === "picks" && <Picks data={data} />}
+        {tab === "picks" && <Picks data={data} compId={compId!} pin={pin!} onChange={refetch} />}
         {tab === "gameweeks" && <Gameweeks compId={compId!} pin={pin!} />}
         {tab === "teams" && <Teams compId={compId!} pin={pin!} />}
         {tab === "stats" && <Stats data={data} />}
