@@ -325,7 +325,9 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
   );
 }
 
-function Picks({ data }: { data: Data }) {
+function Picks({ data, compId, pin, onChange }: { data: Data; compId: string; pin: string; onChange: () => void }) {
+  const overrideP = useServerFn(overridePick);
+  const qc = useQueryClient();
   const weeks = Array.from(new Set(data.picks.map((p) => p.week))).sort();
   const [week, setWeek] = useState<number>(weeks[weeks.length - 1] ?? data.competition.current_week);
 
