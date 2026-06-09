@@ -226,9 +226,18 @@ function PlatformAdmin() {
             key={t.id}
             tenant={t}
             onStatus={(s) => handleStatus(t.id, s)}
+            onEdit={() => setEditingTenantId(t.id)}
           />
         ))}
       </Card>
+
+      {editingTenantId && (
+        <EditTenantPanel
+          tenantId={editingTenantId}
+          onClose={() => setEditingTenantId(null)}
+          onSaved={refresh}
+        />
+      )}
 
       <h2 className="mt-8 display text-xl">New tenant</h2>
       <Card className="mt-3 space-y-3">
