@@ -162,7 +162,6 @@ export type Database = {
       }
       competitions: {
         Row: {
-          admin_pin: string
           club_logo_url: string | null
           club_name: string | null
           created_at: string
@@ -178,7 +177,6 @@ export type Database = {
           whatsapp_link: string | null
         }
         Insert: {
-          admin_pin: string
           club_logo_url?: string | null
           club_name?: string | null
           created_at?: string
@@ -194,7 +192,6 @@ export type Database = {
           whatsapp_link?: string | null
         }
         Update: {
-          admin_pin?: string
           club_logo_url?: string | null
           club_name?: string | null
           created_at?: string
