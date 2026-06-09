@@ -230,6 +230,7 @@ function PlatformAdmin() {
             tenant={t}
             onStatus={(s) => handleStatus(t.id, s)}
             onEdit={() => setEditingTenantId(t.id)}
+            onActivate={() => setActivatingTenantId(t.id)}
           />
         ))}
       </Card>
@@ -238,6 +239,14 @@ function PlatformAdmin() {
         <EditTenantPanel
           tenantId={editingTenantId}
           onClose={() => setEditingTenantId(null)}
+          onSaved={refresh}
+        />
+      )}
+
+      {activatingTenantId && (
+        <ActivateTenantWizard
+          tenantId={activatingTenantId}
+          onClose={() => setActivatingTenantId(null)}
           onSaved={refresh}
         />
       )}
