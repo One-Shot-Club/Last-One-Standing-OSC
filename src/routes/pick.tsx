@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { getPickContext, submitPickV2 } from "@/lib/gameweeks.functions";
 import { Btn, Card, Eyebrow, Shell } from "@/components/oneshot/ui";
-import plBg from "@/assets/premier-league-bg.png.asset.json";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +68,7 @@ function Pick() {
 
   if (!token) {
     return (
-      <Shell bgUrl={plBg.url} bgBlur={4}>
+      <Shell>
         <p className="mt-10 text-sm text-muted-foreground">Missing magic link token.</p>
       </Shell>
     );
@@ -77,7 +76,7 @@ function Pick() {
 
   if (isLoading || !data) {
     return (
-      <Shell bgUrl={plBg.url} bgBlur={4}>
+      <Shell>
         <p className="mt-10 text-sm text-muted-foreground">Loading…</p>
       </Shell>
     );
@@ -85,7 +84,7 @@ function Pick() {
 
   if (data === null) {
     return (
-      <Shell bgUrl={plBg.url} bgBlur={4}>
+      <Shell>
         <p className="mt-10 text-sm text-muted-foreground">Invalid or expired link.</p>
       </Shell>
     );
@@ -95,7 +94,7 @@ function Pick() {
 
   if (!player.alive) {
     return (
-      <Shell bgUrl={plBg.url} bgBlur={4}>
+      <Shell>
         <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={competition?.club_logo_url} />
         <div className="mt-10 text-center">
           <h1 className="display text-3xl">You've been eliminated</h1>
@@ -109,7 +108,7 @@ function Pick() {
 
   if (!gameweek) {
     return (
-      <Shell bgUrl={plBg.url} bgBlur={4}>
+      <Shell>
         <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={competition?.club_logo_url} />
         <div className="mt-10 text-center">
           <h1 className="display text-2xl">No upcoming gameweek yet</h1>
@@ -140,7 +139,7 @@ function Pick() {
   }
 
   return (
-    <Shell bgUrl={plBg.url} bgBlur={4}>
+    <Shell>
       <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={competition?.club_logo_url} />
 
       <div className="mt-6">
