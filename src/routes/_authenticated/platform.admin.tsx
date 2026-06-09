@@ -301,9 +301,11 @@ type Role = "tenant_owner" | "tenant_admin" | "tenant_operator" | "tenant_viewer
 function TenantCard({
   tenant,
   onStatus,
+  onEdit,
 }: {
   tenant: TenantRow;
   onStatus: (s: "active" | "paused" | "archived") => void;
+  onEdit: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -320,6 +322,9 @@ function TenantCard({
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          <button className="text-xs underline" onClick={onEdit}>
+            Edit
+          </button>
           <button className="text-xs underline" onClick={() => setOpen((v) => !v)}>
             {open ? "Hide members" : "Members"}
           </button>
