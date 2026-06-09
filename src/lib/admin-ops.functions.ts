@@ -1,33 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { verifyAdmin } from "@/lib/admin-auth.server";
-
-
-async function logAction(
-  tenantId: string,
-  action: string,
-  actorLabel: string,
-  targetType: string | null,
-  targetId: string | null,
-  payload: Record<string, unknown>,
-) {
-  await supabaseAdmin.from("admin_actions").insert({
-    tenant_id: tenantId,
-    actor_label: actorLabel,
-    action,
-    target_type: targetType,
-    target_id: targetId,
-    payload,
-  } as never);
-}
-
-type PaymentMethod =
-  | "online_stripe"
-  | "online_revolut"
-  | "online_other"
-  | "cash"
-  | "bank_transfer"
-  | "manual_other";
+import { logAction, type PaymentMethod } from "@/lib/admin-ops.server";
 
 // --- Add a manual entrant (admin-entered, offline source) ---
 export const addManualEntrant = createServerFn({ method: "POST" })
