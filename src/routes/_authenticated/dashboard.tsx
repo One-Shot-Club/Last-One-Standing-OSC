@@ -59,6 +59,11 @@ function Dashboard() {
           </div>
         ))}
         <Btn onClick={signOut}>Sign out</Btn>
+        <div className="pt-2 text-center">
+          <Link to="/_authenticated/platform/admin" className="text-xs underline">
+            Platform admin →
+          </Link>
+        </div>
       </Card>
     </Shell>
   );
