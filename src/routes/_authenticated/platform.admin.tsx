@@ -18,6 +18,7 @@ import {
   removeTenantMember,
 } from "@/lib/admin-ops.functions";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
+import { EditTenantPanel } from "@/components/platform/EditTenantPanel";
 
 export const Route = createFileRoute("/_authenticated/platform/admin")({
   component: PlatformAdmin,
@@ -51,6 +52,7 @@ function PlatformAdmin() {
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
 
   const [newSlug, setNewSlug] = useState("");
   const [newName, setNewName] = useState("");
@@ -225,9 +227,18 @@ function PlatformAdmin() {
             key={t.id}
             tenant={t}
             onStatus={(s) => handleStatus(t.id, s)}
+            onEdit={() => setEditingTenantId(t.id)}
           />
         ))}
       </Card>
+
+      {editingTenantId && (
+        <EditTenantPanel
+          tenantId={editingTenantId}
+          onClose={() => setEditingTenantId(null)}
+          onSaved={refresh}
+        />
+      )}
 
       <h2 className="mt-8 display text-xl">New tenant</h2>
       <Card className="mt-3 space-y-3">
@@ -290,9 +301,11 @@ type Role = "tenant_owner" | "tenant_admin" | "tenant_operator" | "tenant_viewer
 function TenantCard({
   tenant,
   onStatus,
+  onEdit,
 }: {
   tenant: TenantRow;
   onStatus: (s: "active" | "paused" | "archived") => void;
+  onEdit: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -309,6 +322,9 @@ function TenantCard({
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          <button className="text-xs underline" onClick={onEdit}>
+            Edit
+          </button>
           <button className="text-xs underline" onClick={() => setOpen((v) => !v)}>
             {open ? "Hide members" : "Members"}
           </button>
