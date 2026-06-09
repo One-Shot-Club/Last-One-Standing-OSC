@@ -15,7 +15,7 @@ interface Props {
 
 const Email = ({
   firstName = 'Player',
-  clubName = 'Killeshin GAA',
+  clubName = 'Last Man Standing',
   nextWeekLabel = 'GW4',
   deadline = 'TBC',
   playersRemaining = 0,
@@ -71,7 +71,7 @@ export const template = {
   displayName: 'Reminder · 24h',
   previewData: {
     firstName: 'Tom',
-    clubName: 'Killeshin GAA',
+    clubName: 'Last Man Standing',
     nextWeekLabel: 'GW4',
     deadline: 'Sat 30 Aug, 13:30',
     playersRemaining: 24,

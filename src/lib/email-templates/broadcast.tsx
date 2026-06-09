@@ -13,7 +13,7 @@ interface Props {
 
 const Email = ({
   firstName = 'Player',
-  clubName = 'Killeshin GAA',
+  clubName = 'Last Man Standing',
   subject = 'Update',
   bodyText = '',
   magicLink,
@@ -49,7 +49,7 @@ export const template = {
   displayName: 'Broadcast',
   previewData: {
     firstName: 'Tom',
-    clubName: 'Killeshin GAA',
+    clubName: 'Last Man Standing',
     subject: 'Important update',
     bodyText: 'This is a broadcast message body.\n\nSecond paragraph.',
   },

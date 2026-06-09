@@ -95,7 +95,7 @@ function Pick() {
   if (!player.alive) {
     return (
       <Shell>
-        <ClubHeader clubName={competition?.club_name ?? "Killeshin GAA"} logoUrl={competition?.club_logo_url} />
+        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={competition?.club_logo_url} />
         <div className="mt-10 text-center">
           <h1 className="display text-3xl">You've been eliminated</h1>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -109,7 +109,7 @@ function Pick() {
   if (!gameweek) {
     return (
       <Shell>
-        <ClubHeader clubName={competition?.club_name ?? "Killeshin GAA"} logoUrl={competition?.club_logo_url} />
+        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={competition?.club_logo_url} />
         <div className="mt-10 text-center">
           <h1 className="display text-2xl">No upcoming gameweek yet</h1>
           <p className="mt-3 text-sm text-muted-foreground">Sit tight — fixtures will appear here once the admin sets them up.</p>
@@ -140,7 +140,7 @@ function Pick() {
 
   return (
     <Shell>
-      <ClubHeader clubName={competition?.club_name ?? "Killeshin GAA"} logoUrl={competition?.club_logo_url} />
+      <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={competition?.club_logo_url} />
 
       <div className="mt-6">
         <Eyebrow>{gameweek.week_label} · deadline</Eyebrow>

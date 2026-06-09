@@ -33,7 +33,7 @@ function HowItWorks() {
 
   return (
     <Shell>
-      <ClubHeader clubName="Killeshin GAA" />
+      <ClubHeader clubName="Last Man Standing" />
 
       <div className="mt-8">
         <Eyebrow>How it works</Eyebrow>

@@ -18,7 +18,7 @@ interface Props {
 
 const Email = ({
   firstName = 'Player',
-  clubName = 'Killeshin GAA',
+  clubName = 'Last Man Standing',
   weekLabel = 'GW3',
   nextWeekLabel = 'GW4',
   playersRemaining = 0,
@@ -82,7 +82,7 @@ export const template = {
   displayName: 'Progression',
   previewData: {
     firstName: 'Tom',
-    clubName: 'Killeshin GAA',
+    clubName: 'Last Man Standing',
     weekLabel: 'GW3',
     nextWeekLabel: 'GW4',
     playersRemaining: 24,
