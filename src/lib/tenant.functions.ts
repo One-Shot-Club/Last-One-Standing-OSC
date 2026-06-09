@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 
 export type TenantBranding = {
   id: string;
@@ -13,12 +14,11 @@ export type TenantBranding = {
   contact_email: string | null;
   contact_phone: string | null;
   whatsapp_link: string | null;
-  sponsor_assets: unknown;
+  sponsor_assets: Json;
 };
 
 export type TenantCompetition = {
   id: string;
-  slug: string | null;
   name: string;
 };
 
@@ -48,7 +48,7 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
 
     const { data: comps } = await supabaseAdmin
       .from("competitions")
-      .select("id, slug, name")
+      .select("id, name")
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false });
 
@@ -65,12 +65,12 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
         contact_email: (settings?.contact_email as string | null) ?? null,
         contact_phone: (settings?.contact_phone as string | null) ?? null,
         whatsapp_link: (settings?.whatsapp_link as string | null) ?? null,
-        sponsor_assets: settings?.sponsor_assets ?? [],
+        sponsor_assets: (settings?.sponsor_assets as Json) ?? ([] as Json),
       },
       competitions: (comps ?? []).map((c) => ({
         id: c.id as string,
-        slug: (c.slug as string | null) ?? null,
         name: c.name as string,
       })),
     };
   });
+
