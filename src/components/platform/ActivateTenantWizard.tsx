@@ -8,6 +8,10 @@ import {
   launchTenant,
 } from "@/lib/platform-admin.functions";
 import { seedGameweek } from "@/lib/gameweeks.functions";
+import {
+  setTenantAdminCredentials,
+  getTenantAdminCredentialsInfo,
+} from "@/lib/club-auth.functions";
 import { Btn, Field } from "@/components/oneshot/ui";
 
 type Activation = {
@@ -36,7 +40,8 @@ type Activation = {
   gameweek1: { id: string; week_number: number; fixtures: number } | null;
 };
 
-const STEPS = ["Brand", "Competition", "Fixtures", "Payments", "Go live"] as const;
+const STEPS = ["Brand", "Competition", "Fixtures", "Payments", "Club admin", "Go live"] as const;
+
 
 export function ActivateTenantWizard({
   tenantId,
@@ -53,6 +58,8 @@ export function ActivateTenantWizard({
   const seedFn = useServerFn(seedGameweek);
   const payFn = useServerFn(setPaymentLinks);
   const launchFn = useServerFn(launchTenant);
+  const setCredFn = useServerFn(setTenantAdminCredentials);
+  const getCredFn = useServerFn(getTenantAdminCredentialsInfo);
 
   const [a, setA] = useState<Activation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,6 +67,13 @@ export function ActivateTenantWizard({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [credInfo, setCredInfo] = useState<{ exists: boolean; username: string | null }>({
+    exists: false,
+    username: null,
+  });
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+
 
   // Step 1 — brand
   const [name, setName] = useState("");
@@ -131,7 +145,15 @@ export function ActivateTenantWizard({
       })
       .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
-  }, [tenantId, loadFn]);
+    getCredFn({ data: { tenantId } })
+      .then((r) => {
+        const info = r as { exists: boolean; username: string | null };
+        setCredInfo({ exists: info.exists, username: info.username });
+        if (info.exists && info.username) setAdminUsername(info.username);
+      })
+      .catch(() => {});
+  }, [tenantId, loadFn, getCredFn]);
+
 
   const checklist = useMemo(() => {
     const hasBrand = !!(a?.settings?.primary_color || a?.settings?.logo_url || a?.settings?.intro_copy);
@@ -190,7 +212,26 @@ export function ActivateTenantWizard({
             paymentLink: bank || null,
           },
         });
+      } else if (step === 4) {
+        // Club admin credentials. Skip if unchanged and credentials already exist.
+        if (adminUsername.trim() || adminPassword) {
+          if (!adminUsername.trim()) throw new Error("Username required");
+          if (!adminPassword || adminPassword.length < 6)
+            throw new Error("Password must be at least 6 characters");
+          await setCredFn({
+            data: { tenantId, username: adminUsername.trim(), password: adminPassword },
+          });
+          setAdminPassword("");
+          const info = (await getCredFn({ data: { tenantId } })) as {
+            exists: boolean;
+            username: string | null;
+          };
+          setCredInfo({ exists: info.exists, username: info.username });
+        } else if (!credInfo.exists) {
+          throw new Error("Set a club admin username and password");
+        }
       }
+
       await refresh();
       setStep((s) => Math.min(STEPS.length - 1, s + 1));
     } catch (e) {
@@ -419,15 +460,50 @@ export function ActivateTenantWizard({
 
         {!loading && !done && step === 4 && (
           <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Create the single Club Admin login. Share these credentials with the
+              club member who'll manage entries and payments.
+            </p>
+            {credInfo.exists && (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-2 text-xs">
+                ✓ Credentials set for username <code>{credInfo.username}</code>.
+                Leave blank to keep, or enter new values to reset.
+              </div>
+            )}
+            <Field
+              label="Username"
+              value={adminUsername}
+              onChange={(e) => setAdminUsername(e.target.value)}
+              placeholder="club-admin"
+              autoComplete="off"
+            />
+            <Field
+              label={credInfo.exists ? "New password (optional)" : "Password"}
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="min 6 characters"
+              autoComplete="new-password"
+            />
+            <p className="text-xs text-muted-foreground">
+              Login URL: <code>/{a?.tenant.slug}/admin</code>
+            </p>
+          </div>
+        )}
+
+        {!loading && !done && step === 5 && (
+          <div className="space-y-3">
             <div className="rounded-md border border-border p-3 text-sm">
               <Row ok={checklist.hasBrand} label="Branding saved" />
               <Row ok={checklist.hasComp} label="Competition created" />
               <Row ok={checklist.hasGw1} label="Gameweek 1 seeded" />
               <Row ok={checklist.hasPay} label="Payment link added" />
+              <Row ok={credInfo.exists} label="Club admin credentials set" />
               <Row ok={checklist.live} label="Tenant status: active" />
             </div>
             <p className="text-xs text-muted-foreground">
-              Public URL: <code>/{a?.tenant.slug}</code>
+              Public URL: <code>/{a?.tenant.slug}</code> · Admin URL:{" "}
+              <code>/{a?.tenant.slug}/admin</code>
             </p>
             <Btn
               onClick={handleLaunch}
@@ -435,13 +511,15 @@ export function ActivateTenantWizard({
                 busy ||
                 !checklist.hasComp ||
                 !checklist.hasGw1 ||
-                !checklist.hasPay
+                !checklist.hasPay ||
+                !credInfo.exists
               }
             >
               {busy ? "Launching…" : checklist.live ? "Re-confirm live" : "Launch"}
             </Btn>
           </div>
         )}
+
 
         {done && (
           <div className="space-y-3">

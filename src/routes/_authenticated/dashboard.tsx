@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyTenantAccess, listMyAdminCompetitions } from "@/lib/admin-ops.functions";
+import { amIPlatformAdmin } from "@/lib/platform-admin.functions";
+
 import { Btn, Card, Logo, Shell } from "@/components/oneshot/ui";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -27,20 +29,28 @@ function Dashboard() {
   const nav = useNavigate();
   const fetchAccess = useServerFn(getMyTenantAccess);
   const fetchComps = useServerFn(listMyAdminCompetitions);
+  const checkPlatform = useServerFn(amIPlatformAdmin);
   const [email, setEmail] = useState<string | null>(null);
   const [tenants, setTenants] = useState<TenantRow[] | null>(null);
   const [comps, setComps] = useState<CompRow[] | null>(null);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
-    Promise.all([fetchAccess({ data: {} }), fetchComps({ data: {} })])
-      .then(([t, c]) => {
+    Promise.all([
+      fetchAccess({ data: {} }),
+      fetchComps({ data: {} }),
+      checkPlatform({ data: {} }).catch(() => ({ isPlatformAdmin: false })),
+    ])
+      .then(([t, c, p]) => {
         setTenants(t as TenantRow[]);
         setComps(c as CompRow[]);
+        setIsPlatformAdmin((p as { isPlatformAdmin: boolean }).isPlatformAdmin);
       })
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : "Failed to load"));
-  }, [fetchAccess, fetchComps]);
+  }, [fetchAccess, fetchComps, checkPlatform]);
+
 
   function openPanel(c: CompRow) {
     sessionStorage.setItem("osc_comp", c.id);
@@ -105,12 +115,15 @@ function Dashboard() {
 
       <div className="mt-6 space-y-3">
         <Btn onClick={signOut}>Sign out</Btn>
-        <div className="text-center">
-          <Link to="/_authenticated/platform/admin" className="text-xs underline">
-            Platform admin →
-          </Link>
-        </div>
+        {isPlatformAdmin && (
+          <div className="text-center">
+            <Link to="/_authenticated/platform/admin" className="text-xs underline">
+              Platform admin →
+            </Link>
+          </div>
+        )}
       </div>
+
     </Shell>
   );
 }

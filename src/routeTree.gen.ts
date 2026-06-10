@@ -23,6 +23,7 @@ import { Route as TenantSlugIndexRouteImport } from './routes/$tenantSlug.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as TenantSlugAdminRouteImport } from './routes/$tenantSlug.admin'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedPlatformAdminRouteImport } from './routes/_authenticated/platform.admin'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -99,6 +100,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const TenantSlugAdminRoute = TenantSlugAdminRouteImport.update({
+  id: '/$tenantSlug/admin',
+  path: '/$tenantSlug/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/pick': typeof PickRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/pick': typeof PickRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/pick': typeof PickRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/pick'
     | '/unsubscribe'
     | '/welcome'
+    | '/$tenantSlug/admin'
     | '/dashboard'
     | '/admin/panel'
     | '/email/unsubscribe'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/pick'
     | '/unsubscribe'
     | '/welcome'
+    | '/$tenantSlug/admin'
     | '/dashboard'
     | '/admin/panel'
     | '/email/unsubscribe'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/pick'
     | '/unsubscribe'
     | '/welcome'
+    | '/$tenantSlug/admin'
     | '/_authenticated/dashboard'
     | '/admin/panel'
     | '/email/unsubscribe'
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   PickRoute: typeof PickRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
+  TenantSlugAdminRoute: typeof TenantSlugAdminRoute
   AdminPanelRoute: typeof AdminPanelRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   TenantSlugIndexRoute: typeof TenantSlugIndexRoute
@@ -388,6 +401,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/$tenantSlug/admin': {
+      id: '/$tenantSlug/admin'
+      path: '/$tenantSlug/admin'
+      fullPath: '/$tenantSlug/admin'
+      preLoaderRoute: typeof TenantSlugAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -456,6 +476,7 @@ const rootRouteChildren: RootRouteChildren = {
   PickRoute: PickRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
+  TenantSlugAdminRoute: TenantSlugAdminRoute,
   AdminPanelRoute: AdminPanelRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   TenantSlugIndexRoute: TenantSlugIndexRoute,
