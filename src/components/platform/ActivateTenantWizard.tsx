@@ -8,6 +8,10 @@ import {
   launchTenant,
 } from "@/lib/platform-admin.functions";
 import { seedGameweek } from "@/lib/gameweeks.functions";
+import {
+  setTenantAdminCredentials,
+  getTenantAdminCredentialsInfo,
+} from "@/lib/club-auth.functions";
 import { Btn, Field } from "@/components/oneshot/ui";
 
 type Activation = {
@@ -36,7 +40,8 @@ type Activation = {
   gameweek1: { id: string; week_number: number; fixtures: number } | null;
 };
 
-const STEPS = ["Brand", "Competition", "Fixtures", "Payments", "Go live"] as const;
+const STEPS = ["Brand", "Competition", "Fixtures", "Payments", "Club admin", "Go live"] as const;
+
 
 export function ActivateTenantWizard({
   tenantId,
