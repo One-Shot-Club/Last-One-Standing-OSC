@@ -460,15 +460,50 @@ export function ActivateTenantWizard({
 
         {!loading && !done && step === 4 && (
           <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Create the single Club Admin login. Share these credentials with the
+              club member who'll manage entries and payments.
+            </p>
+            {credInfo.exists && (
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-2 text-xs">
+                ✓ Credentials set for username <code>{credInfo.username}</code>.
+                Leave blank to keep, or enter new values to reset.
+              </div>
+            )}
+            <Field
+              label="Username"
+              value={adminUsername}
+              onChange={(e) => setAdminUsername(e.target.value)}
+              placeholder="club-admin"
+              autoComplete="off"
+            />
+            <Field
+              label={credInfo.exists ? "New password (optional)" : "Password"}
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="min 6 characters"
+              autoComplete="new-password"
+            />
+            <p className="text-xs text-muted-foreground">
+              Login URL: <code>/{a?.tenant.slug}/admin</code>
+            </p>
+          </div>
+        )}
+
+        {!loading && !done && step === 5 && (
+          <div className="space-y-3">
             <div className="rounded-md border border-border p-3 text-sm">
               <Row ok={checklist.hasBrand} label="Branding saved" />
               <Row ok={checklist.hasComp} label="Competition created" />
               <Row ok={checklist.hasGw1} label="Gameweek 1 seeded" />
               <Row ok={checklist.hasPay} label="Payment link added" />
+              <Row ok={credInfo.exists} label="Club admin credentials set" />
               <Row ok={checklist.live} label="Tenant status: active" />
             </div>
             <p className="text-xs text-muted-foreground">
-              Public URL: <code>/{a?.tenant.slug}</code>
+              Public URL: <code>/{a?.tenant.slug}</code> · Admin URL:{" "}
+              <code>/{a?.tenant.slug}/admin</code>
             </p>
             <Btn
               onClick={handleLaunch}
@@ -476,13 +511,15 @@ export function ActivateTenantWizard({
                 busy ||
                 !checklist.hasComp ||
                 !checklist.hasGw1 ||
-                !checklist.hasPay
+                !checklist.hasPay ||
+                !credInfo.exists
               }
             >
               {busy ? "Launching…" : checklist.live ? "Re-confirm live" : "Launch"}
             </Btn>
           </div>
         )}
+
 
         {done && (
           <div className="space-y-3">
