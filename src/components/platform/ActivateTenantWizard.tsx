@@ -204,7 +204,26 @@ export function ActivateTenantWizard({
             paymentLink: bank || null,
           },
         });
+      } else if (step === 4) {
+        // Club admin credentials. Skip if unchanged and credentials already exist.
+        if (adminUsername.trim() || adminPassword) {
+          if (!adminUsername.trim()) throw new Error("Username required");
+          if (!adminPassword || adminPassword.length < 6)
+            throw new Error("Password must be at least 6 characters");
+          await setCredFn({
+            data: { tenantId, username: adminUsername.trim(), password: adminPassword },
+          });
+          setAdminPassword("");
+          const info = (await getCredFn({ data: { tenantId } })) as {
+            exists: boolean;
+            username: string | null;
+          };
+          setCredInfo({ exists: info.exists, username: info.username });
+        } else if (!credInfo.exists) {
+          throw new Error("Set a club admin username and password");
+        }
       }
+
       await refresh();
       setStep((s) => Math.min(STEPS.length - 1, s + 1));
     } catch (e) {
