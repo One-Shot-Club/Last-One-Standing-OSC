@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyTenantAccess, listMyAdminCompetitions } from "@/lib/admin-ops.functions";
+import { amIPlatformAdmin } from "@/lib/platform-admin.functions";
+
 import { Btn, Card, Logo, Shell } from "@/components/oneshot/ui";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
