@@ -115,12 +115,15 @@ function Dashboard() {
 
       <div className="mt-6 space-y-3">
         <Btn onClick={signOut}>Sign out</Btn>
-        <div className="text-center">
-          <Link to="/_authenticated/platform/admin" className="text-xs underline">
-            Platform admin →
-          </Link>
-        </div>
+        {isPlatformAdmin && (
+          <div className="text-center">
+            <Link to="/_authenticated/platform/admin" className="text-xs underline">
+              Platform admin →
+            </Link>
+          </div>
+        )}
       </div>
+
     </Shell>
   );
 }
