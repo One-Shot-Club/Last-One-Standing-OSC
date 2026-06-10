@@ -3,6 +3,10 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getTenantEntryContext } from "@/lib/tenant.functions";
 import { Logo, Shell } from "@/components/oneshot/ui";
 import { TenantEntry } from "@/components/oneshot/TenantEntry";
+import {
+  MasterTenantLanding,
+  clubsQuery,
+} from "@/components/oneshot/MasterTenantLanding";
 
 const tenantEntryQuery = (slug: string) =>
   queryOptions({
@@ -16,6 +20,9 @@ export const Route = createFileRoute("/$tenantSlug/")({
       await context.queryClient.ensureQueryData(
         tenantEntryQuery(params.tenantSlug),
       );
+      if (params.tenantSlug === "oneshotclub") {
+        await context.queryClient.ensureQueryData(clubsQuery);
+      }
     } catch {
       throw notFound();
     }
@@ -47,5 +54,8 @@ export const Route = createFileRoute("/$tenantSlug/")({
 function TenantLanding() {
   const { tenantSlug } = Route.useParams();
   const { data } = useSuspenseQuery(tenantEntryQuery(tenantSlug));
+  if (tenantSlug === "oneshotclub") {
+    return <MasterTenantLanding tenant={data.tenant} />;
+  }
   return <TenantEntry tenant={data.tenant} competition={data.competition} />;
 }

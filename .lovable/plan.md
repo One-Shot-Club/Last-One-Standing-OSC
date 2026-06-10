@@ -1,65 +1,48 @@
 ## Goal
 
-One canonical "Last Man Standing" entry experience, rendered per tenant. Every tenant — Killeshin, St. Joseph's AFC, and any future club — uses the **same template**, just branded and scoped to its own competition. No more parallel half-built tenant page.
-
-## Current state (the "half setup")
-
-- `/` — full working funnel (hero → name/email/phone → how-it-works → pick → pay), but hardcoded to a "demo competition" (Killeshin) via `getDemoCompetition()`.
-- `/$tenantSlug/` — different page: branding header + a competitions list card. **No entry form.** That's why St. Joseph's looks broken.
-
-Two parallel implementations, only one of which actually lets people enter.
-
-## Target architecture
-
-```text
-/                 → 302 redirect to /killeshin (default tenant)
-/{tenantSlug}/    → THE entry template (same hero, same form, same flow)
-                     - branding: tenant.logo_url, tenant.name, tenant colors
-                     - competition: tenant's primary active competition
-                     - submit → /how-it-works?c={compId}&n=&e=&p= (already tenant-agnostic)
-```
-
-Killeshin loses its "special" status at `/` and just lives at `/killeshin`. St. Joseph's at `/st-josephs-afc` automatically gets the identical experience.
+Create a new **OneShotClub** master tenant, separate from Killeshin, and make the root URL (`/`) redirect to it instead of `/killeshin`.
 
 ## Changes
 
-### 1. New server function: `getTenantEntryContext({ slug })`
-In `src/lib/tenant.functions.ts`. Returns `{ tenant, competition }` where `competition` is the tenant's primary active competition (single competition assumption matches today's data — one comp per tenant). Same shape `getDemoCompetition` returns today so the template can consume it uniformly.
+### 1. Database — insert new tenant
 
-### 2. Rewrite `src/routes/$tenantSlug.index.tsx`
-Replace the current branded-list layout with a **copy of `src/routes/index.tsx`'s `Landing` component**, but:
-- Data source: `getTenantEntryContext({ slug: params.tenantSlug })` instead of `getDemoCompetition()`.
-- `ClubHeader` driven by `tenant.name` + `tenant.logo_url` (falls back to competition's `club_name`/`club_logo_url`).
-- Apply `useTenantBranding(tenant)` so colors theme the page.
-- `head()` uses tenant name + competition prize for proper OG/share metadata.
-- `notFound` if slug doesn't resolve.
+Add via the data tool (not a schema migration):
 
-### 3. Convert `/` into a redirect
-`src/routes/index.tsx` becomes a tiny route that `throw redirect({ to: "/$tenantSlug/", params: { tenantSlug: "killeshin" } })` in `beforeLoad`. Delete the inline `Landing` component (it's now lifted into the tenant route, or extracted as a shared `<TenantEntry tenant comp />` component if cleaner).
+- `tenants` row: `slug = 'oneshotclub'`, `name = 'OneShotClub'`, `status = 'active'`
+- `tenant_settings` row for that tenant with placeholder branding (no logo, intro copy like "The home of Last One Standing competitions for Irish clubs."). No competition is created — OneShotClub is a brand/landing tenant, not a club running a comp.
 
-**Cleaner variant (recommended):** extract the funnel UI into `src/components/oneshot/TenantEntry.tsx` and have **both** `$tenantSlug.index.tsx` render it. `index.tsx` is just the redirect. Single source of truth for the funnel — fixing a bug or restyling the hero updates every tenant at once.
+Killeshin and St. Joseph's AFC tenants remain untouched.
 
-### 4. Downstream flow already works
-`/how-it-works`, team picker, and payment pages already take a `c=competitionId` search param and are tenant-agnostic. No changes needed there.
+### 2. Root redirect
 
-### 5. Keep `getDemoCompetition` for now
-Don't delete it in this pass — it may be referenced elsewhere. Mark for follow-up after verifying no other call sites.
+`src/routes/index.tsx` currently redirects to `/killeshin`. Change the target to `/oneshotclub`.
 
-## What does NOT change
+### 3. Landing page behaviour at `/oneshotclub`
 
-- DB schema. No migrations.
-- `/platform/admin` and the Activate Tenant wizard. Once a tenant has a competition + branding, `/{slug}` just works.
-- Auth/RLS posture. Still deny-all + server functions.
-- Admin pages, magic-token flows, payment provider integrations.
+The tenant route (`/$tenantSlug/`) renders `<TenantEntry>`, which expects a `competition`. Since OneShotClub has no competition, the existing component will render with `competition: null`. Two options:
 
-## Verification
+- **(a) Reuse `TenantEntry`** as-is and let it show its empty/no-comp state.
+- **(b) Branch in `$tenantSlug.index.tsx`**: if `competition === null`, render a simple OneShotClub master landing (logo, tagline, short "what is this" copy, link to how-it-works). No new route file needed.
 
-1. Visit `/` → lands on `/killeshin` showing the existing Killeshin hero/form (identical to today's `/`).
-2. Visit `/st-josephs-afc` → same template, St. Joseph's branding, St. Joseph's competition (`6b149c5a-…`), prize pool / entry fee from that comp.
-3. Submit form on `/st-josephs-afc` → continues into `/how-it-works?c=6b149c5a-…` and through to pick/pay.
-4. Visit `/does-not-exist` → tenant-not-found state.
+Plan: go with **(b)** — cleaner and gives OneShotClub a proper brand landing rather than a half-filled entry form. Add a small `MasterTenantLanding` component in `src/components/oneshot/`.
 
-## Open items (small, can decide while building)
+### 4. Out of scope
 
-- Where to extract the shared funnel component (`src/components/oneshot/TenantEntry.tsx` vs inline duplication). I'll go with extraction unless you prefer otherwise.
-- Whether `/killeshin` should keep its current `club_name`/`club_logo_url` from the competitions row, or switch to the tenants row. Plan: prefer tenant row, fall back to competition row, so nothing visually changes for Killeshin.
+- No change to Killeshin's slug, name, branding, or URLs.
+- No change to St. Joseph's AFC.
+- No new admin/auth or platform-admin wiring — OneShotClub is just another tenant row that happens to be the default redirect.
+
+## Resulting URLs
+
+```
+/                            → redirects to /oneshotclub
+/oneshotclub                 → OneShotClub master landing
+/killeshin                   → Killeshin LMS entry (unchanged)
+/st-josephs-afc              → St. Joseph's AFC entry (unchanged)
+```
+
+Custom domain equivalent: `https://last-one-standing.oneshotclub.ie/` → OneShotClub landing.
+
+## Open question
+
+Do you want the OneShotClub landing to list the live club competitions (Killeshin, St. Joseph's AFC) as clickable cards, or stay as a plain brand page with no club list for now?
