@@ -58,6 +58,8 @@ export function ActivateTenantWizard({
   const seedFn = useServerFn(seedGameweek);
   const payFn = useServerFn(setPaymentLinks);
   const launchFn = useServerFn(launchTenant);
+  const setCredFn = useServerFn(setTenantAdminCredentials);
+  const getCredFn = useServerFn(getTenantAdminCredentialsInfo);
 
   const [a, setA] = useState<Activation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,13 @@ export function ActivateTenantWizard({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [credInfo, setCredInfo] = useState<{ exists: boolean; username: string | null }>({
+    exists: false,
+    username: null,
+  });
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+
 
   // Step 1 — brand
   const [name, setName] = useState("");
