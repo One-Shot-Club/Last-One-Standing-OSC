@@ -26,10 +26,9 @@ export async function getOptionalUserId(): Promise<string | null> {
 }
 
 // Verify admin access against a competition.
-// Auth-only: requires a Supabase Auth session with tenant_admin+ access on
-// the competition's tenant. The `pin` arg is accepted for backwards-compat
-// but ignored — the legacy admin_pin column has been dropped.
-export async function verifyAdmin(competitionId: string, _pin?: string) {
+// Accepts either: a Supabase Auth session (platform admin or tenant_admin+),
+// OR a club admin session token passed in `pin` slot (from clubAdminLogin).
+export async function verifyAdmin(competitionId: string, pin?: string) {
   const { data: comp } = await supabaseAdmin
     .from("competitions")
     .select("id, tenant_id")
@@ -37,6 +36,21 @@ export async function verifyAdmin(competitionId: string, _pin?: string) {
     .maybeSingle();
   if (!comp) throw new Error("Unauthorized");
 
+  // 1) Club admin session token path
+  if (pin && pin.length >= 32) {
+    const { validateClubSession } = await import("@/lib/club-auth.functions");
+    const ok = await validateClubSession(pin, comp.tenant_id as string);
+    if (ok) {
+      return {
+        id: comp.id as string,
+        tenant_id: comp.tenant_id as string,
+        actorId: `club:${pin.slice(0, 8)}`,
+        actorLabel: "club_admin",
+      };
+    }
+  }
+
+  // 2) Supabase Auth path (platform admin / tenant member)
   const userId = await getOptionalUserId();
   if (!userId) throw new Error("Unauthorized");
 
@@ -54,3 +68,4 @@ export async function verifyAdmin(competitionId: string, _pin?: string) {
     actorLabel: `auth:${userId}`,
   };
 }
+
