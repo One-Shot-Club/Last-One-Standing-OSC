@@ -141,3 +141,34 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
     };
   });
 
+export type ClubListing = {
+  slug: string;
+  name: string;
+  logo_url: string | null;
+};
+
+export const listPublicClubs = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ClubListing[]> => {
+    const { data: tenants } = await supabaseAdmin
+      .from("tenants")
+      .select("id, slug, name")
+      .eq("status", "active")
+      .neq("slug", "oneshotclub")
+      .order("name", { ascending: true });
+    if (!tenants?.length) return [];
+    const { data: settings } = await supabaseAdmin
+      .from("tenant_settings")
+      .select("tenant_id, logo_url")
+      .in("tenant_id", tenants.map((t) => t.id as string));
+    const logoMap = new Map(
+      (settings ?? []).map((s) => [s.tenant_id as string, (s.logo_url as string | null) ?? null]),
+    );
+    return tenants.map((t) => ({
+      slug: t.slug as string,
+      name: t.name as string,
+      logo_url: logoMap.get(t.id as string) ?? null,
+    }));
+  },
+);
+
+
