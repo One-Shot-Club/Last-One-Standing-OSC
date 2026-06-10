@@ -145,7 +145,15 @@ export function ActivateTenantWizard({
       })
       .catch((e) => setErr(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
-  }, [tenantId, loadFn]);
+    getCredFn({ data: { tenantId } })
+      .then((r) => {
+        const info = r as { exists: boolean; username: string | null };
+        setCredInfo({ exists: info.exists, username: info.username });
+        if (info.exists && info.username) setAdminUsername(info.username);
+      })
+      .catch(() => {});
+  }, [tenantId, loadFn, getCredFn]);
+
 
   const checklist = useMemo(() => {
     const hasBrand = !!(a?.settings?.primary_color || a?.settings?.logo_url || a?.settings?.intro_copy);
