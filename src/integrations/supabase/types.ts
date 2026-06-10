@@ -99,6 +99,35 @@ export type Database = {
           },
         ]
       }
+      club_admin_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          tenant_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          tenant_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          tenant_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_admin_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_entries: {
         Row: {
           alive: boolean
@@ -775,6 +804,38 @@ export type Database = {
             foreignKeyName: "teams_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_admin_credentials: {
+        Row: {
+          created_at: string
+          password_hash: string
+          tenant_id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          password_hash: string
+          tenant_id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          password_hash?: string
+          tenant_id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_admin_credentials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
