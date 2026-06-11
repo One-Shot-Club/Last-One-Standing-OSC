@@ -57,30 +57,7 @@ function MasterPage() {
       <TenantEntry tenant={data.tenant} competition={data.competition} />
 
       <Shell>
-        <p className="eyebrow mb-3">Master</p>
-        <Link to="/$tenantSlug" params={{ tenantSlug: MASTER_SLUG }} className="block">
-          <Card className="flex items-center gap-4 border-primary hover:border-primary transition-colors">
-            {data.tenant?.logo_url ? (
-              <img
-                src={data.tenant.logo_url}
-                alt="OneShotClub logo"
-                className="h-12 w-12 rounded-md object-contain bg-background"
-              />
-            ) : (
-              <div className="h-12 w-12 rounded-md bg-primary/20" />
-            )}
-            <div className="flex-1">
-              <p className="font-semibold text-foreground">
-                {data.tenant?.name ?? "OneShotClub"}
-              </p>
-              <p className="text-xs text-primary uppercase tracking-widest">
-                Master template
-              </p>
-            </div>
-          </Card>
-        </Link>
-
-        <p className="eyebrow mt-8 mb-3">Active clubs</p>
+        <p className="eyebrow mt-2 mb-3">Active clubs</p>
         {clubs.length === 0 ? (
           <Card>
             <p className="text-sm text-muted-foreground">
