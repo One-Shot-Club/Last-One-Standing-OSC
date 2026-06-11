@@ -11,7 +11,7 @@ const tenantEntryQuery = queryOptions({
   queryFn: () => getTenantEntryContext({ data: { slug: MASTER_SLUG } }),
 });
 
-export const Route = createFileRoute("/oneshotclub/Master")({
+export const Route = createFileRoute("/oneshotclub/Master/")({
   loader: async ({ context }) => {
     try {
       await context.queryClient.ensureQueryData(tenantEntryQuery);
