@@ -619,10 +619,11 @@ export type Database = {
           alive: boolean
           competition_id: string
           created_at: string
-          email: string
+          email: string | null
           full_name: string
           id: string
           magic_token: string
+          offline: boolean
           paid: boolean
           phone: string | null
           tenant_id: string
@@ -631,10 +632,11 @@ export type Database = {
           alive?: boolean
           competition_id: string
           created_at?: string
-          email: string
+          email?: string | null
           full_name: string
           id?: string
           magic_token?: string
+          offline?: boolean
           paid?: boolean
           phone?: string | null
           tenant_id: string
@@ -643,10 +645,11 @@ export type Database = {
           alive?: boolean
           competition_id?: string
           created_at?: string
-          email?: string
+          email?: string | null
           full_name?: string
           id?: string
           magic_token?: string
+          offline?: boolean
           paid?: boolean
           phone?: string | null
           tenant_id?: string
@@ -876,6 +879,7 @@ export type Database = {
       tenant_settings: {
         Row: {
           accent_color: string | null
+          background_url: string | null
           contact_email: string | null
           contact_phone: string | null
           created_at: string
@@ -890,6 +894,7 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          background_url?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -904,6 +909,7 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          background_url?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
