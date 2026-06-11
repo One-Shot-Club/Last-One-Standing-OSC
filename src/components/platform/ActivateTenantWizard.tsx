@@ -575,6 +575,126 @@ export function ActivateTenantWizard({
   );
 }
 
+type UploadFn = (args: {
+  data: {
+    tenantId: string;
+    kind: "logo" | "background";
+    filename: string;
+    contentType: string;
+    dataBase64: string;
+  };
+}) => Promise<{ path: string; url: string }>;
+
+function AssetUpload({
+  label,
+  hint,
+  value,
+  onChange,
+  kind,
+  tenantId,
+  uploadFn,
+  preview,
+}: {
+  label: string;
+  hint: string;
+  value: string;
+  onChange: (url: string) => void;
+  kind: "logo" | "background";
+  tenantId: string;
+  uploadFn: UploadFn;
+  preview: "contain" | "cover";
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setBusy(true);
+    setErr(null);
+    try {
+      const buf = await file.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(
+          null,
+          Array.from(bytes.subarray(i, i + chunk)) as number[],
+        );
+      }
+      const dataBase64 = btoa(binary);
+      const res = await uploadFn({
+        data: {
+          tenantId,
+          kind,
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          dataBase64,
+        },
+      });
+      onChange(res.url);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {label}
+          </p>
+          <p className="text-[11px] text-muted-foreground">{hint}</p>
+        </div>
+        <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-card">
+          {busy ? "Uploading…" : value ? "Replace" : "Upload"}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleFile(f);
+              e.currentTarget.value = "";
+            }}
+          />
+        </label>
+      </div>
+      {value && (
+        <div
+          className={
+            preview === "cover"
+              ? "h-24 w-full overflow-hidden rounded-md border border-border bg-muted"
+              : "flex items-center"
+          }
+        >
+          <img
+            src={value}
+            alt=""
+            className={
+              preview === "cover"
+                ? "h-full w-full object-cover"
+                : "h-16 w-16 rounded-md border border-border object-contain"
+            }
+          />
+        </div>
+      )}
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="…or paste a URL"
+        className="mt-2 h-9 w-full rounded-md border border-border bg-[color:var(--input)] px-2 text-xs text-foreground"
+      />
+      {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
+    </div>
+  );
+}
+
+
 function Row({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2 py-1">
