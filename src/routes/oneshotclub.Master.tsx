@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getTenantEntryContext } from "@/lib/tenant.functions";
-import { Card, Logo, Shell } from "@/components/oneshot/ui";
+import { Shell } from "@/components/oneshot/ui";
 import { TenantEntry } from "@/components/oneshot/TenantEntry";
 import { clubsQuery } from "@/components/oneshot/MasterTenantLanding";
 
