@@ -1,9 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Btn, Card, Field, Shell } from "@/components/oneshot/ui";
+import { Btn, Card, Eyebrow, Shell, StickyCTA } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useTenantBranding } from "@/lib/tenant/branding";
 import { cn } from "@/lib/utils";
+import { getFixtures, type Fixture } from "@/lib/fixtures";
 import type { TenantBranding } from "@/lib/tenant.functions";
 
 export type EntryCompetition = {
@@ -14,6 +15,14 @@ export type EntryCompetition = {
   club_logo_url: string | null;
 };
 
+const RULES = [
+  "Pick one Premier League team each gameweek.",
+  "If they win, you survive to next week. Lose/Draw = Elimination.",
+  "You can't reuse a team for the rest of the comp.",
+  "Forget to pick? You're auto-assigned the first team alphabetically.",
+  "Last person standing wins the pot.",
+];
+
 export function TenantEntry({
   tenant,
   competition,
@@ -23,11 +32,8 @@ export function TenantEntry({
 }) {
   useTenantBranding(tenant);
   const nav = useNavigate();
-  const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
-  const [offline, setOffline] = useState(false);
-  const emailReady = offline ? true : !!form.email.trim();
-  const valid =
-    form.fullName.trim() && emailReady && form.phone.trim() && competition;
+  const [selected, setSelected] = useState<string | null>(null);
+  const fixtures = getFixtures(1);
 
   const clubName =
     tenant?.name ?? competition?.club_name ?? "LAST MAN STANDING";
@@ -51,74 +57,109 @@ export function TenantEntry({
         </p>
       </Card>
 
-      <Card className="mt-6 space-y-4">
-        <p className="eyebrow">Enter the comp</p>
-        <Field
-          label="Full name"
-          placeholder="Tom Murphy"
-          value={form.fullName}
-          onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-        />
+      <div className="mt-8">
+        <Eyebrow>Gameweek 1 fixtures</Eyebrow>
+        <h2 className="display mt-2 text-2xl">Make your pick</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Tap the team you back to win.
+        </p>
+      </div>
 
-        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
-          <Field
-            label="Email"
-            type="email"
-            placeholder={offline ? "Not required" : "tom@example.com"}
-            value={offline ? "" : form.email}
-            disabled={offline}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+      <div className="mt-3 space-y-1.5 pb-24">
+        {fixtures.map((f, i) => (
+          <FixtureCard
+            key={i}
+            fixture={f}
+            selected={selected}
+            onSelect={setSelected}
           />
-          <button
-            type="button"
-            onClick={() => setOffline((v) => !v)}
-            aria-pressed={offline}
-            className={cn(
-              "h-12 shrink-0 rounded-lg border px-3 text-[10px] font-semibold uppercase tracking-wider transition",
-              offline
-                ? "bg-destructive text-destructive-foreground border-destructive"
-                : "border-destructive/60 text-destructive hover:bg-destructive/10",
-            )}
-            title="No email — communicate picks via the club admin"
-          >
-            Offline
-            <br />
-            Player
-          </button>
-        </div>
-        {offline && (
-          <p className="text-[11px] leading-snug text-destructive">
-            Offline player: no email will be sent. Submit your weekly pick directly to the club admin.
-          </p>
-        )}
+        ))}
+      </div>
 
-        <Field
-          label="Mobile"
-          placeholder="087 123 4567"
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        />
-      </Card>
+      <div className="mt-8">
+        <Eyebrow>How it works</Eyebrow>
+        <ol className="mt-4 space-y-2 text-sm text-muted-foreground">
+          {RULES.map((r, i) => (
+            <li key={i}>
+              <span className="text-primary mr-2">{i + 1}.</span>
+              {r}
+            </li>
+          ))}
+        </ol>
+      </div>
 
-      <div className="mt-6">
+      <div className="h-20" />
+
+      <StickyCTA>
         <Btn
-          disabled={!valid}
+          disabled={!selected || !competition}
           onClick={() =>
             nav({
-              to: "/how-it-works",
-              search: {
-                c: competition!.id,
-                n: form.fullName,
-                e: offline ? "" : form.email,
-                p: form.phone,
-                ...(offline ? { o: "1" } : {}),
-              },
+              to: "/details",
+              search: { c: competition!.id, t: selected! },
             })
           }
         >
-          Enter the Comp →
+          {selected ? `Continue with ${selected} →` : "Select a team"}
         </Btn>
-      </div>
+      </StickyCTA>
     </Shell>
+  );
+}
+
+function FixtureCard({
+  fixture,
+  selected,
+  onSelect,
+}: {
+  fixture: Fixture;
+  selected: string | null;
+  onSelect: (t: string) => void;
+}) {
+  return (
+    <Card className="p-1.5">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
+        <TeamBtn
+          name={fixture.home}
+          badge={fixture.homeBadge}
+          selected={selected === fixture.home}
+          onClick={() => onSelect(fixture.home)}
+        />
+        <span className="display px-1 text-[10px] text-primary">vs</span>
+        <TeamBtn
+          name={fixture.away}
+          badge={fixture.awayBadge}
+          selected={selected === fixture.away}
+          onClick={() => onSelect(fixture.away)}
+        />
+      </div>
+    </Card>
+  );
+}
+
+function TeamBtn({
+  name,
+  badge,
+  selected,
+  onClick,
+}: {
+  name: string;
+  badge: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 rounded-md border px-2 py-1 text-center transition",
+        "border-[color:var(--border)] bg-[color:var(--surface-elevated)]",
+        selected ? "border-primary ring-1 ring-primary" : "hover:border-primary/60",
+      )}
+    >
+      <img src={badge} alt={name} className="h-5 w-5 object-contain" />
+      <span className="text-[10px] font-semibold leading-tight">{name}</span>
+    </button>
   );
 }
