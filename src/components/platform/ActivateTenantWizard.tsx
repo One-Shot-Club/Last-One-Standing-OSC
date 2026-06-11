@@ -140,6 +140,8 @@ export function ActivateTenantWizard({
         setSlug(res.tenant.slug);
         setLogoUrl(res.settings?.logo_url ?? "");
         setBackgroundUrl(res.settings?.background_url ?? "");
+
+        setBackgroundUrl(res.settings?.background_url ?? "");
         setPrimary(res.settings?.primary_color ?? "");
         setAccent(res.settings?.accent_color ?? "");
         setIntro(res.settings?.intro_copy ?? "");
