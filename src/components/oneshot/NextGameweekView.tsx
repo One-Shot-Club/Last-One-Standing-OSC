@@ -153,97 +153,108 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError }: Pr
         </h2>
       </Card>
 
-      {alreadyPickedThisWeek && (
-        <Card className="mt-4 border-primary/40">
-          <p className="text-sm">
-            Your pick for {gameweek.week_label}:{" "}
-            <span className="font-semibold text-primary">
-              {picks.find((p) => p.week === gameweek.week_number)?.team}
-            </span>
-          </p>
-        </Card>
-      )}
-
       {/* Your picks so far */}
       <section className="mt-8">
         <h3 className="text-xs uppercase tracking-widest text-muted-foreground">Your picks so far</h3>
         <Card className="mt-2 p-3">
-          {picks.length === 0 && (
+          {picks.filter((p) => !gameweek || p.week !== gameweek.week_number).length === 0 && (
             <p className="text-xs text-muted-foreground">No picks yet.</p>
           )}
           <ul className="divide-y divide-[color:var(--border)]">
-            {picks.map((p) => {
-              const badge = badges[p.team];
-              return (
-                <li key={p.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <span className="text-muted-foreground">GW{p.week}</span>
-                  <span className="flex items-center gap-2">
-                    {badge ? (
-                      <img src={badge} alt="" className="h-5 w-5 rounded" />
-                    ) : (
-                      <span className="inline-block h-5 w-5 rounded bg-muted" />
-                    )}
-                    <span>{p.team}</span>
-                  </span>
-                </li>
-              );
-            })}
+            {picks
+              .filter((p) => !gameweek || p.week !== gameweek.week_number)
+              .map((p) => {
+                const badge = badges[p.team];
+                return (
+                  <li key={p.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                    <span className="text-muted-foreground">GW{p.week}</span>
+                    <span className="flex items-center gap-2">
+                      {badge ? (
+                        <img src={badge} alt="" className="h-5 w-5 rounded" />
+                      ) : (
+                        <span className="inline-block h-5 w-5 rounded bg-muted" />
+                      )}
+                      <span>{p.team}</span>
+                    </span>
+                  </li>
+                );
+              })}
           </ul>
         </Card>
       </section>
 
       {/* Fixtures + pick */}
-      {!alreadyPickedThisWeek && (
-        <section className="mt-8">
-          <h3 className="text-xs uppercase tracking-widest text-muted-foreground">
-            {gameweek.week_label} fixtures
-          </h3>
-          <div className="mt-2 space-y-2">
-            {fixtures.length === 0 && (
-              <p className="text-sm text-muted-foreground">Fixtures not loaded yet.</p>
-            )}
-            {fixtures.map((f) => (
-              <Card key={f.id} className="p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <TeamButton
-                    name={f.home_team}
-                    badge={badges[f.home_team]}
-                    used={usedTeams.has(f.home_team)}
-                    selected={selected === f.home_team}
-                    disabled={cd.locked || !!preview}
-                    onClick={() => setSelected(f.home_team)}
-                  />
-                  <span className="text-xs text-muted-foreground">vs</span>
-                  <TeamButton
-                    name={f.away_team}
-                    badge={badges[f.away_team]}
-                    used={usedTeams.has(f.away_team)}
-                    selected={selected === f.away_team}
-                    disabled={cd.locked || !!preview}
-                    onClick={() => setSelected(f.away_team)}
-                  />
-                </div>
-              </Card>
-            ))}
-          </div>
+      <section className="mt-8">
+        <h3 className="text-xs uppercase tracking-widest text-muted-foreground">
+          {gameweek.week_label} fixtures
+        </h3>
+        {existingPickThisWeek && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {cd.locked
+              ? `Your pick is locked: ${existingPickThisWeek}`
+              : `Your current pick is ${existingPickThisWeek}. Tap another team to change it before the deadline.`}
+          </p>
+        )}
+        <div className="mt-2 space-y-2">
+          {fixtures.length === 0 && (
+            <p className="text-sm text-muted-foreground">Fixtures not loaded yet.</p>
+          )}
+          {fixtures.map((f) => (
+            <Card key={f.id} className="p-3">
+              <div className="flex items-center justify-between gap-2">
+                <TeamButton
+                  name={f.home_team}
+                  badge={badges[f.home_team]}
+                  used={usedTeams.has(f.home_team)}
+                  selected={selected === f.home_team}
+                  isCurrent={existingPickThisWeek === f.home_team}
+                  locked={cd.locked}
+                  disabled={cd.locked}
+                  onClick={() => setSelected(f.home_team)}
+                />
+                <span className="text-xs text-muted-foreground">vs</span>
+                <TeamButton
+                  name={f.away_team}
+                  badge={badges[f.away_team]}
+                  used={usedTeams.has(f.away_team)}
+                  selected={selected === f.away_team}
+                  isCurrent={existingPickThisWeek === f.away_team}
+                  locked={cd.locked}
+                  disabled={cd.locked}
+                  onClick={() => setSelected(f.away_team)}
+                />
+              </div>
+            </Card>
+          ))}
+        </div>
 
-          <div className="mt-6">
-            <Btn
-              disabled={!selected || cd.locked || !!submitting || preview}
-              onClick={handleSubmit}
-            >
-              {preview
-                ? "Lock-in disabled in preview"
-                : cd.locked
-                  ? "Picks locked"
-                  : submitting
-                    ? "Saving…"
+        <div className="mt-6">
+          <Btn
+            disabled={
+              !selected ||
+              cd.locked ||
+              !!submitting ||
+              !!preview ||
+              selected === existingPickThisWeek
+            }
+            onClick={handleSubmit}
+          >
+            {preview
+              ? "Lock-in disabled in preview"
+              : cd.locked
+                ? "Picks locked"
+                : submitting
+                  ? "Saving…"
+                  : existingPickThisWeek
+                    ? selected === existingPickThisWeek
+                      ? "Your pick is locked in — tap another team to change"
+                      : `Update pick to ${selected} →`
                     : `Lock in ${selected ?? "a team"} →`}
-            </Btn>
-            {submitError && <p className="mt-3 text-sm text-destructive">{submitError}</p>}
-          </div>
-        </section>
-      )}
+          </Btn>
+          {submitError && <p className="mt-3 text-sm text-destructive">{submitError}</p>}
+        </div>
+      </section>
+
 
       {/* Survival stats */}
       <section className="mt-8">
