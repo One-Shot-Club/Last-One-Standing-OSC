@@ -60,16 +60,18 @@ interface Props {
 export function NextGameweekView({ data, onSubmit, submitting, submitError }: Props) {
   const { player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, lastWeekLabel, preview } = data;
   const cd = useCountdown(gameweek?.deadline_at ?? null);
-  const [selected, setSelected] = useState<string | null>(null);
 
   const usedTeams = useMemo(
-    () => new Set((picks ?? []).map((p) => p.team)),
-    [picks],
+    () => new Set((picks ?? []).filter((p) => !gameweek || p.week !== gameweek.week_number).map((p) => p.team)),
+    [picks, gameweek],
   );
 
-  const alreadyPickedThisWeek = gameweek
-    ? picks.some((p) => p.week === gameweek.week_number)
-    : false;
+  const existingPickThisWeek = gameweek
+    ? picks.find((p) => p.week === gameweek.week_number)?.team ?? null
+    : null;
+
+  const [selected, setSelected] = useState<string | null>(existingPickThisWeek);
+  useEffect(() => { setSelected(existingPickThisWeek); }, [existingPickThisWeek]);
 
   if (!player.alive) {
     return (
