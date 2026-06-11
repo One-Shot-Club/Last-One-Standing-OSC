@@ -311,6 +311,19 @@ export const getNextGameweekPreviewContext = createServerFn({ method: 'POST' })
       result: 'W',
       created_at: nowIso,
     }))
+    // Seed a current-week pick so preview shows the "change your pick" state
+    const currentWeekSeed = teamNames[3]
+    if (currentWeekSeed) {
+      previewPicks.push({
+        id: 'preview-pick-current',
+        player_id: 'preview-player',
+        competition_id: data.competitionId,
+        week: previewWeekNumber,
+        team: currentWeekSeed,
+        result: null as never,
+        created_at: nowIso,
+      })
+    }
 
     const survivalStats = { total: 60, alive: 24, eliminated: 36, alivePct: 40, eliminatedPct: 60 }
     const topSeed = teamNames.slice(3, 6)
