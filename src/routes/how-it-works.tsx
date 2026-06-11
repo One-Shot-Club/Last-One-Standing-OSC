@@ -75,7 +75,7 @@ function HowItWorks() {
           onClick={() =>
             nav({
               to: "/pay",
-              search: { c, n, e, p, t: selected! },
+              search: { c, n, e, p, t: selected!, ...(o ? { o } : {}) },
             })
           }
         >
