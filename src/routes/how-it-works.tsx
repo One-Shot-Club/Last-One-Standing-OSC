@@ -28,7 +28,7 @@ const RULES = [
 ];
 
 function HowItWorks() {
-  const { c, n, e, p } = Route.useSearch();
+  const { c, n, e, p, o } = Route.useSearch();
   const nav = useNavigate();
   const fixtures = getFixtures(1);
   const [selected, setSelected] = useState<string | null>(null);
