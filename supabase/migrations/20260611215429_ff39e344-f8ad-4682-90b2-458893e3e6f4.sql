@@ -1,0 +1,1 @@
+UPDATE public.competitions SET club_logo_url='/api/public/tenant-assets/7a395cf9-33f4-4e65-83c5-e642f19494d3/logo-1781211000000.png' WHERE tenant_id='7a395cf9-33f4-4e65-83c5-e642f19494d3';
