@@ -225,8 +225,10 @@ export async function sendReminder(kind: '24h' | '1h', opts: {
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
   if (!player) return
+  if (!player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+
   const { data: priorPicks } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
