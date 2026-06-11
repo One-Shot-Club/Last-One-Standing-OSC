@@ -8,10 +8,14 @@ import {
   clubsQuery,
 } from "@/components/oneshot/MasterTenantLanding";
 
+const MASTER_ALIASES = new Set(["oneshotclub", "oneshotclub-master", "Master"]);
+const resolveSlug = (slug: string) =>
+  MASTER_ALIASES.has(slug) ? "oneshotclub-master" : slug;
+
 const tenantEntryQuery = (slug: string) =>
   queryOptions({
-    queryKey: ["tenant-entry", slug],
-    queryFn: () => getTenantEntryContext({ data: { slug } }),
+    queryKey: ["tenant-entry", resolveSlug(slug)],
+    queryFn: () => getTenantEntryContext({ data: { slug: resolveSlug(slug) } }),
   });
 
 export const Route = createFileRoute("/$tenantSlug/")({
@@ -20,7 +24,7 @@ export const Route = createFileRoute("/$tenantSlug/")({
       await context.queryClient.ensureQueryData(
         tenantEntryQuery(params.tenantSlug),
       );
-      if (params.tenantSlug === "oneshotclub") {
+      if (MASTER_ALIASES.has(params.tenantSlug)) {
         await context.queryClient.ensureQueryData(clubsQuery);
       }
     } catch {
@@ -54,7 +58,7 @@ export const Route = createFileRoute("/$tenantSlug/")({
 function TenantLanding() {
   const { tenantSlug } = Route.useParams();
   const { data } = useSuspenseQuery(tenantEntryQuery(tenantSlug));
-  if (tenantSlug === "oneshotclub") {
+  if (MASTER_ALIASES.has(tenantSlug)) {
     return <MasterTenantLanding tenant={data.tenant} />;
   }
   return <TenantEntry tenant={data.tenant} competition={data.competition} />;
