@@ -8,6 +8,8 @@ export type TenantBranding = {
   name: string;
   status: string;
   logo_url: string | null;
+  background_url: string | null;
+
   primary_color: string | null;
   accent_color: string | null;
   intro_copy: string | null;
