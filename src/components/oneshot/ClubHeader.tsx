@@ -5,7 +5,7 @@ export function ClubHeader({ clubName, logoUrl }: { clubName: string; logoUrl?: 
         <img
           src={logoUrl}
           alt={`${clubName} logo`}
-          className="mb-2 h-16 w-16 rounded-md bg-background/40 object-contain p-1"
+          className="mb-2 h-32 w-32 object-contain"
         />
       )}
       <h2 className="display mt-2 text-2xl tracking-wide">{clubName}</h2>
