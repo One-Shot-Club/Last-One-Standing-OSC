@@ -64,6 +64,8 @@ export function ActivateTenantWizard({
   const launchFn = useServerFn(launchTenant);
   const setCredFn = useServerFn(setTenantAdminCredentials);
   const getCredFn = useServerFn(getTenantAdminCredentialsInfo);
+  const uploadFn = useServerFn(uploadTenantAsset);
+
 
   const [a, setA] = useState<Activation | null>(null);
   const [loading, setLoading] = useState(true);
