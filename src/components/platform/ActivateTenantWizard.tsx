@@ -112,6 +112,7 @@ export function ActivateTenantWizard({
     setName(r.tenant.name);
     setSlug(r.tenant.slug);
     setLogoUrl(r.settings?.logo_url ?? "");
+    setBackgroundUrl(r.settings?.background_url ?? "");
     setPrimary(r.settings?.primary_color ?? "");
     setAccent(r.settings?.accent_color ?? "");
     setIntro(r.settings?.intro_copy ?? "");
@@ -136,6 +137,7 @@ export function ActivateTenantWizard({
         setName(res.tenant.name);
         setSlug(res.tenant.slug);
         setLogoUrl(res.settings?.logo_url ?? "");
+        setBackgroundUrl(res.settings?.background_url ?? "");
         setPrimary(res.settings?.primary_color ?? "");
         setAccent(res.settings?.accent_color ?? "");
         setIntro(res.settings?.intro_copy ?? "");
