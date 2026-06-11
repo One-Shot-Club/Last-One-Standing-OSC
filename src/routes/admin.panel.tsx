@@ -86,7 +86,7 @@ function Panel() {
           className="text-xs uppercase tracking-widest text-muted-foreground"
           onClick={() => {
             sessionStorage.clear();
-            nav({ to: "/admin" });
+            nav({ to: "/" });
           }}
         >
           Sign out
