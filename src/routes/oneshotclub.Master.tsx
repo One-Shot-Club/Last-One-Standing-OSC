@@ -14,10 +14,7 @@ const tenantEntryQuery = queryOptions({
 export const Route = createFileRoute("/oneshotclub/Master")({
   loader: async ({ context }) => {
     try {
-      await Promise.all([
-        context.queryClient.ensureQueryData(tenantEntryQuery),
-        context.queryClient.ensureQueryData(clubsQuery),
-      ]);
+      await context.queryClient.ensureQueryData(tenantEntryQuery);
     } catch {
       throw notFound();
     }
