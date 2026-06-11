@@ -102,8 +102,10 @@ async function countPlayers(competitionId: string, aliveOnly = false): Promise<n
 export async function sendEntryConfirmation(playerId: string, week: number): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', playerId).maybeSingle()
   if (!player) return
+  if (!player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+
   const { data: pick } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', playerId).eq('week', week).maybeSingle()
   const team = pick?.team ?? '—'
