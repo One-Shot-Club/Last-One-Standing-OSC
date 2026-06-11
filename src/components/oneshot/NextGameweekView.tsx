@@ -217,7 +217,7 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError }: Pr
                     badge={badges[f.away_team]}
                     used={usedTeams.has(f.away_team)}
                     selected={selected === f.away_team}
-                    disabled={cd.locked || preview}
+                    disabled={cd.locked || !!preview}
                     onClick={() => setSelected(f.away_team)}
                   />
                 </div>
