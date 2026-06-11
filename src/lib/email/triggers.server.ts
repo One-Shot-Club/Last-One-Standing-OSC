@@ -85,9 +85,10 @@ async function getCompetition(id: string): Promise<Competition | null> {
   return data as any
 }
 
-async function teamBadgeUrl(competitionId: string, teamName: string): Promise<string | null> {
+async function teamBadgeUrl(_competitionId: string, teamName: string): Promise<string | null> {
+  const { MASTER_TEAMS_COMPETITION_ID } = await import('@/lib/master-catalog')
   const { data } = await supabaseAdmin
-    .from('teams').select('badge_url').eq('competition_id', competitionId).eq('name', teamName).maybeSingle()
+    .from('teams').select('badge_url').eq('competition_id', MASTER_TEAMS_COMPETITION_ID).eq('name', teamName).maybeSingle()
   return data?.badge_url ?? null
 }
 
