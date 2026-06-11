@@ -76,7 +76,7 @@ function Panel() {
     );
   }
 
-  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats", "tools", "audit"];
+  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats"];
 
   return (
     <Shell>
