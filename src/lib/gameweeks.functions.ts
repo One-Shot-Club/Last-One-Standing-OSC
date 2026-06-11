@@ -159,6 +159,44 @@ export const processGameweekResults = createServerFn({ method: 'POST' })
 
 // ---- Pick screen context (player-facing, token-gated) ----
 
+async function buildSurvivalAndTopPicks(competitionId: string, upcomingWeek: number | null) {
+  const { data: allPlayers } = await supabaseAdmin
+    .from('players').select('alive').eq('competition_id', competitionId)
+  const rows = allPlayers ?? []
+  const total = rows.length
+  const alive = rows.filter((p: any) => p.alive).length
+  const eliminated = Math.max(0, total - alive)
+
+  let topPicksLastWeek: Array<{ team: string; count: number }> = []
+  let lastWeekLabel: string | null = null
+  if (upcomingWeek && upcomingWeek > 1) {
+    const prevWeek = upcomingWeek - 1
+    const { data: prev } = await supabaseAdmin
+      .from('picks').select('team').eq('competition_id', competitionId).eq('week', prevWeek)
+    const counts: Record<string, number> = {}
+    for (const r of prev ?? []) counts[r.team] = (counts[r.team] ?? 0) + 1
+    topPicksLastWeek = Object.entries(counts)
+      .map(([team, count]) => ({ team, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3)
+    const { data: gwPrev } = await supabaseAdmin
+      .from('gameweeks').select('week_label')
+      .eq('competition_id', competitionId).eq('week_number', prevWeek).maybeSingle()
+    lastWeekLabel = gwPrev?.week_label ?? `GW${prevWeek}`
+  }
+  return {
+    survivalStats: {
+      total,
+      alive,
+      eliminated,
+      alivePct: total ? Math.round((alive / total) * 100) : 0,
+      eliminatedPct: total ? Math.round((eliminated / total) * 100) : 0,
+    },
+    topPicksLastWeek,
+    lastWeekLabel,
+  }
+}
+
 export const getPickContext = createServerFn({ method: 'GET' })
   .inputValidator((d: { token: string }) => d)
   .handler(async ({ data }) => {
@@ -172,7 +210,6 @@ export const getPickContext = createServerFn({ method: 'GET' })
     const { data: picks } = await supabaseAdmin
       .from('picks').select('*').eq('player_id', player.id).order('week')
 
-    // Current upcoming gameweek: deadline_at > now, smallest week_number
     const nowIso = new Date().toISOString()
     const { data: upcoming } = await supabaseAdmin
       .from('gameweeks').select('*')
@@ -180,8 +217,6 @@ export const getPickContext = createServerFn({ method: 'GET' })
       .gt('deadline_at', nowIso)
       .order('week_number', { ascending: true })
       .limit(1).maybeSingle()
-
-    // If no upcoming gameweek, fall back to most recent locked/past one to show context
     const gameweek = upcoming ?? null
 
     let fixtures: any[] = []
@@ -191,11 +226,15 @@ export const getPickContext = createServerFn({ method: 'GET' })
       fixtures = results ?? []
     }
 
-    // Team badges
     const { data: teams } = await supabaseAdmin
       .from('teams').select('name, badge_url').eq('competition_id', player.competition_id)
     const badges: Record<string, string | null> = {}
     for (const t of teams ?? []) badges[t.name] = t.badge_url ?? null
+
+    const extras = await buildSurvivalAndTopPicks(
+      player.competition_id,
+      gameweek?.week_number ?? null,
+    )
 
     return {
       player: { id: player.id, full_name: player.full_name, alive: player.alive, email: player.email },
@@ -205,6 +244,101 @@ export const getPickContext = createServerFn({ method: 'GET' })
       fixtures,
       badges,
       now: nowIso,
+      ...extras,
+      preview: false,
+    }
+  })
+
+// Admin-only preview: real fixtures, synthetic player + picks + deadline + stats.
+export const getNextGameweekPreviewContext = createServerFn({ method: 'POST' })
+  .inputValidator((d: { competitionId: string; pin: string }) => d)
+  .handler(async ({ data }) => {
+    await verifyAdmin(data.competitionId, data.pin)
+
+    const { data: comp } = await supabaseAdmin
+      .from('competitions').select('*').eq('id', data.competitionId).maybeSingle()
+
+    const nowIso = new Date().toISOString()
+    let { data: gameweek } = await supabaseAdmin
+      .from('gameweeks').select('*')
+      .eq('competition_id', data.competitionId)
+      .gt('deadline_at', nowIso)
+      .order('week_number', { ascending: true })
+      .limit(1).maybeSingle()
+    if (!gameweek) {
+      const { data: fallback } = await supabaseAdmin
+        .from('gameweeks').select('*')
+        .eq('competition_id', data.competitionId)
+        .order('week_number', { ascending: false })
+        .limit(1).maybeSingle()
+      gameweek = fallback ?? null
+    }
+
+    let fixtures: any[] = []
+    if (gameweek) {
+      const { data: results } = await supabaseAdmin
+        .from('results').select('*').eq('gameweek_id', gameweek.id)
+      fixtures = results ?? []
+    }
+
+    const { data: teams } = await supabaseAdmin
+      .from('teams').select('name, badge_url').eq('competition_id', data.competitionId)
+    const badges: Record<string, string | null> = {}
+    for (const t of teams ?? []) badges[t.name] = t.badge_url ?? null
+
+    const previewDeadline = new Date(Date.now() + 3 * 86400000).toISOString()
+    const previewWeekNumber = (gameweek?.week_number ?? 4)
+    const previewGw = gameweek
+      ? { ...gameweek, deadline_at: previewDeadline }
+      : {
+          id: 'preview-gw',
+          competition_id: data.competitionId,
+          week_number: previewWeekNumber,
+          week_label: `GW${previewWeekNumber}`,
+          deadline_at: previewDeadline,
+          first_kickoff_at: previewDeadline,
+          last_match_ends_at: previewDeadline,
+        }
+
+    const teamNames = (teams ?? []).map((t: any) => t.name)
+    const usedSeed = teamNames.slice(0, 3)
+    const previewPicks = usedSeed.map((team, i) => ({
+      id: `preview-pick-${i + 1}`,
+      player_id: 'preview-player',
+      competition_id: data.competitionId,
+      week: i + 1,
+      team,
+      result: 'W',
+      created_at: nowIso,
+    }))
+
+    const survivalStats = { total: 60, alive: 24, eliminated: 36, alivePct: 40, eliminatedPct: 60 }
+    const topSeed = teamNames.slice(3, 6)
+    const topPicksLastWeek = topSeed.length >= 3
+      ? [
+          { team: topSeed[0], count: 14 },
+          { team: topSeed[1], count: 9 },
+          { team: topSeed[2], count: 7 },
+        ]
+      : []
+
+    return {
+      player: {
+        id: 'preview-player',
+        full_name: 'Tom Murphy',
+        alive: true,
+        email: 'preview@oneshotclub.ie',
+      },
+      competition: comp,
+      picks: previewPicks,
+      gameweek: previewGw,
+      fixtures,
+      badges,
+      now: nowIso,
+      survivalStats,
+      topPicksLastWeek,
+      lastWeekLabel: `GW${previewWeekNumber - 1}`,
+      preview: true,
     }
   })
 

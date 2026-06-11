@@ -22,6 +22,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TenantSlugIndexRouteImport } from './routes/$tenantSlug.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
+import { Route as AdminNextGameweekPreviewRouteImport } from './routes/admin.next-gameweek-preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as TenantSlugAdminRouteImport } from './routes/$tenantSlug.admin'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -95,6 +96,12 @@ const AdminPanelRoute = AdminPanelRouteImport.update({
   path: '/admin/panel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminNextGameweekPreviewRoute =
+  AdminNextGameweekPreviewRouteImport.update({
+    id: '/admin/next-gameweek-preview',
+    path: '/admin/next-gameweek-preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -152,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
@@ -174,6 +182,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/$tenantSlug': typeof TenantSlugIndexRoute
@@ -198,6 +207,7 @@ export interface FileRoutesById {
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/$tenantSlug/admin'
     | '/dashboard'
+    | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/$tenantSlug/'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/$tenantSlug/admin'
     | '/dashboard'
+    | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/$tenantSlug'
@@ -267,6 +279,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/$tenantSlug/admin'
     | '/_authenticated/dashboard'
+    | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/$tenantSlug/'
@@ -290,6 +303,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
   TenantSlugAdminRoute: typeof TenantSlugAdminRoute
+  AdminNextGameweekPreviewRoute: typeof AdminNextGameweekPreviewRoute
   AdminPanelRoute: typeof AdminPanelRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   TenantSlugIndexRoute: typeof TenantSlugIndexRoute
@@ -394,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPanelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/next-gameweek-preview': {
+      id: '/admin/next-gameweek-preview'
+      path: '/admin/next-gameweek-preview'
+      fullPath: '/admin/next-gameweek-preview'
+      preLoaderRoute: typeof AdminNextGameweekPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -477,6 +498,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
   TenantSlugAdminRoute: TenantSlugAdminRoute,
+  AdminNextGameweekPreviewRoute: AdminNextGameweekPreviewRoute,
   AdminPanelRoute: AdminPanelRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   TenantSlugIndexRoute: TenantSlugIndexRoute,
@@ -490,13 +512,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
