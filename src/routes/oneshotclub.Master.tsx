@@ -5,7 +5,7 @@ import { Card, Logo, Shell } from "@/components/oneshot/ui";
 import { TenantEntry } from "@/components/oneshot/TenantEntry";
 import { clubsQuery } from "@/components/oneshot/MasterTenantLanding";
 
-const MASTER_SLUG = "oneshotclub";
+const MASTER_SLUG = "oneshotclub-master";
 
 const tenantEntryQuery = queryOptions({
   queryKey: ["tenant-entry", MASTER_SLUG],
