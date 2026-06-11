@@ -67,7 +67,7 @@ export const listTeams = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     await verifyAdmin(data.competitionId, data.pin)
     const { data: rows } = await supabaseAdmin
-      .from('teams').select('*').eq('competition_id', data.competitionId).order('name')
+      .from('teams').select('*').eq('competition_id', MASTER_TEAMS_COMPETITION_ID).order('name')
     return rows ?? []
   })
 
@@ -77,7 +77,7 @@ export const upsertTeam = createServerFn({ method: 'POST' })
     await verifyAdmin(data.competitionId, data.pin)
     const row = {
       id: data.id,
-      competition_id: data.competitionId,
+      competition_id: MASTER_TEAMS_COMPETITION_ID,
       name: data.name.trim(),
       badge_url: data.badgeUrl ?? null,
     }
@@ -91,7 +91,7 @@ export const deleteTeam = createServerFn({ method: 'POST' })
   .inputValidator((d: { competitionId: string; pin: string; id: string }) => d)
   .handler(async ({ data }) => {
     await verifyAdmin(data.competitionId, data.pin)
-    await supabaseAdmin.from('teams').delete().eq('id', data.id).eq('competition_id', data.competitionId)
+    await supabaseAdmin.from('teams').delete().eq('id', data.id).eq('competition_id', MASTER_TEAMS_COMPETITION_ID)
     return { ok: true }
   })
 
