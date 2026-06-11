@@ -1087,6 +1087,23 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
   return (
     <div className="space-y-6">
       <Card>
+        <Eyebrow>Player preview</Eyebrow>
+        <h2 className="display mt-1 text-xl">NEXT GAMEWEEK PAGE</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Open the magic-link "Next Gameweek" page with synthetic data — for QA and design review.
+          No picks are saved.
+        </p>
+        <a
+          href="/admin/next-gameweek-preview"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 text-xs font-semibold uppercase tracking-wider text-primary-foreground"
+        >
+          Preview Next Gameweek page →
+        </a>
+      </Card>
+
+      <Card>
         <Eyebrow>Bulk CSV import</Eyebrow>
         <h2 className="display mt-1 text-xl">IMPORT ENTRANTS</h2>
         <p className="mt-2 text-sm text-muted-foreground">
