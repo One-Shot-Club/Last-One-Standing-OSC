@@ -338,19 +338,27 @@ export function ActivateTenantWizard({
           <div className="space-y-3">
             <Field label="Display name" value={name} onChange={(e) => setName(e.target.value)} />
             <Field label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-            <Field
-              label="Logo URL"
+            <AssetUpload
+              label="Club logo"
+              hint="Shown above the OneShotClub mark on the entry page."
               value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://…/logo.png"
+              onChange={setLogoUrl}
+              kind="logo"
+              tenantId={tenantId}
+              uploadFn={uploadFn}
+              preview="contain"
             />
-            {logoUrl && (
-              <img
-                src={logoUrl}
-                alt=""
-                className="h-16 w-16 rounded-md border border-border object-contain"
-              />
-            )}
+            <AssetUpload
+              label="Background image"
+              hint="Lightly blurred behind the entry page. Use a high-resolution photo."
+              value={backgroundUrl}
+              onChange={setBackgroundUrl}
+              kind="background"
+              tenantId={tenantId}
+              uploadFn={uploadFn}
+              preview="cover"
+            />
+
             <div className="grid grid-cols-2 gap-3">
               <Field
                 label="Primary colour"
