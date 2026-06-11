@@ -157,7 +157,7 @@ export const listPublicClubs = createServerFn({ method: "GET" }).handler(
       .from("tenants")
       .select("id, slug, name")
       .eq("status", "active")
-      .neq("slug", "oneshotclub")
+      .neq("slug", "oneshotclub-master")
       .order("name", { ascending: true });
     if (!tenants?.length) return [];
     const { data: settings } = await supabaseAdmin
