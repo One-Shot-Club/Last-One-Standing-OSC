@@ -68,8 +68,9 @@ function Pay() {
     setError(null);
     try {
       const player = await join({
-        data: { competitionId: c, fullName: n, email: e, phone: p },
+        data: { competitionId: c, fullName: n, email: e, phone: p, offline: o === "1" },
       });
+
       await pick({
         data: {
           playerId: player.id,
