@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Btn, Card, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useTenantBranding } from "@/lib/tenant/branding";
+import { cn } from "@/lib/utils";
 import type { TenantBranding } from "@/lib/tenant.functions";
 
 export type EntryCompetition = {
@@ -23,8 +24,10 @@ export function TenantEntry({
   useTenantBranding(tenant);
   const nav = useNavigate();
   const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
+  const [offline, setOffline] = useState(false);
+  const emailReady = offline ? true : !!form.email.trim();
   const valid =
-    form.fullName.trim() && form.email.trim() && form.phone.trim() && competition;
+    form.fullName.trim() && emailReady && form.phone.trim() && competition;
 
   const clubName =
     tenant?.name ?? competition?.club_name ?? "LAST MAN STANDING";
@@ -33,7 +36,7 @@ export function TenantEntry({
   const fee = Number(competition?.entry_fee ?? 10);
 
   return (
-    <Shell>
+    <Shell bgUrl={tenant?.background_url ?? undefined} bgBlur={6}>
       <div className="mt-2">
         <ClubHeader clubName={clubName} logoUrl={logoUrl} />
       </div>
@@ -56,13 +59,39 @@ export function TenantEntry({
           value={form.fullName}
           onChange={(e) => setForm({ ...form, fullName: e.target.value })}
         />
-        <Field
-          label="Email"
-          type="email"
-          placeholder="tom@example.com"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
+
+        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+          <Field
+            label="Email"
+            type="email"
+            placeholder={offline ? "Not required" : "tom@example.com"}
+            value={offline ? "" : form.email}
+            disabled={offline}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+          <button
+            type="button"
+            onClick={() => setOffline((v) => !v)}
+            aria-pressed={offline}
+            className={cn(
+              "h-12 shrink-0 rounded-lg border px-3 text-[10px] font-semibold uppercase tracking-wider transition",
+              offline
+                ? "bg-destructive text-destructive-foreground border-destructive"
+                : "border-destructive/60 text-destructive hover:bg-destructive/10",
+            )}
+            title="No email — communicate picks via the club admin"
+          >
+            Offline
+            <br />
+            Player
+          </button>
+        </div>
+        {offline && (
+          <p className="text-[11px] leading-snug text-destructive">
+            Offline player: no email will be sent. Submit your weekly pick directly to the club admin.
+          </p>
+        )}
+
         <Field
           label="Mobile"
           placeholder="087 123 4567"
@@ -80,8 +109,9 @@ export function TenantEntry({
               search: {
                 c: competition!.id,
                 n: form.fullName,
-                e: form.email,
+                e: offline ? "" : form.email,
                 p: form.phone,
+                ...(offline ? { o: "1" } : {}),
               },
             })
           }

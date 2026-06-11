@@ -30,6 +30,7 @@ import { Route as AuthenticatedPlatformAdminRouteImport } from './routes/_authen
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicTenantAssetsSplatRouteImport } from './routes/api/public/tenant-assets/$'
 import { Route as ApiPublicCronCheckRemindersRouteImport } from './routes/api/public/cron/check-reminders'
 
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -141,6 +142,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTenantAssetsSplatRoute =
+  ApiPublicTenantAssetsSplatRouteImport.update({
+    id: '/api/public/tenant-assets/$',
+    path: '/api/public/tenant-assets/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronCheckRemindersRoute =
   ApiPublicCronCheckRemindersRouteImport.update({
     id: '/api/public/cron/check-reminders',
@@ -167,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
+  '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -190,6 +198,7 @@ export interface FileRoutesByTo {
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
+  '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -215,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
+  '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
+    | '/api/public/tenant-assets/$'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
+    | '/api/public/tenant-assets/$'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -287,6 +299,7 @@ export interface FileRouteTypes {
     | '/_authenticated/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
+    | '/api/public/tenant-assets/$'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -310,6 +323,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronCheckRemindersRoute: typeof ApiPublicCronCheckRemindersRoute
+  ApiPublicTenantAssetsSplatRoute: typeof ApiPublicTenantAssetsSplatRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -464,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/tenant-assets/$': {
+      id: '/api/public/tenant-assets/$'
+      path: '/api/public/tenant-assets/$'
+      fullPath: '/api/public/tenant-assets/$'
+      preLoaderRoute: typeof ApiPublicTenantAssetsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/check-reminders': {
       id: '/api/public/cron/check-reminders'
       path: '/api/public/cron/check-reminders'
@@ -505,6 +526,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronCheckRemindersRoute: ApiPublicCronCheckRemindersRoute,
+  ApiPublicTenantAssetsSplatRoute: ApiPublicTenantAssetsSplatRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,

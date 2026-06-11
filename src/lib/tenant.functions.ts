@@ -8,6 +8,8 @@ export type TenantBranding = {
   name: string;
   status: string;
   logo_url: string | null;
+  background_url: string | null;
+
   primary_color: string | null;
   accent_color: string | null;
   intro_copy: string | null;
@@ -41,7 +43,7 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
       )
       .eq("tenant_id", tenant.id)
       .maybeSingle();
@@ -59,6 +61,7 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
         name: tenant.name as string,
         status: tenant.status as string,
         logo_url: (settings?.logo_url as string | null) ?? null,
+        background_url: (settings?.background_url as string | null) ?? null,
         primary_color: (settings?.primary_color as string | null) ?? null,
         accent_color: (settings?.accent_color as string | null) ?? null,
         intro_copy: (settings?.intro_copy as string | null) ?? null,
@@ -100,7 +103,7 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
       )
       .eq("tenant_id", tenant.id)
       .maybeSingle();
@@ -120,6 +123,7 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
         name: tenant.name as string,
         status: tenant.status as string,
         logo_url: (settings?.logo_url as string | null) ?? null,
+        background_url: (settings?.background_url as string | null) ?? null,
         primary_color: (settings?.primary_color as string | null) ?? null,
         accent_color: (settings?.accent_color as string | null) ?? null,
         intro_copy: (settings?.intro_copy as string | null) ?? null,

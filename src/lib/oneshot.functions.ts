@@ -64,24 +64,30 @@ export const joinCompetition = createServerFn({ method: "POST" })
       fullName: string;
       email: string;
       phone: string;
+      offline?: boolean;
     }) => d,
   )
   .handler(async ({ data }) => {
+    const isOffline = !!data.offline;
+    const email = data.email?.trim() ? data.email.trim() : null;
+    if (!isOffline && !email) throw new Error("Email is required");
     const { data: player, error } = await supabaseAdmin
       .from("players")
       .insert({
         competition_id: data.competitionId,
         full_name: data.fullName,
-        email: data.email,
-        phone: data.phone,
+        email,
+        phone: data.phone || null,
         paid: true,
         alive: true,
+        offline: isOffline,
       } as never)
       .select("*")
       .single();
     if (error) throw error;
     return player;
   });
+
 
 export const getPlayerByToken = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => d)

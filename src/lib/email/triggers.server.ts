@@ -102,8 +102,10 @@ async function countPlayers(competitionId: string, aliveOnly = false): Promise<n
 export async function sendEntryConfirmation(playerId: string, week: number): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', playerId).maybeSingle()
   if (!player) return
+  if (!player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+
   const { data: pick } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', playerId).eq('week', week).maybeSingle()
   const team = pick?.team ?? '—'
@@ -144,8 +146,10 @@ export async function sendElimination(opts: {
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
   if (!player) return
+  if (!player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+
   const { data: picks } = await supabaseAdmin
     .from('picks').select('week, team').eq('player_id', opts.playerId).order('week', { ascending: true })
   const pickHistory = (picks ?? []).map((p) => ({ week: `GW${p.week}`, team: p.team }))
@@ -182,8 +186,10 @@ export async function sendProgression(opts: {
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
   if (!player) return
+  if (!player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+
   const remaining = await countPlayers(player.competition_id, true)
   const { data: priorPicks } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', opts.playerId)
@@ -219,8 +225,10 @@ export async function sendReminder(kind: '24h' | '1h', opts: {
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
   if (!player) return
+  if (!player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+
   const { data: priorPicks } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)

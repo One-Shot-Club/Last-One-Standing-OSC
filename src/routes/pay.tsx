@@ -11,7 +11,7 @@ import {
 import { Btn, Card, Eyebrow, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 
-type Search = { c: string; n: string; e: string; p: string; t: string };
+type Search = { c: string; n: string; e: string; p: string; t: string; o?: string };
 
 export const Route = createFileRoute("/pay")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -20,7 +20,9 @@ export const Route = createFileRoute("/pay")({
     e: String(s.e ?? ""),
     p: String(s.p ?? ""),
     t: String(s.t ?? ""),
+    o: s.o ? String(s.o) : undefined,
   }),
+
   beforeLoad: ({ search }) => {
     if (!search.c || !search.t) {
       throw redirect({ to: "/" });
@@ -38,7 +40,7 @@ const LABELS: Record<Kind, string> = {
 };
 
 function Pay() {
-  const { c, n, e, p, t } = Route.useSearch();
+  const { c, n, e, p, t, o } = Route.useSearch();
   const nav = useNavigate();
   const qc = useQueryClient();
   const fetchComp = useServerFn(getCompetition);
@@ -66,8 +68,9 @@ function Pay() {
     setError(null);
     try {
       const player = await join({
-        data: { competitionId: c, fullName: n, email: e, phone: p },
+        data: { competitionId: c, fullName: n, email: e, phone: p, offline: o === "1" },
       });
+
       await pick({
         data: {
           playerId: player.id,

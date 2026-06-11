@@ -12,7 +12,6 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import faviconAsset from "../assets/favicon.png.asset.json";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { PageFlowToggler } from "../components/dev/PageFlowToggler";
 
 function NotFoundComponent() {
   return (
@@ -131,7 +130,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <PageFlowToggler />
     </QueryClientProvider>
   );
+
 }

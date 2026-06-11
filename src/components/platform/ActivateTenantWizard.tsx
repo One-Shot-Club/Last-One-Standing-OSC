@@ -12,12 +12,15 @@ import {
   setTenantAdminCredentials,
   getTenantAdminCredentialsInfo,
 } from "@/lib/club-auth.functions";
+import { uploadTenantAsset } from "@/lib/uploads.functions";
 import { Btn, Field } from "@/components/oneshot/ui";
+
 
 type Activation = {
   tenant: { id: string; slug: string; name: string; status: string };
   settings: {
     logo_url: string | null;
+    background_url: string | null;
     primary_color: string | null;
     accent_color: string | null;
     intro_copy: string | null;
@@ -25,6 +28,7 @@ type Activation = {
     contact_phone: string | null;
     whatsapp_link: string | null;
   } | null;
+
   competition: {
     id: string;
     name: string;
@@ -60,6 +64,8 @@ export function ActivateTenantWizard({
   const launchFn = useServerFn(launchTenant);
   const setCredFn = useServerFn(setTenantAdminCredentials);
   const getCredFn = useServerFn(getTenantAdminCredentialsInfo);
+  const uploadFn = useServerFn(uploadTenantAsset);
+
 
   const [a, setA] = useState<Activation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,6 +85,8 @@ export function ActivateTenantWizard({
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [backgroundUrl, setBackgroundUrl] = useState("");
+
   const [primary, setPrimary] = useState("");
   const [accent, setAccent] = useState("");
   const [intro, setIntro] = useState("");
@@ -104,6 +112,9 @@ export function ActivateTenantWizard({
     setName(r.tenant.name);
     setSlug(r.tenant.slug);
     setLogoUrl(r.settings?.logo_url ?? "");
+    setBackgroundUrl(r.settings?.background_url ?? "");
+
+    setBackgroundUrl(r.settings?.background_url ?? "");
     setPrimary(r.settings?.primary_color ?? "");
     setAccent(r.settings?.accent_color ?? "");
     setIntro(r.settings?.intro_copy ?? "");
@@ -128,6 +139,9 @@ export function ActivateTenantWizard({
         setName(res.tenant.name);
         setSlug(res.tenant.slug);
         setLogoUrl(res.settings?.logo_url ?? "");
+        setBackgroundUrl(res.settings?.background_url ?? "");
+
+        setBackgroundUrl(res.settings?.background_url ?? "");
         setPrimary(res.settings?.primary_color ?? "");
         setAccent(res.settings?.accent_color ?? "");
         setIntro(res.settings?.intro_copy ?? "");
@@ -179,6 +193,8 @@ export function ActivateTenantWizard({
             slug,
             settings: {
               logo_url: logoUrl || null,
+              background_url: backgroundUrl || null,
+
               primary_color: primary || null,
               accent_color: accent || null,
               intro_copy: intro || null,
@@ -322,19 +338,27 @@ export function ActivateTenantWizard({
           <div className="space-y-3">
             <Field label="Display name" value={name} onChange={(e) => setName(e.target.value)} />
             <Field label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-            <Field
-              label="Logo URL"
+            <AssetUpload
+              label="Club logo"
+              hint="Shown above the OneShotClub mark on the entry page."
               value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://…/logo.png"
+              onChange={setLogoUrl}
+              kind="logo"
+              tenantId={tenantId}
+              uploadFn={uploadFn}
+              preview="contain"
             />
-            {logoUrl && (
-              <img
-                src={logoUrl}
-                alt=""
-                className="h-16 w-16 rounded-md border border-border object-contain"
-              />
-            )}
+            <AssetUpload
+              label="Background image"
+              hint="Lightly blurred behind the entry page. Use a high-resolution photo."
+              value={backgroundUrl}
+              onChange={setBackgroundUrl}
+              kind="background"
+              tenantId={tenantId}
+              uploadFn={uploadFn}
+              preview="cover"
+            />
+
             <div className="grid grid-cols-2 gap-3">
               <Field
                 label="Primary colour"
@@ -550,6 +574,126 @@ export function ActivateTenantWizard({
     </div>
   );
 }
+
+type UploadFn = (args: {
+  data: {
+    tenantId: string;
+    kind: "logo" | "background";
+    filename: string;
+    contentType: string;
+    dataBase64: string;
+  };
+}) => Promise<{ path: string; url: string }>;
+
+function AssetUpload({
+  label,
+  hint,
+  value,
+  onChange,
+  kind,
+  tenantId,
+  uploadFn,
+  preview,
+}: {
+  label: string;
+  hint: string;
+  value: string;
+  onChange: (url: string) => void;
+  kind: "logo" | "background";
+  tenantId: string;
+  uploadFn: UploadFn;
+  preview: "contain" | "cover";
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setBusy(true);
+    setErr(null);
+    try {
+      const buf = await file.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(
+          null,
+          Array.from(bytes.subarray(i, i + chunk)) as number[],
+        );
+      }
+      const dataBase64 = btoa(binary);
+      const res = await uploadFn({
+        data: {
+          tenantId,
+          kind,
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          dataBase64,
+        },
+      });
+      onChange(res.url);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {label}
+          </p>
+          <p className="text-[11px] text-muted-foreground">{hint}</p>
+        </div>
+        <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs hover:bg-card">
+          {busy ? "Uploading…" : value ? "Replace" : "Upload"}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleFile(f);
+              e.currentTarget.value = "";
+            }}
+          />
+        </label>
+      </div>
+      {value && (
+        <div
+          className={
+            preview === "cover"
+              ? "h-24 w-full overflow-hidden rounded-md border border-border bg-muted"
+              : "flex items-center"
+          }
+        >
+          <img
+            src={value}
+            alt=""
+            className={
+              preview === "cover"
+                ? "h-full w-full object-cover"
+                : "h-16 w-16 rounded-md border border-border object-contain"
+            }
+          />
+        </div>
+      )}
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="…or paste a URL"
+        className="mt-2 h-9 w-full rounded-md border border-border bg-[color:var(--input)] px-2 text-xs text-foreground"
+      />
+      {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
+    </div>
+  );
+}
+
 
 function Row({ ok, label }: { ok: boolean; label: string }) {
   return (
