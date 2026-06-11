@@ -25,6 +25,7 @@ import { Route as AdminPanelRouteImport } from './routes/admin.panel'
 import { Route as AdminNextGameweekPreviewRouteImport } from './routes/admin.next-gameweek-preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as TenantSlugAdminRouteImport } from './routes/$tenantSlug.admin'
+import { Route as OneshotclubMasterIndexRouteImport } from './routes/oneshotclub.Master.index'
 import { Route as OneshotclubMasterAdminRouteImport } from './routes/oneshotclub.Master.admin'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedPlatformAdminRouteImport } from './routes/_authenticated/platform.admin'
@@ -114,6 +115,11 @@ const TenantSlugAdminRoute = TenantSlugAdminRouteImport.update({
   path: '/$tenantSlug/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OneshotclubMasterIndexRoute = OneshotclubMasterIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OneshotclubMasterRoute,
+} as any)
 const OneshotclubMasterAdminRoute = OneshotclubMasterAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
+  '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -200,11 +207,11 @@ export interface FileRoutesByTo {
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/oneshotclub/Master': typeof OneshotclubMasterRouteWithChildren
   '/$tenantSlug': typeof TenantSlugIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
+  '/oneshotclub/Master': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -232,6 +239,7 @@ export interface FileRoutesById {
   '/_authenticated/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
+  '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -259,6 +267,7 @@ export interface FileRouteTypes {
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
+    | '/oneshotclub/Master/'
     | '/api/public/cron/check-reminders'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/queue/process'
@@ -279,11 +288,11 @@ export interface FileRouteTypes {
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
-    | '/oneshotclub/Master'
     | '/$tenantSlug'
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
+    | '/oneshotclub/Master'
     | '/api/public/cron/check-reminders'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/queue/process'
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/_authenticated/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
+    | '/oneshotclub/Master/'
     | '/api/public/cron/check-reminders'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/queue/process'
@@ -455,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TenantSlugAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oneshotclub/Master/': {
+      id: '/oneshotclub/Master/'
+      path: '/'
+      fullPath: '/oneshotclub/Master/'
+      preLoaderRoute: typeof OneshotclubMasterIndexRouteImport
+      parentRoute: typeof OneshotclubMasterRoute
+    }
     '/oneshotclub/Master/admin': {
       id: '/oneshotclub/Master/admin'
       path: '/admin'
@@ -529,10 +546,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface OneshotclubMasterRouteChildren {
   OneshotclubMasterAdminRoute: typeof OneshotclubMasterAdminRoute
+  OneshotclubMasterIndexRoute: typeof OneshotclubMasterIndexRoute
 }
 
 const OneshotclubMasterRouteChildren: OneshotclubMasterRouteChildren = {
   OneshotclubMasterAdminRoute: OneshotclubMasterAdminRoute,
+  OneshotclubMasterIndexRoute: OneshotclubMasterIndexRoute,
 }
 
 const OneshotclubMasterRouteWithChildren =
@@ -564,3 +583,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
