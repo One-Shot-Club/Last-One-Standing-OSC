@@ -5,7 +5,7 @@ import { Btn, Card, Eyebrow, Shell, StickyCTA } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { cn } from "@/lib/utils";
 
-type Search = { c: string; n: string; e: string; p: string };
+type Search = { c: string; n: string; e: string; p: string; o?: string };
 
 export const Route = createFileRoute("/how-it-works")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -13,9 +13,11 @@ export const Route = createFileRoute("/how-it-works")({
     n: String(s.n ?? ""),
     e: String(s.e ?? ""),
     p: String(s.p ?? ""),
+    o: s.o ? String(s.o) : undefined,
   }),
   component: HowItWorks,
 });
+
 
 const RULES = [
   "Pick one Premier League team each gameweek.",
