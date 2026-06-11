@@ -14,11 +14,9 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as PickRouteImport } from './routes/pick'
 import { Route as PayRouteImport } from './routes/pay'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
-import { Route as Gw2RouteImport } from './routes/gw2'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TenantSlugIndexRouteImport } from './routes/$tenantSlug.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
@@ -58,11 +56,6 @@ const HowItWorksRoute = HowItWorksRouteImport.update({
   path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Gw2Route = Gw2RouteImport.update({
-  id: '/gw2',
-  path: '/gw2',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -75,11 +68,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TenantSlugIndexRoute = TenantSlugIndexRouteImport.update({
@@ -158,7 +146,6 @@ const ApiPublicCronCheckRemindersRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/gw2': typeof Gw2Route
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
@@ -170,7 +157,6 @@ export interface FileRoutesByFullPath {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
-  '/admin/': typeof AdminIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
@@ -182,7 +168,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/gw2': typeof Gw2Route
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
@@ -194,7 +179,6 @@ export interface FileRoutesByTo {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/$tenantSlug': typeof TenantSlugIndexRoute
-  '/admin': typeof AdminIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
@@ -208,7 +192,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/gw2': typeof Gw2Route
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
@@ -220,7 +203,6 @@ export interface FileRoutesById {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
-  '/admin/': typeof AdminIndexRoute
   '/_authenticated/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
@@ -234,7 +216,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/gw2'
     | '/how-it-works'
     | '/pay'
     | '/pick'
@@ -246,7 +227,6 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/$tenantSlug/'
-    | '/admin/'
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
@@ -258,7 +238,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/gw2'
     | '/how-it-works'
     | '/pay'
     | '/pick'
@@ -270,7 +249,6 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/$tenantSlug'
-    | '/admin'
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
@@ -283,7 +261,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/gw2'
     | '/how-it-works'
     | '/pay'
     | '/pick'
@@ -295,7 +272,6 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/$tenantSlug/'
-    | '/admin/'
     | '/_authenticated/platform/admin'
     | '/lovable/email/suppression'
     | '/api/public/cron/check-reminders'
@@ -309,7 +285,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  Gw2Route: typeof Gw2Route
   HowItWorksRoute: typeof HowItWorksRoute
   PayRoute: typeof PayRoute
   PickRoute: typeof PickRoute
@@ -320,7 +295,6 @@ export interface RootRouteChildren {
   AdminPanelRoute: typeof AdminPanelRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   TenantSlugIndexRoute: typeof TenantSlugIndexRoute
-  AdminIndexRoute: typeof AdminIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronCheckRemindersRoute: typeof ApiPublicCronCheckRemindersRoute
   ApiPublicTenantAssetsSplatRoute: typeof ApiPublicTenantAssetsSplatRoute
@@ -366,13 +340,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/gw2': {
-      id: '/gw2'
-      path: '/gw2'
-      fullPath: '/gw2'
-      preLoaderRoute: typeof Gw2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -392,13 +359,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/': {
-      id: '/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$tenantSlug/': {
@@ -512,7 +472,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  Gw2Route: Gw2Route,
   HowItWorksRoute: HowItWorksRoute,
   PayRoute: PayRoute,
   PickRoute: PickRoute,
@@ -523,7 +482,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPanelRoute: AdminPanelRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   TenantSlugIndexRoute: TenantSlugIndexRoute,
-  AdminIndexRoute: AdminIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronCheckRemindersRoute: ApiPublicCronCheckRemindersRoute,
   ApiPublicTenantAssetsSplatRoute: ApiPublicTenantAssetsSplatRoute,
@@ -534,3 +492,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
