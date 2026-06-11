@@ -41,7 +41,7 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
       )
       .eq("tenant_id", tenant.id)
       .maybeSingle();
@@ -100,7 +100,7 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
       )
       .eq("tenant_id", tenant.id)
       .maybeSingle();

@@ -232,7 +232,7 @@ export const getTenantForEdit = createServerFn({ method: "POST" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link",
+        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link",
       )
       .eq("tenant_id", data.tenantId)
       .maybeSingle();
@@ -353,7 +353,7 @@ export const getTenantActivation = createServerFn({ method: "POST" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link",
+        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link",
       )
       .eq("tenant_id", data.tenantId)
       .maybeSingle();
