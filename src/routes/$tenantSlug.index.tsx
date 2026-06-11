@@ -8,7 +8,7 @@ import {
   clubsQuery,
 } from "@/components/oneshot/MasterTenantLanding";
 
-const MASTER_ALIASES = new Set(["oneshotclub", "oneshotclub-master", "Master"]);
+const MASTER_ALIASES = new Set(["oneshotclub", "Master"]);
 const resolveSlug = (slug: string) =>
   MASTER_ALIASES.has(slug) ? "oneshotclub-master" : slug;
 
