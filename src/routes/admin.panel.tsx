@@ -53,7 +53,7 @@ function Panel() {
     const p = sessionStorage.getItem("osc_pin") ?? "";
     const c = sessionStorage.getItem("osc_comp");
     // Allow either: legacy PIN flow OR Supabase Auth flow (osc_comp present, pin may be empty).
-    if (!c) nav({ to: "/admin" });
+    if (!c) nav({ to: "/" });
     else {
       setPin(p);
       setCompId(c);
@@ -86,7 +86,7 @@ function Panel() {
           className="text-xs uppercase tracking-widest text-muted-foreground"
           onClick={() => {
             sessionStorage.clear();
-            nav({ to: "/admin" });
+            nav({ to: "/" });
           }}
         >
           Sign out
