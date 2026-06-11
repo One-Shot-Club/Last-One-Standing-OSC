@@ -12,7 +12,6 @@ const tenantEntryQuery = queryOptions({
 });
 
 export const Route = createFileRoute("/oneshotclub/Master/")({
-  ssr: false,
   loader: async ({ context }) => {
     try {
       await context.queryClient.ensureQueryData(tenantEntryQuery);
