@@ -12,7 +12,9 @@ import {
   setTenantAdminCredentials,
   getTenantAdminCredentialsInfo,
 } from "@/lib/club-auth.functions";
+import { uploadTenantAsset } from "@/lib/uploads.functions";
 import { Btn, Field } from "@/components/oneshot/ui";
+
 
 type Activation = {
   tenant: { id: string; slug: string; name: string; status: string };
