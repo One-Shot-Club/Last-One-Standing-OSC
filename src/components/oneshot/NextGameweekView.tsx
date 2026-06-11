@@ -303,12 +303,14 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError }: Pr
 }
 
 function TeamButton({
-  name, badge, used, selected, disabled, onClick,
+  name, badge, used, selected, isCurrent, locked, disabled, onClick,
 }: {
   name: string;
   badge: string | null | undefined;
   used: boolean;
   selected: boolean;
+  isCurrent?: boolean;
+  locked?: boolean;
   disabled: boolean;
   onClick: () => void;
 }) {
@@ -318,10 +320,11 @@ function TeamButton({
       onClick={isDisabled ? undefined : onClick}
       disabled={isDisabled}
       className={cn(
-        "flex flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition",
+        "relative flex flex-1 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition",
         selected
-          ? "border-primary bg-primary/10 text-primary"
+          ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/40"
           : "border-[color:var(--border)] bg-card text-foreground",
+        isCurrent && !selected && "border-primary/60",
         used && "opacity-40 line-through",
         disabled && !used && "opacity-50",
       )}
@@ -332,6 +335,11 @@ function TeamButton({
         <span className="inline-block h-6 w-6 rounded bg-muted" />
       )}
       <span className="truncate">{name}</span>
+      {isCurrent && (
+        <span className="ml-auto rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          {locked ? "Locked" : "Your pick"}
+        </span>
+      )}
     </button>
   );
 }
