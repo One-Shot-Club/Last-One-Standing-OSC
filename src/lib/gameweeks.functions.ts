@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { processGameweekResultsInternal } from '@/lib/results-engine.server'
 import { FIXTURES_BY_WEEK } from '@/lib/fixtures'
 import { verifyAdmin as verifyAdminAuth } from '@/lib/admin-auth.server'
+import { MASTER_TEAMS_COMPETITION_ID } from '@/lib/master-catalog'
 
 
 
