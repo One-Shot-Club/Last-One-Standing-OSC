@@ -1,48 +1,52 @@
 ## Goal
 
-Create a new **OneShotClub** master tenant, separate from Killeshin, and make the root URL (`/`) redirect to it instead of `/killeshin`.
+Replace the current `/pick` page with a richer "Next Gameweek" experience that survivors see between rounds, and add a preview route so you can review the look & feel without a real magic token.
 
-## Changes
+## What players will see (in order, top → bottom)
 
-### 1. Database — insert new tenant
+1. **Club header** (logo + name, same as today).
+2. **"You're through to GW{n}" hero** — eyebrow shows the week they just survived; big headline confirms progression.
+3. **Week label + deadline date** e.g. `GW4 · Sat 30 Aug 13:30`
+4. **Countdown timer** — large `Dd Hh Mm Ss` ticking to the next deadline (reuses existing `useCountdown` from `/pick`). Turns red in last hour; "Picks locked" state when expired.
+  &nbsp;
+5. **Your picks so far** — every prior gameweek with the team they used. Acts as the "history".
+6. **Next gameweek fixtures** — fixture rows with the home/away buttons (same as today). Teams the player has already used are visually greyed out, line-through, and disabled. Lock-in button at the bottom; on submit, refetches and shows a confirmation card with the chosen team.
+7. **Survival stats strip** — three tiles:
+  - **Still alive**: `X players (Y%)`
+  - **Eliminated**: `Z players (W%)`
+    9. **Top 3 picks last week** — small leaderboard chip row: `Liverpool 14 · Arsenal 9 · Spurs 7` (most-picked teams from last completed gameweek, derived from `picks` joined on previous `gameweeks.week_number`).
 
-Add via the data tool (not a schema migration):
+If the player is eliminated → eliminated screen (unchanged). If there's no upcoming gameweek → "No upcoming gameweek yet" (unchanged).
 
-- `tenants` row: `slug = 'oneshotclub'`, `name = 'OneShotClub'`, `status = 'active'`
-- `tenant_settings` row for that tenant with placeholder branding (no logo, intro copy like "The home of Last One Standing competitions for Irish clubs."). No competition is created — OneShotClub is a brand/landing tenant, not a club running a comp.
+## How to preview without a real token
 
-Killeshin and St. Joseph's AFC tenants remain untouched.
+Add a **preview mode** so you can validate the design:
 
-### 2. Root redirect
+- New route `/$tenantSlug/admin/next-gameweek-preview` (gated by the existing club-admin session) — renders the exact same component using **synthetic preview data**: a fake player named "Tom Murphy" who has survived 3 GWs with picks (Liverpool, Arsenal, Man City), a synthetic upcoming GW4 with the real fixtures from the tenant's current competition, a deadline of "now + 3 days", and synthetic survival stats (24 alive of 60, top 3 picks of last week).
+- The preview screen has a thin banner at the top: **"Preview mode — synthetic data, no picks will be saved"** with the lock-in button disabled.
+- Accessed from a new "Preview Next Gameweek email page" button on `/admin/panel`.
 
-`src/routes/index.tsx` currently redirects to `/killeshin`. Change the target to `/oneshotclub`.
+This lets you iterate purely on layout/copy without minting tokens or affecting live data.
 
-### 3. Landing page behaviour at `/oneshotclub`
+## Files
 
-The tenant route (`/$tenantSlug/`) renders `<TenantEntry>`, which expects a `competition`. Since OneShotClub has no competition, the existing component will render with `competition: null`. Two options:
+**New**
 
-- **(a) Reuse `TenantEntry`** as-is and let it show its empty/no-comp state.
-- **(b) Branch in `$tenantSlug.index.tsx`**: if `competition === null`, render a simple OneShotClub master landing (logo, tagline, short "what is this" copy, link to how-it-works). No new route file needed.
+- `src/components/oneshot/NextGameweekView.tsx` — the shared presentational component. Takes a fully-resolved data object (player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, mode: "live" | "preview") and renders sections 1–7 above. The `/pick` route and the preview route both render this component.
+- `src/routes/$tenantSlug.admin.next-gameweek-preview.tsx` — admin-only route; loads real fixtures for the tenant's current competition, fabricates the rest, renders `NextGameweekView` in preview mode.
 
-Plan: go with **(b)** — cleaner and gives OneShotClub a proper brand landing rather than a half-filled entry form. Add a small `MasterTenantLanding` component in `src/components/oneshot/`.
+**Edited**
 
-### 4. Out of scope
+- `src/routes/pick.tsx` — keep the route, replace the layout with `<NextGameweekView mode="live" data={…} />`. Submission logic stays in `/pick`.
+- `src/lib/gameweeks.functions.ts` — extend `getPickContext` (or add a sibling `getNextGameweekContext`) to also return: `playersAlive`, `playersEliminated`, `topPicksLastWeek: { team, count }[]`, and the previous week's label. All server-side via `supabaseAdmin`, no new client privileges.
+- `src/routes/admin.panel.tsx` — add a "Preview Next Gameweek page" link.
 
-- No change to Killeshin's slug, name, branding, or URLs.
-- No change to St. Joseph's AFC.
-- No new admin/auth or platform-admin wiring — OneShotClub is just another tenant row that happens to be the default redirect.
+## Out of scope
 
-## Resulting URLs
-
-```
-/                            → redirects to /oneshotclub
-/oneshotclub                 → OneShotClub master landing
-/killeshin                   → Killeshin LMS entry (unchanged)
-/st-josephs-afc              → St. Joseph's AFC entry (unchanged)
-```
-
-Custom domain equivalent: `https://last-one-standing.oneshotclub.ie/` → OneShotClub landing.
+- No change to the eliminated screen, the entry/pay flow, or the email templates.
+- No new admin permissions; preview route uses the existing club-admin session check.
+- No changes to results/elimination engine.
 
 ## Open question
 
-Do you want the OneShotClub landing to list the live club competitions (Killeshin, St. Joseph's AFC) as clickable cards, or stay as a plain brand page with no club list for now?
+Should the **countdown turn red and pulse in the final hour**, or stay neutral until lock? Default = red + pulse, but easy to flip. Yes Red and pulse 
