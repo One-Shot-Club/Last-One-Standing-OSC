@@ -228,7 +228,7 @@ export const getPickContext = createServerFn({ method: 'GET' })
     }
 
     const { data: teams } = await supabaseAdmin
-      .from('teams').select('name, badge_url').eq('competition_id', player.competition_id)
+      .from('teams').select('name, badge_url').eq('competition_id', MASTER_TEAMS_COMPETITION_ID)
     const badges: Record<string, string | null> = {}
     for (const t of teams ?? []) badges[t.name] = t.badge_url ?? null
 
