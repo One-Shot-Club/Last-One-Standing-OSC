@@ -106,7 +106,7 @@ function Panel() {
         <h1 className="display mt-1 text-3xl">ADMIN CONTROL PANEL</h1>
       </div>
 
-      <nav className="mt-5 grid grid-cols-3 gap-2 rounded-lg border border-[color:var(--border)] bg-card p-2 text-xs tracking-wide sm:grid-cols-6">
+      <nav className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-[color:var(--border)] bg-card p-3 text-sm tracking-wide">
         {tabs.map((t) => (
           <button
             key={t}
