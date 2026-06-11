@@ -20,6 +20,7 @@ type Activation = {
   tenant: { id: string; slug: string; name: string; status: string };
   settings: {
     logo_url: string | null;
+    background_url: string | null;
     primary_color: string | null;
     accent_color: string | null;
     intro_copy: string | null;
@@ -27,6 +28,7 @@ type Activation = {
     contact_phone: string | null;
     whatsapp_link: string | null;
   } | null;
+
   competition: {
     id: string;
     name: string;
