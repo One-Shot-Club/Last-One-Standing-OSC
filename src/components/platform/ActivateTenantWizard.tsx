@@ -85,6 +85,8 @@ export function ActivateTenantWizard({
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [backgroundUrl, setBackgroundUrl] = useState("");
+
   const [primary, setPrimary] = useState("");
   const [accent, setAccent] = useState("");
   const [intro, setIntro] = useState("");
