@@ -208,7 +208,7 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError }: Pr
                     badge={badges[f.home_team]}
                     used={usedTeams.has(f.home_team)}
                     selected={selected === f.home_team}
-                    disabled={cd.locked || preview}
+                    disabled={cd.locked || !!preview}
                     onClick={() => setSelected(f.home_team)}
                   />
                   <span className="text-xs text-muted-foreground">vs</span>
