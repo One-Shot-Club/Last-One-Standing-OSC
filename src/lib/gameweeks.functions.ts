@@ -283,7 +283,7 @@ export const getNextGameweekPreviewContext = createServerFn({ method: 'POST' })
     }
 
     const { data: teams } = await supabaseAdmin
-      .from('teams').select('name, badge_url').eq('competition_id', data.competitionId)
+      .from('teams').select('name, badge_url').eq('competition_id', MASTER_TEAMS_COMPETITION_ID)
     const badges: Record<string, string | null> = {}
     for (const t of teams ?? []) badges[t.name] = t.badge_url ?? null
 
