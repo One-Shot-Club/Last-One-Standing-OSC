@@ -311,6 +311,19 @@ export const getNextGameweekPreviewContext = createServerFn({ method: 'POST' })
       result: 'W',
       created_at: nowIso,
     }))
+    // Seed a current-week pick so preview shows the "change your pick" state
+    const currentWeekSeed = teamNames[3]
+    if (currentWeekSeed) {
+      previewPicks.push({
+        id: 'preview-pick-current',
+        player_id: 'preview-player',
+        competition_id: data.competitionId,
+        week: previewWeekNumber,
+        team: currentWeekSeed,
+        result: null as never,
+        created_at: nowIso,
+      })
+    }
 
     const survivalStats = { total: 60, alive: 24, eliminated: 36, alivePct: 40, eliminatedPct: 60 }
     const topSeed = teamNames.slice(3, 6)
@@ -357,9 +370,18 @@ export const submitPickV2 = createServerFn({ method: 'POST' })
     if (new Date(gw.deadline_at).getTime() <= Date.now()) throw new Error('Picks are locked for this gameweek')
 
     const { data: existing } = await supabaseAdmin
-      .from('picks').select('team, week').eq('player_id', player.id)
-    if (existing?.some((p) => p.team === data.team)) throw new Error(`You already used ${data.team}`)
-    if (existing?.some((p) => p.week === gw.week_number)) throw new Error('You already picked this week')
+      .from('picks').select('id, team, week').eq('player_id', player.id)
+    const otherWeeks = (existing ?? []).filter((p) => p.week !== gw.week_number)
+    if (otherWeeks.some((p) => p.team === data.team)) throw new Error(`You already used ${data.team}`)
+
+    const currentWeekPick = (existing ?? []).find((p) => p.week === gw.week_number)
+    if (currentWeekPick) {
+      if (currentWeekPick.team === data.team) return currentWeekPick
+      const { data: updated, error } = await supabaseAdmin
+        .from('picks').update({ team: data.team } as never).eq('id', currentWeekPick.id).select('*').single()
+      if (error) throw error
+      return updated
+    }
 
     const { data: pick, error } = await supabaseAdmin.from('picks').insert({
       player_id: player.id,
