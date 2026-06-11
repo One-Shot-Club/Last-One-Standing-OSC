@@ -193,6 +193,8 @@ export function ActivateTenantWizard({
             slug,
             settings: {
               logo_url: logoUrl || null,
+              background_url: backgroundUrl || null,
+
               primary_color: primary || null,
               accent_color: accent || null,
               intro_copy: intro || null,
