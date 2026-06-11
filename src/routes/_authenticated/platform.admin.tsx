@@ -332,6 +332,9 @@ function TenantCard({
           >
             {tenant.competitions > 0 ? "Re-run setup" : "Activate"}
           </button>
+          <button className="text-xs underline" onClick={() => window.open(`https://last-one-standing.oneshotclub.ie/${tenant.slug}`, '_blank')}>
+            Open live URL
+          </button>
           <button className="text-xs underline" onClick={onEdit}>
             Edit branding
           </button>
