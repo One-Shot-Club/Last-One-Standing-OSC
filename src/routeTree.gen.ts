@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TenantSlugIndexRouteImport } from './routes/$tenantSlug.index'
+import { Route as OneshotclubMasterRouteImport } from './routes/oneshotclub.Master'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
 import { Route as AdminNextGameweekPreviewRouteImport } from './routes/admin.next-gameweek-preview'
@@ -73,6 +74,11 @@ const IndexRoute = IndexRouteImport.update({
 const TenantSlugIndexRoute = TenantSlugIndexRouteImport.update({
   id: '/$tenantSlug/',
   path: '/$tenantSlug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OneshotclubMasterRoute = OneshotclubMasterRouteImport.update({
+  id: '/oneshotclub/Master',
+  path: '/oneshotclub/Master',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/oneshotclub/Master': typeof OneshotclubMasterRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/oneshotclub/Master': typeof OneshotclubMasterRoute
   '/$tenantSlug': typeof TenantSlugIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/oneshotclub/Master': typeof OneshotclubMasterRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
   '/_authenticated/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
+    | '/oneshotclub/Master'
     | '/$tenantSlug/'
     | '/platform/admin'
     | '/lovable/email/suppression'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
+    | '/oneshotclub/Master'
     | '/$tenantSlug'
     | '/platform/admin'
     | '/lovable/email/suppression'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
+    | '/oneshotclub/Master'
     | '/$tenantSlug/'
     | '/_authenticated/platform/admin'
     | '/lovable/email/suppression'
@@ -294,6 +306,7 @@ export interface RootRouteChildren {
   AdminNextGameweekPreviewRoute: typeof AdminNextGameweekPreviewRoute
   AdminPanelRoute: typeof AdminPanelRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  OneshotclubMasterRoute: typeof OneshotclubMasterRoute
   TenantSlugIndexRoute: typeof TenantSlugIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronCheckRemindersRoute: typeof ApiPublicCronCheckRemindersRoute
@@ -366,6 +379,13 @@ declare module '@tanstack/react-router' {
       path: '/$tenantSlug'
       fullPath: '/$tenantSlug/'
       preLoaderRoute: typeof TenantSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oneshotclub/Master': {
+      id: '/oneshotclub/Master'
+      path: '/oneshotclub/Master'
+      fullPath: '/oneshotclub/Master'
+      preLoaderRoute: typeof OneshotclubMasterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -481,6 +501,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminNextGameweekPreviewRoute: AdminNextGameweekPreviewRoute,
   AdminPanelRoute: AdminPanelRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  OneshotclubMasterRoute: OneshotclubMasterRoute,
   TenantSlugIndexRoute: TenantSlugIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronCheckRemindersRoute: ApiPublicCronCheckRemindersRoute,
@@ -492,13 +513,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
