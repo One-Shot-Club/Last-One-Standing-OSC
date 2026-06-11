@@ -83,12 +83,6 @@ function Panel() {
       <header className="flex items-center justify-between">
         <Logo />
         <div className="flex items-center gap-3">
-          <Link
-            to="/oneshotclub/Master"
-            className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-          >
-            Master
-          </Link>
           <button
             className="text-xs uppercase tracking-widest text-muted-foreground"
             onClick={() => {
