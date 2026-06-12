@@ -90,10 +90,13 @@ export const getSelectionsTracker = createServerFn({ method: "GET" })
       const { data: teams } = await supabaseAdmin
         .from("teams")
         .select("name, badge_url")
-        .eq("competition_id", comp.id as string);
+        .in("competition_id", [comp.id as string, MASTER_TEAMS_COMPETITION_ID]);
       const badgeByName = new Map<string, string | null>();
       for (const t of teams ?? []) {
-        badgeByName.set(t.name as string, (t.badge_url as string | null) ?? null);
+        const name = t.name as string;
+        const badge = (t.badge_url as string | null) ?? null;
+        // Prefer the tenant's own badge if both exist
+        if (!badgeByName.has(name) || badge) badgeByName.set(name, badge);
       }
 
       picks = (pk ?? []).map((p) => ({
