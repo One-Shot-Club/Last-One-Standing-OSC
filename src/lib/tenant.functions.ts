@@ -12,6 +12,8 @@ export type TenantBranding = {
 
   primary_color: string | null;
   accent_color: string | null;
+  panel_text_color: string | null;
+  meta_text_color: string | null;
   intro_copy: string | null;
   contact_email: string | null;
   contact_phone: string | null;
