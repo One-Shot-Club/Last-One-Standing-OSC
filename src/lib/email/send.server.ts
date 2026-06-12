@@ -125,7 +125,7 @@ export async function enqueueTemplatedEmail(input: SendEmailInput): Promise<
     payload: {
       message_id: canonicalMessageId,
       to: recipient,
-      from: FROM_ADDRESS,
+      from: buildFromAddress(fromName),
       sender_domain: SENDER_DOMAIN,
       subject,
       html,
