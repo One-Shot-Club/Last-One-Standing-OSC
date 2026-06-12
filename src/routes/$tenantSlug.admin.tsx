@@ -1,7 +1,10 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { clubAdminLogin } from "@/lib/club-auth.functions";
+import { resolveTenantBySlug } from "@/lib/tenant.functions";
+import { useTenantBranding } from "@/lib/tenant/branding";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
 
 export const Route = createFileRoute("/$tenantSlug/admin")({
