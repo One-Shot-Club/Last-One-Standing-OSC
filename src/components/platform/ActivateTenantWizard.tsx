@@ -14,6 +14,7 @@ import {
 } from "@/lib/club-auth.functions";
 import { uploadTenantAsset } from "@/lib/uploads.functions";
 import { Btn, Field } from "@/components/oneshot/ui";
+import { BrandPreview } from "./BrandPreview";
 
 
 type Activation = {
@@ -23,6 +24,8 @@ type Activation = {
     background_url: string | null;
     primary_color: string | null;
     accent_color: string | null;
+    panel_text_color: string | null;
+    meta_text_color: string | null;
     intro_copy: string | null;
     contact_email: string | null;
     contact_phone: string | null;
@@ -89,6 +92,8 @@ export function ActivateTenantWizard({
 
   const [primary, setPrimary] = useState("");
   const [accent, setAccent] = useState("");
+  const [panelText, setPanelText] = useState("");
+  const [metaText, setMetaText] = useState("");
   const [intro, setIntro] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
