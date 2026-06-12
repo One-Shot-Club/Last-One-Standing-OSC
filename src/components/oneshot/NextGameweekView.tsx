@@ -55,9 +55,13 @@ interface Props {
   onSubmit?: (team: string) => Promise<void>;
   submitting?: boolean;
   submitError?: string | null;
+  /** Tenant logo (preferred over competition.club_logo_url). */
+  tenantLogoUrl?: string | null;
+  /** Tenant background image. */
+  tenantBgUrl?: string | null;
 }
 
-export function NextGameweekView({ data, onSubmit, submitting, submitError }: Props) {
+export function NextGameweekView({ data, onSubmit, submitting, submitError, tenantLogoUrl, tenantBgUrl }: Props) {
   const { player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, lastWeekLabel, preview } = data;
   const cd = useCountdown(gameweek?.deadline_at ?? null);
 
