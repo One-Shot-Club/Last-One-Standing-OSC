@@ -1,7 +1,10 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { clubAdminLogin } from "@/lib/club-auth.functions";
+import { resolveTenantBySlug } from "@/lib/tenant.functions";
+import { useTenantBranding } from "@/lib/tenant/branding";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
 
 export const Route = createFileRoute("/$tenantSlug/admin")({
@@ -12,6 +15,12 @@ function ClubAdminLogin() {
   const { tenantSlug } = useParams({ from: "/$tenantSlug/admin" });
   const nav = useNavigate();
   const loginFn = useServerFn(clubAdminLogin);
+  const resolveFn = useServerFn(resolveTenantBySlug);
+  const { data: tenantData } = useQuery({
+    queryKey: ["tenant-branding", tenantSlug],
+    queryFn: () => resolveFn({ data: { slug: tenantSlug } }),
+  });
+  useTenantBranding(tenantData?.tenant ?? null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);

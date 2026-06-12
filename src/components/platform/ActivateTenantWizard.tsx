@@ -447,7 +447,7 @@ export function ActivateTenantWizard({
             </div>
 
             <BrandPreview
-              clubName={name || a?.tenant.name || "Your club"}
+              clubName={clubName || name || a?.tenant.name || "Your club"}
               primary={primary}
               accent={accent}
               panelText={panelText}
@@ -456,6 +456,8 @@ export function ActivateTenantWizard({
               backgroundUrl={backgroundUrl}
               cardLogoUrl={clubLogo}
               intro={intro}
+              entryFee={entryFee}
+              prizePool={prize}
             />
           </div>
         )}

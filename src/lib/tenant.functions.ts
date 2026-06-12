@@ -12,6 +12,8 @@ export type TenantBranding = {
 
   primary_color: string | null;
   accent_color: string | null;
+  panel_text_color: string | null;
+  meta_text_color: string | null;
   intro_copy: string | null;
   contact_email: string | null;
   contact_phone: string | null;
@@ -43,7 +45,7 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+        "logo_url, background_url, primary_color, accent_color, panel_text_color, meta_text_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
       )
       .eq("tenant_id", tenant.id)
       .maybeSingle();
@@ -64,6 +66,8 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
         background_url: (settings?.background_url as string | null) ?? null,
         primary_color: (settings?.primary_color as string | null) ?? null,
         accent_color: (settings?.accent_color as string | null) ?? null,
+        panel_text_color: ((settings as Record<string, unknown> | null)?.panel_text_color as string | null) ?? null,
+        meta_text_color: ((settings as Record<string, unknown> | null)?.meta_text_color as string | null) ?? null,
         intro_copy: (settings?.intro_copy as string | null) ?? null,
         contact_email: (settings?.contact_email as string | null) ?? null,
         contact_phone: (settings?.contact_phone as string | null) ?? null,
@@ -103,7 +107,7 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+        "logo_url, background_url, primary_color, accent_color, panel_text_color, meta_text_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
       )
       .eq("tenant_id", tenant.id)
       .maybeSingle();
@@ -126,6 +130,8 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
         background_url: (settings?.background_url as string | null) ?? null,
         primary_color: (settings?.primary_color as string | null) ?? null,
         accent_color: (settings?.accent_color as string | null) ?? null,
+        panel_text_color: ((settings as Record<string, unknown> | null)?.panel_text_color as string | null) ?? null,
+        meta_text_color: ((settings as Record<string, unknown> | null)?.meta_text_color as string | null) ?? null,
         intro_copy: (settings?.intro_copy as string | null) ?? null,
         contact_email: (settings?.contact_email as string | null) ?? null,
         contact_phone: (settings?.contact_phone as string | null) ?? null,
@@ -174,5 +180,39 @@ export const listPublicClubs = createServerFn({ method: "GET" }).handler(
     }));
   },
 );
+
+export type TenantBrandingLite = {
+  primary_color: string | null;
+  accent_color: string | null;
+  panel_text_color: string | null;
+  meta_text_color: string | null;
+};
+
+/** Branding colours for a competition's tenant — used to theme admin screens. */
+export const getTenantBrandingForCompetition = createServerFn({ method: "GET" })
+  .inputValidator((d: { competitionId: string }) => d)
+  .handler(async ({ data }): Promise<TenantBrandingLite> => {
+    const { data: comp } = await supabaseAdmin
+      .from("competitions")
+      .select("tenant_id")
+      .eq("id", data.competitionId)
+      .maybeSingle();
+    if (!comp?.tenant_id) {
+      return { primary_color: null, accent_color: null, panel_text_color: null, meta_text_color: null };
+    }
+    const { data: s } = await supabaseAdmin
+      .from("tenant_settings")
+      .select("primary_color, accent_color, panel_text_color, meta_text_color")
+      .eq("tenant_id", comp.tenant_id as string)
+      .maybeSingle();
+    const r = (s ?? {}) as Record<string, string | null>;
+    return {
+      primary_color: r.primary_color ?? null,
+      accent_color: r.accent_color ?? null,
+      panel_text_color: r.panel_text_color ?? null,
+      meta_text_color: r.meta_text_color ?? null,
+    };
+  });
+
 
 

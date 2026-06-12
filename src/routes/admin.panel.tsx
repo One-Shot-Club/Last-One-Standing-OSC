@@ -33,6 +33,8 @@ import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
 import { Btn, Card, Eyebrow, Field, Logo, Shell } from "@/components/oneshot/ui";
 import { GameweekTasks } from "@/components/admin/GameweekTasks";
+import { getTenantBrandingForCompetition } from "@/lib/tenant.functions";
+import { useTenantBranding } from "@/lib/tenant/branding";
 
 import { cn } from "@/lib/utils";
 import {
@@ -62,11 +64,18 @@ function Panel() {
   }, [nav]);
 
   const fetchData = useServerFn(adminGetData);
+  const fetchBranding = useServerFn(getTenantBrandingForCompetition);
   const { data, refetch } = useQuery({
     queryKey: ["admin", compId, pin],
     queryFn: () => fetchData({ data: { competitionId: compId!, pin: pin ?? "" } }),
     enabled: !!compId,
   });
+  const { data: branding } = useQuery({
+    queryKey: ["admin-branding", compId],
+    queryFn: () => fetchBranding({ data: { competitionId: compId! } }),
+    enabled: !!compId,
+  });
+  useTenantBranding(branding ?? null);
 
   if (!data) {
     return (
