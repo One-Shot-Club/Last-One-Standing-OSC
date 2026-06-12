@@ -76,10 +76,11 @@ function Panel() {
     enabled: !!compId,
   });
   useTenantBranding(branding ?? null);
+  const bgUrl = branding?.background_url ?? undefined;
 
   if (!data) {
     return (
-      <Shell>
+      <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
         <Logo />
         <p className="mt-10 text-sm text-muted-foreground">Loading…</p>
       </Shell>
@@ -89,7 +90,7 @@ function Panel() {
   const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats"];
 
   return (
-    <Shell>
+    <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
       <header className="flex items-center justify-between">
         <Logo />
         <div className="flex items-center gap-3">

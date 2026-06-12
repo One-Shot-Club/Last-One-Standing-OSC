@@ -55,9 +55,13 @@ interface Props {
   onSubmit?: (team: string) => Promise<void>;
   submitting?: boolean;
   submitError?: string | null;
+  /** Tenant logo (preferred over competition.club_logo_url). */
+  tenantLogoUrl?: string | null;
+  /** Tenant background image. */
+  tenantBgUrl?: string | null;
 }
 
-export function NextGameweekView({ data, onSubmit, submitting, submitError }: Props) {
+export function NextGameweekView({ data, onSubmit, submitting, submitError, tenantLogoUrl, tenantBgUrl }: Props) {
   const { player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, lastWeekLabel, preview } = data;
   const cd = useCountdown(gameweek?.deadline_at ?? null);
 
@@ -73,10 +77,13 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError }: Pr
   const [selected, setSelected] = useState<string | null>(existingPickThisWeek);
   useEffect(() => { setSelected(existingPickThisWeek); }, [existingPickThisWeek]);
 
+  const logoUrl = tenantLogoUrl ?? competition?.club_logo_url ?? undefined;
+  const bgUrl = tenantBgUrl ?? undefined;
+
   if (!player.alive) {
     return (
-      <Shell>
-        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} />
+      <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
+        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
         <div className="mt-10 text-center">
           <h1 className="display text-3xl">You've been eliminated</h1>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -89,8 +96,8 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError }: Pr
 
   if (!gameweek) {
     return (
-      <Shell>
-        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} />
+      <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
+        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
         <div className="mt-10 text-center">
           <h1 className="display text-2xl">No upcoming gameweek yet</h1>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -119,14 +126,14 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError }: Pr
   }
 
   return (
-    <Shell>
+    <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
       {preview && (
         <div className="mb-3 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-center text-[11px] uppercase tracking-widest text-primary">
           Preview mode — synthetic data, no picks will be saved
         </div>
       )}
 
-      <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} />
+      <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
 
       {/* Hero: through to GWx */}
       <div className="mt-6 text-center">

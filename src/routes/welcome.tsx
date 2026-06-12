@@ -25,11 +25,11 @@ function Welcome() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
-  useCompetitionBranding(c);
+  const { logoUrl: tenantLogo, bgUrl } = useCompetitionBranding(c);
 
   return (
-    <Shell>
-      <ClubHeader clubName={comp?.club_name ?? "Last Man Standing"} logoUrl={comp?.club_logo_url} />
+    <Shell bgUrl={bgUrl ?? undefined} bgBlur={6}>
+      <ClubHeader clubName={comp?.club_name ?? "Last Man Standing"} logoUrl={tenantLogo ?? comp?.club_logo_url} />
 
       <div className="mt-12 text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-primary text-primary">
