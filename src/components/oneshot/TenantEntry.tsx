@@ -65,7 +65,7 @@ export function TenantEntry({
         </p>
       </div>
 
-      <div className="mt-3 space-y-1.5 pb-24">
+      <div className="mt-3 space-y-1.5 pb-6">
         {fixtures.map((f, i) => (
           <FixtureCard
             key={i}
@@ -76,7 +76,7 @@ export function TenantEntry({
         ))}
       </div>
 
-      <div className="mt-8">
+      <div className="mt-4">
         <Eyebrow>How it works</Eyebrow>
         <ol className="mt-4 space-y-2 text-sm text-muted-foreground">
           {RULES.map((r, i) => (
