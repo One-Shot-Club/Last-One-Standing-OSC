@@ -15,6 +15,12 @@ function ClubAdminLogin() {
   const { tenantSlug } = useParams({ from: "/$tenantSlug/admin" });
   const nav = useNavigate();
   const loginFn = useServerFn(clubAdminLogin);
+  const resolveFn = useServerFn(resolveTenantBySlug);
+  const { data: tenantData } = useQuery({
+    queryKey: ["tenant-branding", tenantSlug],
+    queryFn: () => resolveFn({ data: { slug: tenantSlug } }),
+  });
+  useTenantBranding(tenantData?.tenant ?? null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
