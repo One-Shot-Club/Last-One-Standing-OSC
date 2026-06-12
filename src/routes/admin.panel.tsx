@@ -564,7 +564,7 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
                 busy
               }
               onClick={async () => {
-                if (!confirm(`Lock ${activeGw.week_label}, eliminate losers, and email all alive players?`)) return;
+                if (!confirm(`Lock ${activeGw.week_label} and eliminate losers? Emails (You're through / Sorry you're out / Pick reminder) will appear as tasks at the top of the panel for you to review and send.`)) return;
                 setBusy(true);
                 try {
                   const out = await processGw({ data: { competitionId: compId, pin, gameweekId: activeGw.id } });
