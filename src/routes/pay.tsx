@@ -10,6 +10,7 @@ import {
 } from "@/lib/oneshot.functions";
 import { Btn, Card, Eyebrow, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
+import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 
 type Search = { c: string; n: string; e: string; p: string; t: string; o?: string };
 
@@ -49,6 +50,7 @@ function Pay() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
+  useCompetitionBranding(c);
   const join = useServerFn(joinCompetition);
   const pick = useServerFn(submitPick);
 

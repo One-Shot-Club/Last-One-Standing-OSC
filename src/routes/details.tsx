@@ -6,6 +6,7 @@ import { getCompetition } from "@/lib/oneshot.functions";
 import { Btn, Card, Eyebrow, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { cn } from "@/lib/utils";
+import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 
 type Search = { c: string; t: string };
 
@@ -29,6 +30,7 @@ function Details() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
+  useCompetitionBranding(c);
 
   const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
   const [offline, setOffline] = useState(false);

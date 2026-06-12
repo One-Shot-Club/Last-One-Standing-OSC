@@ -5,6 +5,7 @@ import { useState } from "react";
 import { getPickContext, submitPickV2 } from "@/lib/gameweeks.functions";
 import { Shell } from "@/components/oneshot/ui";
 import { NextGameweekView } from "@/components/oneshot/NextGameweekView";
+import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 
 type Search = { token: string };
 
@@ -29,6 +30,7 @@ function Pick() {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useCompetitionBranding((data as { competition?: { id?: string } } | undefined)?.competition?.id ?? null);
 
   if (!token) {
     return <Shell><p className="mt-10 text-sm text-muted-foreground">Missing magic link token.</p></Shell>;

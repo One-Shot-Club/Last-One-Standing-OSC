@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCompetition } from "@/lib/oneshot.functions";
 import { Btn, Card, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
+import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 
 type Search = { token: string; team: string; c: string };
 
@@ -24,6 +25,7 @@ function Welcome() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
+  useCompetitionBranding(c);
 
   return (
     <Shell>
