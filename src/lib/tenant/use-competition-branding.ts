@@ -4,9 +4,10 @@ import { getTenantBrandingForCompetition } from "@/lib/tenant.functions";
 import { useTenantBranding } from "@/lib/tenant/branding";
 
 /**
- * Fetch the tenant branding for a competition and apply it to the page.
- * Use on any route reached from the entry flow (details, pay, pick, welcome)
- * so the whole entry → payment → pick → admin journey shares the tenant theme.
+ * Fetch the tenant branding for a competition, apply colour tokens to the
+ * page, and return the tenant logo + background URLs so callers can wire
+ * them into <Shell> and <ClubHeader>. Use anywhere in the entry → pay →
+ * pick → welcome → admin flow so the whole journey shares one identity.
  */
 export function useCompetitionBranding(competitionId: string | null | undefined) {
   const fetchBranding = useServerFn(getTenantBrandingForCompetition);
@@ -17,4 +18,8 @@ export function useCompetitionBranding(competitionId: string | null | undefined)
     staleTime: 5 * 60 * 1000,
   });
   useTenantBranding(data ?? null);
+  return {
+    logoUrl: data?.logo_url ?? null,
+    bgUrl: data?.background_url ?? null,
+  };
 }
