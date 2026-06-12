@@ -77,10 +77,13 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError, tena
   const [selected, setSelected] = useState<string | null>(existingPickThisWeek);
   useEffect(() => { setSelected(existingPickThisWeek); }, [existingPickThisWeek]);
 
+  const logoUrl = tenantLogoUrl ?? competition?.club_logo_url ?? undefined;
+  const bgUrl = tenantBgUrl ?? undefined;
+
   if (!player.alive) {
     return (
-      <Shell>
-        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} />
+      <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
+        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
         <div className="mt-10 text-center">
           <h1 className="display text-3xl">You've been eliminated</h1>
           <p className="mt-3 text-sm text-muted-foreground">
@@ -93,8 +96,8 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError, tena
 
   if (!gameweek) {
     return (
-      <Shell>
-        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} />
+      <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
+        <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
         <div className="mt-10 text-center">
           <h1 className="display text-2xl">No upcoming gameweek yet</h1>
           <p className="mt-3 text-sm text-muted-foreground">
