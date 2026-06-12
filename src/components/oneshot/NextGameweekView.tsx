@@ -126,14 +126,14 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError, tena
   }
 
   return (
-    <Shell>
+    <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
       {preview && (
         <div className="mb-3 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-center text-[11px] uppercase tracking-widest text-primary">
           Preview mode — synthetic data, no picks will be saved
         </div>
       )}
 
-      <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} />
+      <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
 
       {/* Hero: through to GWx */}
       <div className="mt-6 text-center">
