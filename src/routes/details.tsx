@@ -30,7 +30,7 @@ function Details() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
-  useCompetitionBranding(c);
+  const { logoUrl: tenantLogo, bgUrl } = useCompetitionBranding(c);
 
   const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
   const [offline, setOffline] = useState(false);
@@ -38,10 +38,10 @@ function Details() {
   const valid = form.fullName.trim() && emailReady && form.phone.trim();
 
   return (
-    <Shell>
+    <Shell bgUrl={bgUrl ?? undefined} bgBlur={6}>
       <ClubHeader
         clubName={comp?.club_name ?? "Last Man Standing"}
-        logoUrl={comp?.club_logo_url}
+        logoUrl={tenantLogo ?? comp?.club_logo_url}
       />
 
       <div className="mt-8">
