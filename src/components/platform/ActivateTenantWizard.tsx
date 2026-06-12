@@ -203,9 +203,10 @@ export function ActivateTenantWizard({
             settings: {
               logo_url: logoUrl || null,
               background_url: backgroundUrl || null,
-
               primary_color: primary || null,
               accent_color: accent || null,
+              panel_text_color: panelText || null,
+              meta_text_color: metaText || null,
               intro_copy: intro || null,
               contact_email: contactEmail || null,
               contact_phone: contactPhone || null,
