@@ -181,4 +181,38 @@ export const listPublicClubs = createServerFn({ method: "GET" }).handler(
   },
 );
 
+export type TenantBrandingLite = {
+  primary_color: string | null;
+  accent_color: string | null;
+  panel_text_color: string | null;
+  meta_text_color: string | null;
+};
+
+/** Branding colours for a competition's tenant — used to theme admin screens. */
+export const getTenantBrandingForCompetition = createServerFn({ method: "GET" })
+  .inputValidator((d: { competitionId: string }) => d)
+  .handler(async ({ data }): Promise<TenantBrandingLite> => {
+    const { data: comp } = await supabaseAdmin
+      .from("competitions")
+      .select("tenant_id")
+      .eq("id", data.competitionId)
+      .maybeSingle();
+    if (!comp?.tenant_id) {
+      return { primary_color: null, accent_color: null, panel_text_color: null, meta_text_color: null };
+    }
+    const { data: s } = await supabaseAdmin
+      .from("tenant_settings")
+      .select("primary_color, accent_color, panel_text_color, meta_text_color")
+      .eq("tenant_id", comp.tenant_id as string)
+      .maybeSingle();
+    const r = (s ?? {}) as Record<string, string | null>;
+    return {
+      primary_color: r.primary_color ?? null,
+      accent_color: r.accent_color ?? null,
+      panel_text_color: r.panel_text_color ?? null,
+      meta_text_color: r.meta_text_color ?? null,
+    };
+  });
+
+
 
