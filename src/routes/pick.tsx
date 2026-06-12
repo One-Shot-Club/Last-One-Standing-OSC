@@ -61,6 +61,8 @@ function Pick() {
       onSubmit={handleSubmit}
       submitting={busy}
       submitError={error}
+      tenantLogoUrl={tenantLogo}
+      tenantBgUrl={bgUrl}
     />
   );
 }
