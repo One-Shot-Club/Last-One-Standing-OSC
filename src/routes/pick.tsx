@@ -5,6 +5,7 @@ import { useState } from "react";
 import { getPickContext, submitPickV2 } from "@/lib/gameweeks.functions";
 import { Shell } from "@/components/oneshot/ui";
 import { NextGameweekView } from "@/components/oneshot/NextGameweekView";
+import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 
 type Search = { token: string };
 
