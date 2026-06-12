@@ -49,9 +49,15 @@ function ClubAdminLogin() {
     }
   }
 
+  const bgUrl = tenantData?.tenant?.background_url ?? undefined;
+  const logoUrl = tenantData?.tenant?.logo_url ?? undefined;
   return (
-    <Shell>
-      <Logo />
+    <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
+      {logoUrl ? (
+        <div className="flex justify-center"><img src={logoUrl} alt="" className="h-16 w-16 object-contain" /></div>
+      ) : (
+        <Logo />
+      )}
       <div className="mt-12">
         <h1 className="display text-3xl">Club admin</h1>
         <p className="mt-2 text-sm text-muted-foreground">
