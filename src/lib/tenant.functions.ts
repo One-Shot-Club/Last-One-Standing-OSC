@@ -45,7 +45,7 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
+        "logo_url, background_url, primary_color, accent_color, panel_text_color, meta_text_color, intro_copy, contact_email, contact_phone, whatsapp_link, sponsor_assets",
       )
       .eq("tenant_id", tenant.id)
       .maybeSingle();
@@ -66,6 +66,8 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
         background_url: (settings?.background_url as string | null) ?? null,
         primary_color: (settings?.primary_color as string | null) ?? null,
         accent_color: (settings?.accent_color as string | null) ?? null,
+        panel_text_color: ((settings as Record<string, unknown> | null)?.panel_text_color as string | null) ?? null,
+        meta_text_color: ((settings as Record<string, unknown> | null)?.meta_text_color as string | null) ?? null,
         intro_copy: (settings?.intro_copy as string | null) ?? null,
         contact_email: (settings?.contact_email as string | null) ?? null,
         contact_phone: (settings?.contact_phone as string | null) ?? null,
