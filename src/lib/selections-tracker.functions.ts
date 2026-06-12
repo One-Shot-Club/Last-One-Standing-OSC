@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { MASTER_TEAMS_COMPETITION_ID } from "@/lib/master-catalog";
 
 export interface SelectionsPlayer {
   id: string;
