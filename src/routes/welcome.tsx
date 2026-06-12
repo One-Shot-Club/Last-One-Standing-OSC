@@ -25,6 +25,7 @@ function Welcome() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
+  useCompetitionBranding(c);
 
   return (
     <Shell>
