@@ -232,18 +232,20 @@ export const getTenantForEdit = createServerFn({ method: "POST" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link",
+        "logo_url, background_url, primary_color, accent_color, panel_text_color, meta_text_color, intro_copy, contact_email, contact_phone, whatsapp_link",
       )
       .eq("tenant_id", data.tenantId)
       .maybeSingle();
 
     return {
       tenant,
-      settings: settings ?? {
+      settings: (settings as Record<string, string | null> | null) ?? {
         logo_url: null,
         background_url: null,
         primary_color: null,
         accent_color: null,
+        panel_text_color: null,
+        meta_text_color: null,
         intro_copy: null,
         contact_email: null,
         contact_phone: null,
@@ -264,6 +266,8 @@ export const updateTenant = createServerFn({ method: "POST" })
         background_url?: string | null;
         primary_color?: string | null;
         accent_color?: string | null;
+        panel_text_color?: string | null;
+        meta_text_color?: string | null;
         intro_copy?: string | null;
         contact_email?: string | null;
         contact_phone?: string | null;
@@ -313,6 +317,8 @@ export const updateTenant = createServerFn({ method: "POST" })
       background_url: s.background_url ?? null,
       primary_color: s.primary_color ?? null,
       accent_color: s.accent_color ?? null,
+      panel_text_color: s.panel_text_color ?? null,
+      meta_text_color: s.meta_text_color ?? null,
       intro_copy: s.intro_copy ?? null,
       contact_email: s.contact_email ?? null,
       contact_phone: s.contact_phone ?? null,
@@ -357,7 +363,7 @@ export const getTenantActivation = createServerFn({ method: "POST" })
     const { data: settings } = await supabaseAdmin
       .from("tenant_settings")
       .select(
-        "logo_url, background_url, primary_color, accent_color, intro_copy, contact_email, contact_phone, whatsapp_link",
+        "logo_url, background_url, primary_color, accent_color, panel_text_color, meta_text_color, intro_copy, contact_email, contact_phone, whatsapp_link",
       )
       .eq("tenant_id", data.tenantId)
       .maybeSingle();
