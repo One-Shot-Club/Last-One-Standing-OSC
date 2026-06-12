@@ -106,7 +106,7 @@ export const runEmailTask = createServerFn({ method: 'POST' })
     if (!task) throw new Error('Task not found')
     if (task.sent_at) return { ok: true, alreadySent: true, queued: 0 }
 
-    const playerIds = await recipientPlayerIds(data.competitionId, task)
+    const playerIds = await recipientPlayerIds(data.competitionId, { gameweek_id: task.gameweek_id, kind: task.kind as TaskKind })
 
     // Resolve gameweek metadata once
     const { data: gw } = task.gameweek_id
