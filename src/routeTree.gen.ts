@@ -24,6 +24,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
 import { Route as AdminNextGameweekPreviewRouteImport } from './routes/admin.next-gameweek-preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as TenantSlugSelectionsTrackerRouteImport } from './routes/$tenantSlug.selections-tracker'
 import { Route as TenantSlugAdminRouteImport } from './routes/$tenantSlug.admin'
 import { Route as OneshotclubMasterIndexRouteImport } from './routes/oneshotclub.Master.index'
 import { Route as OneshotclubMasterAdminRouteImport } from './routes/oneshotclub.Master.admin'
@@ -110,6 +111,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const TenantSlugSelectionsTrackerRoute =
+  TenantSlugSelectionsTrackerRouteImport.update({
+    id: '/$tenantSlug/selections-tracker',
+    path: '/$tenantSlug/selections-tracker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const TenantSlugAdminRoute = TenantSlugAdminRouteImport.update({
   id: '/$tenantSlug/admin',
   path: '/$tenantSlug/admin',
@@ -177,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
+  '/$tenantSlug/selections-tracker': typeof TenantSlugSelectionsTrackerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
@@ -203,6 +211,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
+  '/$tenantSlug/selections-tracker': typeof TenantSlugSelectionsTrackerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
@@ -230,6 +239,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
+  '/$tenantSlug/selections-tracker': typeof TenantSlugSelectionsTrackerRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/welcome'
     | '/$tenantSlug/admin'
+    | '/$tenantSlug/selections-tracker'
     | '/dashboard'
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/welcome'
     | '/$tenantSlug/admin'
+    | '/$tenantSlug/selections-tracker'
     | '/dashboard'
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
@@ -310,6 +322,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/welcome'
     | '/$tenantSlug/admin'
+    | '/$tenantSlug/selections-tracker'
     | '/_authenticated/dashboard'
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
@@ -338,6 +351,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
   TenantSlugAdminRoute: typeof TenantSlugAdminRoute
+  TenantSlugSelectionsTrackerRoute: typeof TenantSlugSelectionsTrackerRoute
   AdminNextGameweekPreviewRoute: typeof AdminNextGameweekPreviewRoute
   AdminPanelRoute: typeof AdminPanelRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -458,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/$tenantSlug/selections-tracker': {
+      id: '/$tenantSlug/selections-tracker'
+      path: '/$tenantSlug/selections-tracker'
+      fullPath: '/$tenantSlug/selections-tracker'
+      preLoaderRoute: typeof TenantSlugSelectionsTrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$tenantSlug/admin': {
       id: '/$tenantSlug/admin'
       path: '/$tenantSlug/admin'
@@ -568,6 +589,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
   TenantSlugAdminRoute: TenantSlugAdminRoute,
+  TenantSlugSelectionsTrackerRoute: TenantSlugSelectionsTrackerRoute,
   AdminNextGameweekPreviewRoute: AdminNextGameweekPreviewRoute,
   AdminPanelRoute: AdminPanelRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
