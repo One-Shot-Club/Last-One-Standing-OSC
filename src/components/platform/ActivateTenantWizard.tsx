@@ -763,3 +763,39 @@ function Row({ ok, label }: { ok: boolean; label: string }) {
     </div>
   );
 }
+
+function ColorPicker({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[10px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={isHex ? value : placeholder && /^#[0-9a-fA-F]{6}$/.test(placeholder) ? placeholder : "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-10 shrink-0 cursor-pointer rounded-md border border-[color:var(--border)] bg-[color:var(--input)]"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="h-9 min-w-0 flex-1 rounded-md border border-[color:var(--border)] bg-[color:var(--input)] px-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        />
+      </div>
+    </label>
+  );
+}
