@@ -949,6 +949,8 @@ export type Database = {
           created_at: string
           intro_copy: string | null
           logo_url: string | null
+          meta_text_color: string | null
+          panel_text_color: string | null
           primary_color: string | null
           reminder_offsets: Json
           sponsor_assets: Json
@@ -964,6 +966,8 @@ export type Database = {
           created_at?: string
           intro_copy?: string | null
           logo_url?: string | null
+          meta_text_color?: string | null
+          panel_text_color?: string | null
           primary_color?: string | null
           reminder_offsets?: Json
           sponsor_assets?: Json
@@ -979,6 +983,8 @@ export type Database = {
           created_at?: string
           intro_copy?: string | null
           logo_url?: string | null
+          meta_text_color?: string | null
+          panel_text_color?: string | null
           primary_color?: string | null
           reminder_offsets?: Json
           sponsor_assets?: Json

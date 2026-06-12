@@ -14,6 +14,7 @@ import {
 } from "@/lib/club-auth.functions";
 import { uploadTenantAsset } from "@/lib/uploads.functions";
 import { Btn, Field } from "@/components/oneshot/ui";
+import { BrandPreview } from "./BrandPreview";
 
 
 type Activation = {
@@ -23,6 +24,8 @@ type Activation = {
     background_url: string | null;
     primary_color: string | null;
     accent_color: string | null;
+    panel_text_color: string | null;
+    meta_text_color: string | null;
     intro_copy: string | null;
     contact_email: string | null;
     contact_phone: string | null;
@@ -89,6 +92,8 @@ export function ActivateTenantWizard({
 
   const [primary, setPrimary] = useState("");
   const [accent, setAccent] = useState("");
+  const [panelText, setPanelText] = useState("");
+  const [metaText, setMetaText] = useState("");
   const [intro, setIntro] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -117,6 +122,8 @@ export function ActivateTenantWizard({
     setBackgroundUrl(r.settings?.background_url ?? "");
     setPrimary(r.settings?.primary_color ?? "");
     setAccent(r.settings?.accent_color ?? "");
+    setPanelText(r.settings?.panel_text_color ?? "");
+    setMetaText(r.settings?.meta_text_color ?? "");
     setIntro(r.settings?.intro_copy ?? "");
     setContactEmail(r.settings?.contact_email ?? "");
     setContactPhone(r.settings?.contact_phone ?? "");
@@ -144,6 +151,8 @@ export function ActivateTenantWizard({
         setBackgroundUrl(res.settings?.background_url ?? "");
         setPrimary(res.settings?.primary_color ?? "");
         setAccent(res.settings?.accent_color ?? "");
+        setPanelText(res.settings?.panel_text_color ?? "");
+        setMetaText(res.settings?.meta_text_color ?? "");
         setIntro(res.settings?.intro_copy ?? "");
         setContactEmail(res.settings?.contact_email ?? "");
         setContactPhone(res.settings?.contact_phone ?? "");
@@ -194,9 +203,10 @@ export function ActivateTenantWizard({
             settings: {
               logo_url: logoUrl || null,
               background_url: backgroundUrl || null,
-
               primary_color: primary || null,
               accent_color: accent || null,
+              panel_text_color: panelText || null,
+              meta_text_color: metaText || null,
               intro_copy: intro || null,
               contact_email: contactEmail || null,
               contact_phone: contactPhone || null,
@@ -295,7 +305,7 @@ export function ActivateTenantWizard({
       onClick={onClose}
     >
       <div
-        className="my-8 w-full max-w-xl rounded-xl border border-border bg-background p-5 shadow-xl"
+        className={`my-8 w-full ${step === 0 ? "max-w-5xl" : "max-w-xl"} rounded-xl border border-border bg-background p-5 shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -335,69 +345,117 @@ export function ActivateTenantWizard({
         {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
         {!loading && !done && step === 0 && (
-          <div className="space-y-3">
-            <Field label="Display name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Field label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-            <AssetUpload
-              label="Club logo"
-              hint="Shown above the OneShotClub mark on the entry page."
-              value={logoUrl}
-              onChange={setLogoUrl}
-              kind="logo"
-              tenantId={tenantId}
-              uploadFn={uploadFn}
-              preview="contain"
-            />
-            <AssetUpload
-              label="Background image"
-              hint="Lightly blurred behind the entry page. Use a high-resolution photo."
-              value={backgroundUrl}
-              onChange={setBackgroundUrl}
-              kind="background"
-              tenantId={tenantId}
-              uploadFn={uploadFn}
-              preview="cover"
-            />
+          <div className="grid gap-6 md:grid-cols-[1fr_280px]">
+            <div className="space-y-4">
+              <Field label="Display name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Field label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
 
-            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Images
+                </p>
+                <AssetUpload
+                  label="Club logo (header)"
+                  hint="Shown at the top of the entry page and in emails."
+                  value={logoUrl}
+                  onChange={setLogoUrl}
+                  kind="logo"
+                  tenantId={tenantId}
+                  uploadFn={uploadFn}
+                  preview="contain"
+                />
+                <AssetUpload
+                  label="Background image"
+                  hint="Lightly blurred behind the entry page. Use a high-resolution photo."
+                  value={backgroundUrl}
+                  onChange={setBackgroundUrl}
+                  kind="background"
+                  tenantId={tenantId}
+                  uploadFn={uploadFn}
+                  preview="cover"
+                />
+                <AssetUpload
+                  label="Competition / card logo"
+                  hint="Used inside the entry card and selection screens. Defaults to the header logo if blank."
+                  value={clubLogo}
+                  onChange={setClubLogo}
+                  kind="logo"
+                  tenantId={tenantId}
+                  uploadFn={uploadFn}
+                  preview="contain"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Colours
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <ColorPicker
+                    label="Primary (page bg)"
+                    value={primary}
+                    onChange={setPrimary}
+                    placeholder="#0e3a25"
+                  />
+                  <ColorPicker
+                    label="Accent (CTA · eyebrow)"
+                    value={accent}
+                    onChange={setAccent}
+                    placeholder="#c9a84c"
+                  />
+                  <ColorPicker
+                    label="On-primary text"
+                    value={panelText}
+                    onChange={setPanelText}
+                    placeholder="#f8f3e3"
+                  />
+                  <ColorPicker
+                    label="Muted / meta text"
+                    value={metaText}
+                    onChange={setMetaText}
+                    placeholder="#cdbf9a"
+                  />
+                </div>
+              </div>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs uppercase tracking-widest text-muted-foreground">
+                  Intro copy
+                </span>
+                <textarea
+                  value={intro}
+                  onChange={(e) => setIntro(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--input)] px-4 py-2 text-foreground focus:border-primary focus:outline-none"
+                />
+              </label>
               <Field
-                label="Primary colour"
-                value={primary}
-                onChange={(e) => setPrimary(e.target.value)}
-                placeholder="#1a1a2e"
+                label="Contact email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
               />
               <Field
-                label="Accent colour"
-                value={accent}
-                onChange={(e) => setAccent(e.target.value)}
-                placeholder="#e94560"
+                label="Contact phone"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+              />
+              <Field
+                label="WhatsApp link"
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
               />
             </div>
-            <label className="block">
-              <span className="mb-1.5 block text-xs uppercase tracking-widest text-muted-foreground">
-                Intro copy
-              </span>
-              <textarea
-                value={intro}
-                onChange={(e) => setIntro(e.target.value)}
-                rows={3}
-                className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--input)] px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-              />
-            </label>
-            <Field
-              label="Contact email"
-              value={contactEmail}
-              onChange={(e) => setContactEmail(e.target.value)}
-            />
-            <Field
-              label="Contact phone"
-              value={contactPhone}
-              onChange={(e) => setContactPhone(e.target.value)}
-            />
-            <Field
-              label="WhatsApp link"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
+
+            <BrandPreview
+              clubName={name || a?.tenant.name || "Your club"}
+              primary={primary}
+              accent={accent}
+              panelText={panelText}
+              metaText={metaText}
+              logoUrl={logoUrl}
+              backgroundUrl={backgroundUrl}
+              cardLogoUrl={clubLogo}
+              intro={intro}
             />
           </div>
         )}
@@ -703,5 +761,41 @@ function Row({ ok, label }: { ok: boolean; label: string }) {
       </span>
       <span className={ok ? "" : "text-muted-foreground"}>{label}</span>
     </div>
+  );
+}
+
+function ColorPicker({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const isHex = /^#[0-9a-fA-F]{6}$/.test(value);
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[10px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={isHex ? value : placeholder && /^#[0-9a-fA-F]{6}$/.test(placeholder) ? placeholder : "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-10 shrink-0 cursor-pointer rounded-md border border-[color:var(--border)] bg-[color:var(--input)]"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="h-9 min-w-0 flex-1 rounded-md border border-[color:var(--border)] bg-[color:var(--input)] px-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        />
+      </div>
+    </label>
   );
 }

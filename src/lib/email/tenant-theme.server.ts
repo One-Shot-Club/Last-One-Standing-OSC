@@ -74,24 +74,33 @@ export async function loadEmailThemeForCompetition(
   let logoUrl: string | null = null
   let primary = DEFAULT_PRIMARY
   let accent = DEFAULT_ACCENT
+  let panelTextOverride: string | null = null
+  let metaTextOverride: string | null = null
 
   if (comp?.tenant_id) {
     const { data: settings } = await supabaseAdmin
       .from('tenant_settings')
-      .select('logo_url, primary_color, accent_color')
+      .select('logo_url, primary_color, accent_color, panel_text_color, meta_text_color')
       .eq('tenant_id', comp.tenant_id)
       .maybeSingle()
     if (settings) {
-      logoUrl = absoluteLogoUrl(settings.logo_url ?? null)
-      primary = safeHex(settings.primary_color, DEFAULT_PRIMARY)
-      accent = safeHex(settings.accent_color, DEFAULT_ACCENT)
+      const s = settings as Record<string, string | null>
+      logoUrl = absoluteLogoUrl(s.logo_url ?? null)
+      primary = safeHex(s.primary_color, DEFAULT_PRIMARY)
+      accent = safeHex(s.accent_color, DEFAULT_ACCENT)
+      if (s.panel_text_color && HEX_RE.test(s.panel_text_color.trim())) {
+        panelTextOverride = s.panel_text_color.trim()
+      }
+      if (s.meta_text_color && HEX_RE.test(s.meta_text_color.trim())) {
+        metaTextOverride = s.meta_text_color.trim()
+      }
     }
   }
 
-  // Pick a readable text colour on top of the chosen primary.
+  // Pick a readable text colour on top of the chosen primary when not overridden.
   const dark = luminance(primary) < 0.5
-  const panelTextColor = dark ? DEFAULT_PANEL_TEXT : '#0a0a0a'
-  const metaTextColor = dark ? DEFAULT_META_TEXT : 'rgba(0,0,0,0.55)'
+  const panelTextColor = panelTextOverride ?? (dark ? DEFAULT_PANEL_TEXT : '#0a0a0a')
+  const metaTextColor = metaTextOverride ?? (dark ? DEFAULT_META_TEXT : 'rgba(0,0,0,0.55)')
 
   return {
     primaryColor: primary,

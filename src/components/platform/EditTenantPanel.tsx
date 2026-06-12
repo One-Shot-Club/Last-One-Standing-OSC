@@ -46,7 +46,7 @@ export function EditTenantPanel({
     loadFn({ data: { tenantId } })
       .then((r) => {
         if (cancelled) return;
-        const res = r as { tenant: { name: string; slug: string }; settings: Settings };
+        const res = r as unknown as { tenant: { name: string; slug: string }; settings: Settings };
         setName(res.tenant.name);
         setSlug(res.tenant.slug);
         setS({
