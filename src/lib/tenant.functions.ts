@@ -186,23 +186,28 @@ export type TenantBrandingLite = {
   accent_color: string | null;
   panel_text_color: string | null;
   meta_text_color: string | null;
+  logo_url: string | null;
+  background_url: string | null;
 };
 
-/** Branding colours for a competition's tenant — used to theme admin screens. */
+/** Branding (colours + logo + background) for a competition's tenant. */
 export const getTenantBrandingForCompetition = createServerFn({ method: "GET" })
   .inputValidator((d: { competitionId: string }) => d)
   .handler(async ({ data }): Promise<TenantBrandingLite> => {
+    const empty: TenantBrandingLite = {
+      primary_color: null, accent_color: null,
+      panel_text_color: null, meta_text_color: null,
+      logo_url: null, background_url: null,
+    };
     const { data: comp } = await supabaseAdmin
       .from("competitions")
       .select("tenant_id")
       .eq("id", data.competitionId)
       .maybeSingle();
-    if (!comp?.tenant_id) {
-      return { primary_color: null, accent_color: null, panel_text_color: null, meta_text_color: null };
-    }
+    if (!comp?.tenant_id) return empty;
     const { data: s } = await supabaseAdmin
       .from("tenant_settings")
-      .select("primary_color, accent_color, panel_text_color, meta_text_color")
+      .select("primary_color, accent_color, panel_text_color, meta_text_color, logo_url, background_url")
       .eq("tenant_id", comp.tenant_id as string)
       .maybeSingle();
     const r = (s ?? {}) as Record<string, string | null>;
@@ -211,6 +216,8 @@ export const getTenantBrandingForCompetition = createServerFn({ method: "GET" })
       accent_color: r.accent_color ?? null,
       panel_text_color: r.panel_text_color ?? null,
       meta_text_color: r.meta_text_color ?? null,
+      logo_url: r.logo_url ?? null,
+      background_url: r.background_url ?? null,
     };
   });
 
