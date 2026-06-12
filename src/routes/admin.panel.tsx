@@ -33,6 +33,8 @@ import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
 import { Btn, Card, Eyebrow, Field, Logo, Shell } from "@/components/oneshot/ui";
 import { GameweekTasks } from "@/components/admin/GameweekTasks";
+import { getTenantBrandingForCompetition } from "@/lib/tenant.functions";
+import { useTenantBranding } from "@/lib/tenant/branding";
 
 import { cn } from "@/lib/utils";
 import {
