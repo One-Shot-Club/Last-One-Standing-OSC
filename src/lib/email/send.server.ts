@@ -46,7 +46,7 @@ export async function enqueueTemplatedEmail(input: SendEmailInput): Promise<
   | { ok: true; messageId: string; queued: true }
   | { ok: false; reason: string }
 > {
-  const { templateName, to, idempotencyKey, templateData = {} } = input
+  const { templateName, to, idempotencyKey, templateData = {}, fromName } = input
   const template: TemplateEntry | undefined = TEMPLATES[templateName]
   if (!template) {
     console.error('[email] template not found', { templateName })
