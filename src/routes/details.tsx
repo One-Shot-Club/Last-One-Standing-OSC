@@ -30,6 +30,7 @@ function Details() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
+  useCompetitionBranding(c);
 
   const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
   const [offline, setOffline] = useState(false);
