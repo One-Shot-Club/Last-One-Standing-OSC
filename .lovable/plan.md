@@ -1,57 +1,93 @@
-## Route map (current)
+## Goal
 
-### Public / marketing
-- **`/`** — Hard redirect to `/oneshotclub`. No UI of its own.
-- **`/oneshotclub`** (`$tenantSlug/` with slug `oneshotclub`) — **Master tenant landing.** Primary access to the master tenant; lists all live clubs and is where global brand edits should originate and cascade to child tenants.
-- **`/[club-slug]`** (e.g. `/killeshin-gaa`, `/st-josephs-afc`) — Tenant landing + entry form. Player enters name / email (or "Offline Player") / phone. Shows tenant logo + blurred background.
-- **`/how-it-works`** — Step 2 of the join flow. Shows the rules and Gameweek 1 fixtures so the player picks their first team before paying.
-- **`/pay`** — Step 3 of the join flow. Records the entry (`joinCompetition`) and shows the club's payment link (Stripe / Revolut / manual).
-- **`/welcome`** — Step 4 of the join flow. Confirmation screen with magic-link deep link for future weeks.
-- **`/auth`** — Supabase Auth sign-in (platform admins + tenant members). Google + email.
-- **`/unsubscribe`** — Email-link landing page to confirm unsubscribe.
+Keep email simple and predictable:
 
-### Player (magic-token, no auth)
-- **`/pick?token=…`** — The live weekly pick page. Renders `NextGameweekView`: survival banner, full fixture list, prior-picks history, current pick marker, lock-in / update button. This is the canonical per-week page.
+- **1 automated email** — Entry Confirmation (fires after payment, already works)
+- **3 manual bulk sends** — surfaced as Tasks in the Tenant Admin Panel after each gameweek
+- All emails **branded per tenant** (logo + primary/accent colours + from-name)
 
-### Club admin (PIN-protected, per tenant)
-- **`/[club-slug]/admin`** — Club admin PIN login for that specific tenant. Issues a club admin session.
-- **`/admin/panel`** — The full club admin console (entries, payments, gameweeks, results, broadcasts, audit log). Opened after PIN login.
-- **`/admin/next-gameweek-preview`** — UI preview of what `/pick` will show players for the upcoming gameweek. Used by club admins to sanity-check fixtures / deadline / messaging before publishing.
+## What stays vs what changes
 
-### Platform admin (Supabase Auth)
-- **`/dashboard`** (`_authenticated/dashboard`) — Landing for any signed-in tenant member; lists tenants you belong to.
-- **`/platform/admin`** (`_authenticated/platform/admin`) — **Platform admin console.** Create new tenants, run the activation wizard (branding, logo, background, fixtures), edit branding, pause / archive, open live URL, manage platform admins.
 
-### Server / utility routes (not user-facing pages)
-- **`/api/public/tenant-assets/*`** — Proxy that serves private tenant logo / background uploads.
-- **`/api/public/cron/check-reminders`** — Cron endpoint that sends 24h / 1h pick reminders.
-- **`/email/unsubscribe`** — JSON endpoint backing the `/unsubscribe` page.
-- **`/lovable/email/*`** — Internal email queue / suppression / preview endpoints (Lovable Email infra).
+| Email                                              | Today                    | After plan                                                |
+| -------------------------------------------------- | ------------------------ | --------------------------------------------------------- |
+| Entry Confirmation                                 | Auto on entry            | Auto on entry (unchanged trigger) — re-skinned per tenant |
+| Progression ("You're through — make GW{n+1} pick") | Auto from results engine | **Manual bulk** from Admin Tasks                          |
+| Elimination ("Sorry, thanks for taking part")      | Auto from results engine | **Manual bulk** from Admin Tasks                          |
+| Reminder ("Don't forget your pick")                | Auto cron (24h + 1h)     | **Manual bulk** from Admin Tasks; cron disabled           |
+| reminder-24h, reminder-1h templates                | 2 files                  | Collapse to 1 `pick-reminder` template                    |
+| broadcast                                          | Exists                   | Keep as-is (ad-hoc) What is "Broadcast" for?              |
 
----
 
-## Legacy / duplicated routes to remove
+## Per-tenant branding
 
-These no longer carry their own purpose and are superseded by newer routes:
+Thread tenant theme into every email:
 
-1. **`/admin` (`src/routes/admin.index.tsx`)** — A thin redirect that just sends signed-in users to `/dashboard` and otherwise links to `/auth`. The footer note ("Club admins should use `/[your-club]/admin`") is already documented elsewhere. **Remove**; point any remaining links straight to `/auth`.
-2. **`/gw2` (`src/routes/gw2.tsx`)** — Gameweek-2-specific pick page from before `/pick` was generalised. `/pick` now handles every gameweek via `getPickContext` + `NextGameweekView`. **Remove**; any stale links should be rewritten to `/pick?token=…`.
-3. **`/welcome`'s "Open Gameweek 2" link** (if it points at `/gw2`) — update to `/pick` as part of the `/gw2` removal.
+- **Logo** — `tenant_settings.logo_url` → header `<Img>` (replaces hardcoded "OneShotClub · Last Man Standing" wordmark)
+- **Primary colour** — `tenant_settings.primary_color` → panel background (replaces `#0e3a25`)
+- **Accent colour** — `tenant_settings.accent_color` → CTA button + eyebrow text (replaces `#c9a84c`)
+- **Club name** — from `competitions.club_name` (already wired) → also drives the **From name**: `Killeshin GAA <notify@oneshotclub.ie>` — same verified sender, per-tenant display name only. No DNS work per club.
 
-Kept (looks like a duplicate but isn't):
-- **`/admin/panel` vs `/[club-slug]/admin`** — `/[club-slug]/admin` is the PIN login screen; `/admin/panel` is the full console you land in after login. Different jobs, both still needed. (Optional follow-up: nest the panel under `/[club-slug]/admin/panel` so the URL reflects the tenant — flagged but not in this change.)
+Body background stays `#ffffff` (email-client requirement). Light/dark text auto-picked from primary colour luminance so light-themed tenants stay readable. 
 
----
+## Admin Panel: Gameweek Tasks
 
-## What this plan delivers
+After results are saved for a gameweek, the results engine **stops sending emails** and instead writes a row to a new `email_tasks` table for each pending bulk send. The Admin Panel grows a "Tasks" badge/section showing:
 
-- Updates `.lovable/plan.md` to the route inventory above so you have a single editable reference page (visible in the right-hand plan view you're currently using).
-- Deletes `src/routes/admin.index.tsx` and `src/routes/gw2.tsx`.
-- Searches the codebase for any `<Link to="/admin">`, `nav({ to: "/admin" })`, or `/gw2` references and rewrites them to `/auth` and `/pick` respectively (notably the `nav({ to: "/admin" })` fallback inside `admin.next-gameweek-preview.tsx` and the welcome / email templates if they link to `/gw2`).
-- Regenerates `routeTree.gen.ts` via the Vite plugin (automatic on next dev run).
+```text
+GW3 results saved · 2 Aug
+┌──────────────────────────────────────────────────────────┐
+│ ☐ Send "You're Through" to 24 survivors      [Preview] [Send] │
+│ ☐ Send "Sorry you're out" to 18 eliminated   [Preview] [Send] │
+└──────────────────────────────────────────────────────────┘
+
+GW4 opens · deadline Sat 30 Aug 13:30
+┌──────────────────────────────────────────────────────────┐
+│ ☐ Send pick reminder to 24 players           [Preview] [Send] │
+└──────────────────────────────────────────────────────────┘
+```
+
+Each task:
+
+- Preview → renders the template with sample data in a dialog
+- Send → calls a server fn that loops the recipient list, enqueues one email per player (idempotency key `task-{taskId}-{playerId}` so re-clicking is safe), marks the task `sent_at`
+- Shows sent count + timestamp once done
+
+## Files
+
+**New**
+
+- `supabase/migrations/*` — `email_tasks` table (tenant_id, gameweek_id, kind: 'progression'|'elimination'|'reminder', recipient_count, sent_at, sent_by) + GRANTs + RLS
+- `src/lib/email-templates/pick-reminder.tsx` — merged reminder template
+- `src/lib/email/tenant-theme.server.ts` — loads tenant_settings, builds `{ logoUrl, primaryColor, accentColor, fromName }` and passes into every `templateData`
+- `src/lib/admin-tasks.functions.ts` — `listTasks`, `runTask` (PIN-gated)
+- `src/components/admin/GameweekTasks.tsx` — UI section in admin panel
+
+**Edited**
+
+- `src/lib/email-templates/_shared.tsx` — accept `theme` prop, replace hardcoded colours/wordmark; helper for contrast text colour
+- `src/lib/email-templates/{entry-confirmation,progression,elimination}.tsx` — consume theme
+- `src/lib/email/triggers.server.ts` — inject theme into every `templateData`; `sendProgression`/`sendElimination`/`sendReminder` become callable by the task runner over a list
+- `src/lib/email/send.server.ts` — set per-tenant `fromName` when enqueueing
+- `src/lib/results-engine.server.ts` — **remove** direct `sendElimination`/`sendProgression` calls; instead `INSERT INTO email_tasks` one row per kind
+- `src/routes/api/public/cron/check-reminders.ts` — disable (or delete) the cron; reminders are manual now
+- `src/routes/admin.panel.tsx` — add `GameweekTasks` section above existing tabs
+
+**Untouched**
+
+- Entry confirmation trigger in `src/lib/oneshot.functions.ts` (stays automated)
+- `broadcast` template
+- Email infrastructure (pgmq queue, send route, suppression, unsubscribe)
+
+## Technical notes
+
+- "Manual" still uses the existing pgmq queue — admin click enqueues N messages and the `/lovable/email/queue/process` cron drains them at ~120/min. No new sending infra.
+- Idempotency keys ensure double-clicking "Send" never duplicates an email.
+- From-name override: pass `fromName` through `enqueueTemplatedEmail` → set when building the Resend/Lovable send payload as `"{clubName} <notify@oneshotclub.ie>"`.
+- Branding colours validated server-side (hex regex) before injection into inline styles to prevent CSS injection.
 
 ## Out of scope
 
-- No DB / schema changes.
-- No change to `/admin/panel` location (flagged as a possible future move under the tenant slug).
-- No change to the master-tenant cascade behaviour itself — just documenting that `/oneshotclub` is the source of truth.
+- Per-tenant verified domains (would need DNS per club — deferred)
+- Automated reminders (cron) — disabled per your decision; can be re-enabled later by flipping the task to auto-send
+- Marketing/newsletter sends (not supported by Lovable Emails by policy)

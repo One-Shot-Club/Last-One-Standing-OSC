@@ -1,14 +1,15 @@
 // High-level email triggers. These wrap enqueueTemplatedEmail with typed
-// inputs and pull common data (club name, magic link URL, formatted dates)
-// in one place. Server-only.
+// inputs and pull common data (club name, magic link URL, formatted dates,
+// per-tenant theme) in one place. Server-only.
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { enqueueTemplatedEmail } from './send.server'
+import { loadEmailThemeForCompetition, type EmailTheme } from './tenant-theme.server'
 
 function appBaseUrl(): string {
   return (
     process.env.APP_URL ||
     process.env.PUBLIC_APP_URL ||
-    'https://killeshin-gaa-lastmanstanding.oneshotclub.ie'
+    'https://last-one-standing.oneshotclub.ie'
   ).replace(/\/+$/, '')
 }
 
@@ -58,12 +59,15 @@ export function humanCountdown(toDate: Date | string): string {
   return `You have ${mins} minute${mins === 1 ? '' : 's'} to make your pick`
 }
 
-interface Player {
-  id: string
-  full_name: string
-  email: string
-  magic_token: string
-  competition_id: string
+function themePropFor(theme: EmailTheme) {
+  return {
+    primaryColor: theme.primaryColor,
+    accentColor: theme.accentColor,
+    panelTextColor: theme.panelTextColor,
+    metaTextColor: theme.metaTextColor,
+    logoUrl: theme.logoUrl,
+    clubName: theme.clubName,
+  }
 }
 
 interface Competition {
@@ -71,13 +75,6 @@ interface Competition {
   name: string
   club_name: string | null
   prize_pool: number
-}
-
-interface Gameweek {
-  id: string
-  week_number: number
-  week_label: string
-  deadline_at: string
 }
 
 async function getCompetition(id: string): Promise<Competition | null> {
@@ -99,13 +96,13 @@ async function countPlayers(competitionId: string, aliveOnly = false): Promise<n
   return count ?? 0
 }
 
-// 1. Entry confirmation
+// 1. Entry confirmation — automated, fires after first pick is recorded.
 export async function sendEntryConfirmation(playerId: string, week: number): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', playerId).maybeSingle()
-  if (!player) return
-  if (!player.email) return
+  if (!player || !player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+  const theme = await loadEmailThemeForCompetition(player.competition_id)
 
   const { data: pick } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', playerId).eq('week', week).maybeSingle()
@@ -121,9 +118,10 @@ export async function sendEntryConfirmation(playerId: string, week: number): Pro
     templateName: 'entry-confirmation',
     to: player.email,
     idempotencyKey: `entry-${playerId}-w${week}`,
+    fromName: theme.fromName,
     templateData: {
       firstName: firstNameOf(player.full_name),
-      clubName: comp.club_name ?? comp.name,
+      clubName: theme.clubName,
       competitionName: comp.name,
       team,
       teamBadgeUrl: badge ?? undefined,
@@ -132,11 +130,12 @@ export async function sendEntryConfirmation(playerId: string, week: number): Pro
       playersEntered: players,
       deadline: formatDeadline(gw?.deadline_at ?? null),
       magicLink: magicLinkFor(player.magic_token),
+      theme: themePropFor(theme),
     },
   })
 }
 
-// 2A. Elimination
+// 2A. Elimination — invoked by admin task runner.
 export async function sendElimination(opts: {
   playerId: string
   gameweekId: string
@@ -146,26 +145,24 @@ export async function sendElimination(opts: {
   noPick?: boolean
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
-  if (!player) return
-  if (!player.email) return
+  if (!player || !player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+  const theme = await loadEmailThemeForCompetition(player.competition_id)
 
   const { data: picks } = await supabaseAdmin
     .from('picks').select('week, team').eq('player_id', opts.playerId).order('week', { ascending: true })
   const pickHistory = (picks ?? []).map((p) => ({ week: `GW${p.week}`, team: p.team }))
-  // weeks survived = number of weeks they made it through alive. If they were
-  // just eliminated this week, weeks survived = picks_count - 1 (their last
-  // pick was the losing one). If no pick, survived = picks before this week.
   const survived = opts.noPick ? pickHistory.length : Math.max(0, pickHistory.length - 1)
 
   await enqueueTemplatedEmail({
     templateName: 'elimination',
     to: player.email,
     idempotencyKey: `elim-${opts.playerId}-${opts.gameweekId}`,
+    fromName: theme.fromName,
     templateData: {
       firstName: firstNameOf(player.full_name),
-      clubName: comp.club_name ?? comp.name,
+      clubName: theme.clubName,
       weekLabel: opts.weekLabel,
       pickedTeam: opts.pickedTeam ?? '',
       resultLine: opts.resultLine ?? '',
@@ -173,11 +170,12 @@ export async function sendElimination(opts: {
       pickHistory,
       shareUrl: competitionShareUrl(player.competition_id),
       noPick: !!opts.noPick,
+      theme: themePropFor(theme),
     },
   })
 }
 
-// 2B. Progression
+// 2B. Progression — invoked by admin task runner.
 export async function sendProgression(opts: {
   playerId: string
   gameweekId: string
@@ -186,71 +184,86 @@ export async function sendProgression(opts: {
   nextDeadline: string | null
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
-  if (!player) return
-  if (!player.email) return
+  if (!player || !player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+  const theme = await loadEmailThemeForCompetition(player.competition_id)
 
   const remaining = await countPlayers(player.competition_id, true)
   const { data: priorPicks } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
-
-  const nextWeekLabel = opts.nextWeekLabel
-  const nextDeadline = opts.nextDeadline
-
 
   await enqueueTemplatedEmail({
     templateName: 'progression',
     to: player.email,
     idempotencyKey: `progress-${opts.playerId}-${opts.gameweekId}`,
+    fromName: theme.fromName,
     templateData: {
       firstName: firstNameOf(player.full_name),
-      clubName: comp.club_name ?? comp.name,
+      clubName: theme.clubName,
       weekLabel: opts.weekLabel,
-      nextWeekLabel,
+      nextWeekLabel: opts.nextWeekLabel,
       playersRemaining: remaining,
       prizePool: Number(comp.prize_pool ?? 0),
-      deadline: formatDeadline(nextDeadline),
-      countdownCopy: nextDeadline ? humanCountdown(nextDeadline) : '',
+      deadline: formatDeadline(opts.nextDeadline),
+      countdownCopy: opts.nextDeadline ? humanCountdown(opts.nextDeadline) : '',
       magicLink: magicLinkFor(player.magic_token),
       usedTeams,
+      theme: themePropFor(theme),
     },
   })
 }
 
-// 3 & 4. Reminders
-export async function sendReminder(kind: '24h' | '1h', opts: {
+// 3. Pick reminder — invoked by admin task runner (was 24h/1h cron).
+export async function sendPickReminder(opts: {
   playerId: string
-  gameweek: Gameweek
+  gameweekId: string
+  nextWeekLabel: string
+  deadline: string | null
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
-  if (!player) return
-  if (!player.email) return
+  if (!player || !player.email) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
+  const theme = await loadEmailThemeForCompetition(player.competition_id)
 
   const { data: priorPicks } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
   const remaining = await countPlayers(player.competition_id, true)
 
-  const nextWeekLabel = opts.gameweek.week_label
-  const deadline = opts.gameweek.deadline_at
-
-
   await enqueueTemplatedEmail({
-    templateName: kind === '24h' ? 'reminder-24h' : 'reminder-1h',
+    templateName: 'pick-reminder',
     to: player.email,
-    idempotencyKey: `${kind}-${opts.playerId}-${opts.gameweek.id}`,
+    // Note: idempotencyKey scoped to gameweek_id so one reminder per player per gw.
+    // If an admin wants to nudge again, dismiss + recreate the task.
+    idempotencyKey: `reminder-${opts.playerId}-${opts.gameweekId}`,
+    fromName: theme.fromName,
     templateData: {
       firstName: firstNameOf(player.full_name),
-      clubName: comp.club_name ?? comp.name,
-      nextWeekLabel,
-      deadline: formatDeadline(deadline),
+      clubName: theme.clubName,
+      nextWeekLabel: opts.nextWeekLabel,
+      deadline: formatDeadline(opts.deadline),
+      countdownCopy: opts.deadline ? humanCountdown(opts.deadline) : '',
       playersRemaining: remaining,
       magicLink: magicLinkFor(player.magic_token),
       usedTeams,
+      theme: themePropFor(theme),
     },
+  })
+}
+
+// Legacy named export — kept so any in-flight imports keep building. Routes
+// to the merged pick-reminder template regardless of kind.
+export async function sendReminder(
+  _kind: '24h' | '1h',
+  opts: { playerId: string; gameweek: { id: string; week_label: string; deadline_at: string } },
+): Promise<void> {
+  await sendPickReminder({
+    playerId: opts.playerId,
+    gameweekId: opts.gameweek.id,
+    nextWeekLabel: opts.gameweek.week_label,
+    deadline: opts.gameweek.deadline_at,
   })
 }

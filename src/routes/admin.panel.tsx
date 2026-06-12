@@ -32,6 +32,7 @@ import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
 
 
 import { Btn, Card, Eyebrow, Field, Logo, Shell } from "@/components/oneshot/ui";
+import { GameweekTasks } from "@/components/admin/GameweekTasks";
 
 import { cn } from "@/lib/utils";
 import {
@@ -98,6 +99,10 @@ function Panel() {
       <div className="mt-6">
         <Eyebrow>{data.competition.name}</Eyebrow>
         <h1 className="display mt-1 text-3xl">ADMIN CONTROL PANEL</h1>
+      </div>
+
+      <div className="mt-5">
+        <GameweekTasks compId={compId!} pin={pin ?? ""} />
       </div>
 
       <nav className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-[color:var(--border)] bg-card p-3 text-sm tracking-wide">
@@ -559,7 +564,7 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
                 busy
               }
               onClick={async () => {
-                if (!confirm(`Lock ${activeGw.week_label}, eliminate losers, and email all alive players?`)) return;
+                if (!confirm(`Lock ${activeGw.week_label} and eliminate losers? Emails (You're through / Sorry you're out / Pick reminder) will appear as tasks at the top of the panel for you to review and send.`)) return;
                 setBusy(true);
                 try {
                   const out = await processGw({ data: { competitionId: compId, pin, gameweekId: activeGw.id } });

@@ -308,6 +308,70 @@ export type Database = {
         }
         Relationships: []
       }
+      email_tasks: {
+        Row: {
+          competition_id: string
+          created_at: string
+          dismissed_at: string | null
+          gameweek_id: string | null
+          id: string
+          kind: string
+          recipient_count: number
+          sent_at: string | null
+          sent_count: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          dismissed_at?: string | null
+          gameweek_id?: string | null
+          id?: string
+          kind: string
+          recipient_count?: number
+          sent_at?: string | null
+          sent_count?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          dismissed_at?: string | null
+          gameweek_id?: string | null
+          id?: string
+          kind?: string
+          recipient_count?: number
+          sent_at?: string | null
+          sent_count?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_tasks_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_tasks_gameweek_id_fkey"
+            columns: ["gameweek_id"]
+            isOneToOne: false
+            referencedRelation: "gameweeks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_unsubscribe_tokens: {
         Row: {
           created_at: string

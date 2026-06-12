@@ -8,7 +8,19 @@ import { TEMPLATES, type TemplateEntry } from '@/lib/email-templates/registry'
 
 const SITE_NAME = 'OneShotClub'
 const SENDER_DOMAIN = 'notify.oneshotclub.ie'
-const FROM_ADDRESS = `OneShotClub Picks <picks@${SENDER_DOMAIN}>`
+const DEFAULT_FROM_NAME = 'OneShotClub Picks'
+const FROM_LOCAL = 'picks'
+
+function sanitizeFromName(name: string): string {
+  // Strip characters that would break the RFC 5322 display-name. Allow most
+  // text but trim quotes/backslashes/CR/LF that could inject headers.
+  return name.replace(/["\\\r\n<>]/g, '').trim().slice(0, 60) || DEFAULT_FROM_NAME
+}
+
+function buildFromAddress(fromName: string | null | undefined): string {
+  const display = sanitizeFromName(fromName || DEFAULT_FROM_NAME)
+  return `${display} <${FROM_LOCAL}@${SENDER_DOMAIN}>`
+}
 
 function generateToken(): string {
   const bytes = new Uint8Array(32)
@@ -26,13 +38,15 @@ export interface SendEmailInput {
   to: string
   idempotencyKey: string
   templateData?: Record<string, any>
+  /** Per-tenant display name for the From header, e.g. "Killeshin GAA". */
+  fromName?: string | null
 }
 
 export async function enqueueTemplatedEmail(input: SendEmailInput): Promise<
   | { ok: true; messageId: string; queued: true }
   | { ok: false; reason: string }
 > {
-  const { templateName, to, idempotencyKey, templateData = {} } = input
+  const { templateName, to, idempotencyKey, templateData = {}, fromName } = input
   const template: TemplateEntry | undefined = TEMPLATES[templateName]
   if (!template) {
     console.error('[email] template not found', { templateName })
@@ -111,7 +125,7 @@ export async function enqueueTemplatedEmail(input: SendEmailInput): Promise<
     payload: {
       message_id: canonicalMessageId,
       to: recipient,
-      from: FROM_ADDRESS,
+      from: buildFromAddress(fromName),
       sender_domain: SENDER_DOMAIN,
       subject,
       html,
