@@ -122,6 +122,8 @@ export function ActivateTenantWizard({
     setBackgroundUrl(r.settings?.background_url ?? "");
     setPrimary(r.settings?.primary_color ?? "");
     setAccent(r.settings?.accent_color ?? "");
+    setPanelText(r.settings?.panel_text_color ?? "");
+    setMetaText(r.settings?.meta_text_color ?? "");
     setIntro(r.settings?.intro_copy ?? "");
     setContactEmail(r.settings?.contact_email ?? "");
     setContactPhone(r.settings?.contact_phone ?? "");
@@ -149,6 +151,8 @@ export function ActivateTenantWizard({
         setBackgroundUrl(res.settings?.background_url ?? "");
         setPrimary(res.settings?.primary_color ?? "");
         setAccent(res.settings?.accent_color ?? "");
+        setPanelText(res.settings?.panel_text_color ?? "");
+        setMetaText(res.settings?.meta_text_color ?? "");
         setIntro(res.settings?.intro_copy ?? "");
         setContactEmail(res.settings?.contact_email ?? "");
         setContactPhone(res.settings?.contact_phone ?? "");
