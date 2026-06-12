@@ -50,7 +50,7 @@ function Pay() {
     queryFn: () => fetchComp({ data: { id: c } }),
     enabled: !!c,
   });
-  useCompetitionBranding(c);
+  const { logoUrl: tenantLogo, bgUrl } = useCompetitionBranding(c);
   const join = useServerFn(joinCompetition);
   const pick = useServerFn(submitPick);
 
