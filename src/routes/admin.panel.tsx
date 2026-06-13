@@ -1224,3 +1224,16 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
     </div>
   );
 }
+
+function Emails({ compId, pin }: { compId: string; pin: string }) {
+  const listTemplatesFn = useServerFn(
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("@/lib/email-test.functions").listEmailTemplates,
+  );
+  return <EmailsInner compId={compId} pin={pin} listTemplatesFn={listTemplatesFn} />;
+}
+
+function EmailsInner(_props: { compId: string; pin: string; listTemplatesFn: unknown }) {
+  return null;
+}
+
