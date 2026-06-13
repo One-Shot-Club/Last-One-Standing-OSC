@@ -43,7 +43,7 @@ import {
 
 export const Route = createFileRoute("/admin/panel")({ component: Panel });
 
-type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit" | "tools";
+type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit" | "tools" | "emails";
 
 
 function Panel() {
