@@ -1226,14 +1226,138 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
 }
 
 function Emails({ compId, pin }: { compId: string; pin: string }) {
-  const listTemplatesFn = useServerFn(
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("@/lib/email-test.functions").listEmailTemplates,
+  const listFn = useServerFn(listEmailTemplates);
+  const sendFn = useServerFn(sendTestEmail);
+  const logFn = useServerFn(listRecentEmailLog);
+
+  const [template, setTemplate] = useState<string>("entry-confirmation");
+  const [recipient, setRecipient] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const { data: templates } = useQuery({
+    queryKey: ["email-templates", compId],
+    queryFn: () => listFn({ data: { competitionId: compId, pin } }),
+    enabled: !!compId,
+  });
+
+  const { data: logRows, refetch: refetchLog } = useQuery({
+    queryKey: ["email-log", compId],
+    queryFn: () => logFn({ data: { competitionId: compId, pin, limit: 25 } }),
+    enabled: !!compId,
+    refetchInterval: 5000,
+  });
+
+  async function onSend(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    setBusy(true);
+    try {
+      const res = await sendFn({
+        data: { competitionId: compId, pin, templateName: template, recipientEmail: recipient },
+      });
+      setMsg({ ok: true, text: `Queued. Message id: ${res.messageId}` });
+      refetchLog();
+    } catch (err) {
+      setMsg({ ok: false, text: err instanceof Error ? err.message : "Send failed" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <Eyebrow>Send test email</Eyebrow>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Sends through the real pipeline using this tenant's branding and From address. Suppression and unsubscribe rules apply.
+        </p>
+        <form onSubmit={onSend} className="mt-3 space-y-3">
+          <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Template
+            <select
+              className="mt-1 block w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm text-foreground"
+              value={template}
+              onChange={(e) => setTemplate(e.target.value)}
+            >
+              {(templates ?? []).map((t) => (
+                <option key={t.name} value={t.name} disabled={!t.hasPreview}>
+                  {t.displayName}{t.hasPreview ? "" : " (no preview data)"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Field
+            label="Recipient email"
+            type="email"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            placeholder="you@example.com"
+          />
+          <Btn type="submit" disabled={busy || !recipient}>
+            {busy ? "Sending…" : "Send test email"}
+          </Btn>
+          {msg && (
+            <p
+              className={cn(
+                "rounded-md border p-2 text-xs",
+                msg.ok
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600"
+                  : "border-destructive/40 bg-destructive/10 text-destructive",
+              )}
+            >
+              {msg.text}
+            </p>
+          )}
+        </form>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between">
+          <Eyebrow>Recent sends</Eyebrow>
+          <button
+            type="button"
+            className="text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => refetchLog()}
+          >
+            Refresh
+          </button>
+        </div>
+        <ul className="mt-3 divide-y divide-[color:var(--border)] text-sm">
+          {(logRows ?? []).map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{r.template_name} → {r.recipient_email}</div>
+                {r.error_message && (
+                  <div className="truncate text-xs text-destructive">{r.error_message}</div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span
+                  className={cn(
+                    "rounded-md border px-2 py-0.5 font-bold uppercase tracking-wide",
+                    r.status === "sent" && "border-emerald-500/40 bg-emerald-500/10 text-emerald-600",
+                    r.status === "pending" && "border-amber-500/40 bg-amber-500/10 text-amber-600",
+                    (r.status === "failed" || r.status === "dlq" || r.status === "bounced") &&
+                      "border-destructive/40 bg-destructive/10 text-destructive",
+                    r.status === "suppressed" && "border-muted bg-muted text-muted-foreground",
+                  )}
+                >
+                  {r.status}
+                </span>
+                <span className="text-muted-foreground">
+                  {new Date(r.created_at).toLocaleString()}
+                </span>
+              </div>
+            </li>
+          ))}
+          {(!logRows || logRows.length === 0) && (
+            <li className="py-4 text-xs text-muted-foreground">No sends logged yet.</li>
+          )}
+        </ul>
+      </Card>
+    </div>
   );
-  return <EmailsInner compId={compId} pin={pin} listTemplatesFn={listTemplatesFn} />;
 }
 
-function EmailsInner(_props: { compId: string; pin: string; listTemplatesFn: unknown }) {
-  return null;
-}
 
