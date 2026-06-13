@@ -1325,7 +1325,7 @@ function Emails({ compId, pin }: { compId: string; pin: string }) {
           </button>
         </div>
         <ul className="mt-3 divide-y divide-[color:var(--border)] text-sm">
-          {(logRows ?? []).map((r) => (
+          {(logRows ?? []).map((r: { id: string; template_name: string; recipient_email: string; status: string; error_message: string | null; created_at: string }) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <div className="min-w-0">
                 <div className="truncate font-medium">{r.template_name} → {r.recipient_email}</div>
