@@ -1281,7 +1281,7 @@ function Emails({ compId, pin }: { compId: string; pin: string }) {
               value={template}
               onChange={(e) => setTemplate(e.target.value)}
             >
-              {(templates ?? []).map((t) => (
+              {(templates ?? []).map((t: { name: string; displayName: string; hasPreview: boolean }) => (
                 <option key={t.name} value={t.name} disabled={!t.hasPreview}>
                   {t.displayName}{t.hasPreview ? "" : " (no preview data)"}
                 </option>
