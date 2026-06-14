@@ -425,12 +425,99 @@ export const importEntrants = createServerFn({ method: "POST" })
   });
 
 // --- Broadcast message to all / alive / eliminated players ---
+type BroadcastAudience =
+  | "all"
+  | "alive"
+  | "eliminated"
+  | "eliminated_last_gw"
+  | "paid"
+  | "unpaid";
+
+// Resolve the "last GW" = most recently processed gameweek for a competition.
+async function getLastProcessedWeek(competitionId: string): Promise<number | null> {
+  const { data } = await supabaseAdmin
+    .from("gameweeks")
+    .select("week_number, processed_at")
+    .eq("competition_id", competitionId)
+    .not("processed_at", "is", null)
+    .order("week_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data?.week_number as number | undefined) ?? null;
+}
+
+async function resolveBroadcastRecipients(
+  competitionId: string,
+  audience: BroadcastAudience,
+): Promise<Array<{ id: string; full_name: string | null; email: string | null; magic_token: string | null }>> {
+  if (audience === "eliminated_last_gw") {
+    const week = await getLastProcessedWeek(competitionId);
+    if (week == null) return [];
+    const { data: losingPicks } = await supabaseAdmin
+      .from("picks")
+      .select("player_id")
+      .eq("competition_id", competitionId)
+      .eq("week", week)
+      .eq("result", "loss");
+    const ids = Array.from(new Set((losingPicks ?? []).map((p) => p.player_id as string)));
+    if (ids.length === 0) return [];
+    const { data: players } = await supabaseAdmin
+      .from("players")
+      .select("id, full_name, email, magic_token")
+      .in("id", ids);
+    return players ?? [];
+  }
+
+  let query = supabaseAdmin
+    .from("players")
+    .select("id, full_name, email, magic_token, alive, paid")
+    .eq("competition_id", competitionId);
+  if (audience === "alive") query = query.eq("alive", true);
+  else if (audience === "eliminated") query = query.eq("alive", false);
+  else if (audience === "paid") query = query.eq("paid", true);
+  else if (audience === "unpaid") query = query.eq("paid", false);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export const getBroadcastAudienceCounts = createServerFn({ method: "POST" })
+  .inputValidator((d: { competitionId: string; pin: string }) => d)
+  .handler(async ({ data }) => {
+    await verifyAdmin(data.competitionId, data.pin);
+    const { data: players } = await supabaseAdmin
+      .from("players")
+      .select("id, alive, paid")
+      .eq("competition_id", data.competitionId);
+    const all = players ?? [];
+    const lastWeek = await getLastProcessedWeek(data.competitionId);
+    let eliminated_last_gw = 0;
+    if (lastWeek != null) {
+      const { count } = await supabaseAdmin
+        .from("picks")
+        .select("player_id", { count: "exact", head: true })
+        .eq("competition_id", data.competitionId)
+        .eq("week", lastWeek)
+        .eq("result", "loss");
+      eliminated_last_gw = count ?? 0;
+    }
+    return {
+      all: all.length,
+      alive: all.filter((p) => p.alive).length,
+      eliminated: all.filter((p) => !p.alive).length,
+      eliminated_last_gw,
+      paid: all.filter((p) => p.paid).length,
+      unpaid: all.filter((p) => !p.paid).length,
+      last_gw_week: lastWeek,
+    };
+  });
+
 export const broadcastMessage = createServerFn({ method: "POST" })
   .inputValidator(
     (d: {
       competitionId: string;
       pin: string;
-      audience: "all" | "alive" | "eliminated" | "paid" | "unpaid";
+      audience: BroadcastAudience;
       subject: string;
       body: string;
     }) => d,
@@ -441,24 +528,13 @@ export const broadcastMessage = createServerFn({ method: "POST" })
     const body = data.body.trim();
     if (!subject || !body) throw new Error("Subject and body required");
 
-    let query = supabaseAdmin
-      .from("players")
-      .select("id, full_name, email, alive, paid, magic_token")
-      .eq("competition_id", data.competitionId);
-
-    if (data.audience === "alive") query = query.eq("alive", true);
-    else if (data.audience === "eliminated") query = query.eq("alive", false);
-    else if (data.audience === "paid") query = query.eq("paid", true);
-    else if (data.audience === "unpaid") query = query.eq("paid", false);
-
-    const { data: recipients, error } = await query;
-    if (error) throw error;
+    const recipients = await resolveBroadcastRecipients(data.competitionId, data.audience);
 
     const { enqueueTemplatedEmail } = await import("@/lib/email/send.server");
     const broadcastId = crypto.randomUUID();
     const clubName = "Last Man Standing";
     let queued = 0;
-    for (const r of recipients ?? []) {
+    for (const r of recipients) {
       if (!r.email) continue;
       const firstName = (r.full_name ?? "Player").split(/\s+/)[0];
       const res = await enqueueTemplatedEmail({
@@ -490,11 +566,12 @@ export const broadcastMessage = createServerFn({ method: "POST" })
       audience: data.audience,
       subject,
       recipient_count: queued,
-      total_targeted: recipients?.length ?? 0,
+      total_targeted: recipients.length,
     });
 
-    return { ok: true, queued, targeted: recipients?.length ?? 0 };
+    return { ok: true, queued, targeted: recipients.length };
   });
+
 
 // --- List recent broadcast messages ---
 export const listMessages = createServerFn({ method: "POST" })
