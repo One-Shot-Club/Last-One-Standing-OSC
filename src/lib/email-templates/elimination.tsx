@@ -72,6 +72,8 @@ const Email = ({
               )}
             </Section>
 
+            <StatsBlock stats={stats} theme={theme} />
+
             <Text style={s.text}>
               Thank you for playing and for supporting {clubName}. Every entry goes into the prize pool and back into the club.
             </Text>
