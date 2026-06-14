@@ -110,4 +110,91 @@ export function Panel({ children, theme }: { children: React.ReactNode; theme?: 
   return <Section style={buildStyles(theme).panel}>{children}</Section>
 }
 
+export interface CompetitionStats {
+  alive: number
+  eliminated: number
+  total: number
+  picksPerWeek?: Array<{ week: number; count: number }>
+}
+
+export function StatsBlock({ stats, theme }: { stats?: CompetitionStats; theme?: EmailThemeProp }) {
+  if (!stats) return null
+  const t = resolve(theme)
+  const s = buildStyles(theme)
+  const cardWrap: React.CSSProperties = {
+    display: 'inline-block',
+    width: '48%',
+    boxSizing: 'border-box',
+    padding: '14px 16px',
+    margin: '0 1% 8px 0',
+    borderRadius: '10px',
+    border: `1px solid ${t.panelText}22`,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    verticalAlign: 'top',
+  }
+  const cardLabel: React.CSSProperties = {
+    color: t.metaText,
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '2px',
+    textTransform: 'uppercase',
+    margin: '0 0 4px',
+  }
+  const cardValue: React.CSSProperties = {
+    color: t.panelText,
+    fontFamily: fontStack.display,
+    fontSize: '28px',
+    fontWeight: 800,
+    lineHeight: 1,
+    margin: 0,
+  }
+  const ppw = stats.picksPerWeek ?? []
+  const maxCount = ppw.reduce((m, r) => Math.max(m, r.count), 0) || 1
+  return (
+    <Section style={{ margin: '18px 0 8px' }}>
+      <div style={{ marginBottom: '6px' }}>
+        <div style={cardWrap}>
+          <Text style={cardLabel}>Alive</Text>
+          <Text style={cardValue}>{stats.alive}</Text>
+        </div>
+        <div style={cardWrap}>
+          <Text style={cardLabel}>Eliminated</Text>
+          <Text style={cardValue}>{stats.eliminated}</Text>
+        </div>
+      </div>
+      {ppw.length > 0 && (
+        <Section
+          style={{
+            padding: '14px 16px',
+            borderRadius: '10px',
+            border: `1px solid ${t.panelText}22`,
+            backgroundColor: 'rgba(255,255,255,0.04)',
+            marginTop: '4px',
+          }}
+        >
+          <Text style={{ ...s.meta, fontSize: '10px', letterSpacing: '2px', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 10px' }}>
+            Picks per week
+          </Text>
+          {ppw.map((r) => {
+            const pct = Math.round((r.count / maxCount) * 100)
+            return (
+              <div key={r.week} style={{ margin: '0 0 6px' }}>
+                <div style={{ display: 'inline-block', width: '44px', color: t.metaText, fontSize: '11px', fontWeight: 700, letterSpacing: '1px' }}>
+                  GW{r.week}
+                </div>
+                <div style={{ display: 'inline-block', width: 'calc(100% - 80px)', verticalAlign: 'middle', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '8px', backgroundColor: t.accent, borderRadius: '4px' }} />
+                </div>
+                <div style={{ display: 'inline-block', width: '32px', textAlign: 'right', color: t.panelText, fontSize: '12px', fontWeight: 700 }}>
+                  {r.count}
+                </div>
+              </div>
+            )
+          })}
+        </Section>
+      )}
+    </Section>
+  )
+}
+
 export { React }
