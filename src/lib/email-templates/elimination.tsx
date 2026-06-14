@@ -106,6 +106,16 @@ export const template = {
       { week: 'GW3', team: 'Arsenal' },
     ],
     shareUrl: 'https://example.com/?c=demo',
+    stats: {
+      alive: 11,
+      eliminated: 1,
+      total: 12,
+      picksPerWeek: [
+        { week: 1, count: 12 },
+        { week: 2, count: 12 },
+        { week: 3, count: 11 },
+      ],
+    },
   },
 } satisfies TemplateEntry
 
