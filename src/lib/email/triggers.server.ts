@@ -180,6 +180,7 @@ export async function sendElimination(opts: {
     .from('picks').select('week, team').eq('player_id', opts.playerId).order('week', { ascending: true })
   const pickHistory = (picks ?? []).map((p) => ({ week: `GW${p.week}`, team: p.team }))
   const survived = opts.noPick ? pickHistory.length : Math.max(0, pickHistory.length - 1)
+  const stats = await loadCompetitionStats(player.competition_id)
 
   await enqueueTemplatedEmail({
     templateName: 'elimination',
@@ -196,6 +197,7 @@ export async function sendElimination(opts: {
       pickHistory,
       shareUrl: competitionShareUrl(player.competition_id),
       noPick: !!opts.noPick,
+      stats,
       theme: themePropFor(theme),
     },
   })
