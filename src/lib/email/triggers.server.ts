@@ -221,6 +221,7 @@ export async function sendProgression(opts: {
   const { data: priorPicks } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
+  const stats = await loadCompetitionStats(player.competition_id)
 
   await enqueueTemplatedEmail({
     templateName: 'progression',
@@ -238,6 +239,7 @@ export async function sendProgression(opts: {
       countdownCopy: opts.nextDeadline ? humanCountdown(opts.nextDeadline) : '',
       magicLink: magicLinkFor(player.magic_token),
       usedTeams,
+      stats,
       theme: themePropFor(theme),
     },
   })
