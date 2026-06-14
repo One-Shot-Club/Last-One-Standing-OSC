@@ -1190,15 +1190,25 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
           <Field label="Audience">
             <select
               value={audience}
-              onChange={(e) => setAudience(e.target.value as typeof audience)}
+              onChange={(e) => setAudience(e.target.value as Audience)}
               className="w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
             >
-              <option value="alive">Alive players</option>
-              <option value="eliminated">Eliminated players</option>
-              <option value="paid">Paid players</option>
-              <option value="unpaid">Unpaid players</option>
-              <option value="all">All players</option>
+              {(["all", "alive", "eliminated", "eliminated_last_gw", "paid", "unpaid"] as const).map((a) => {
+                const n = countFor(a);
+                const noLastGw = a === "eliminated_last_gw" && counts && counts.last_gw_week == null;
+                const suffix = noLastGw
+                  ? " (no completed GW)"
+                  : n == null ? " (…)" : ` (${n})`;
+                return (
+                  <option key={a} value={a} disabled={!!noLastGw}>
+                    {audienceLabels[a]}{suffix}
+                  </option>
+                );
+              })}
             </select>
+            {counts?.last_gw_week != null && audience === "eliminated_last_gw" && (
+              <p className="mt-1 text-xs text-muted-foreground">Last completed gameweek: GW{counts.last_gw_week}</p>
+            )}
           </Field>
           <Field label="Subject">
             <input
