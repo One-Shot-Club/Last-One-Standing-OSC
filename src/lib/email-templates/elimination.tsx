@@ -26,7 +26,7 @@ const Email = ({
   weeksSurvived = 0,
   pickHistory = [],
   shareUrl = '#',
-  noPick = false,
+  stats,
   theme,
 }: Props) => {
   const s = buildStyles(theme)
