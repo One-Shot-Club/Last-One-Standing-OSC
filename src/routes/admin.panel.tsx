@@ -145,6 +145,7 @@ function Panel() {
         {tab === "audit" && <Audit compId={compId!} pin={pin!} />}
         {tab === "tools" && <Tools compId={compId!} pin={pin!} />}
         {tab === "emails" && <Emails compId={compId!} pin={pin!} />}
+        {tab === "broadcast" && <Broadcast compId={compId!} pin={pin!} />}
 
       </div>
     </Shell>
