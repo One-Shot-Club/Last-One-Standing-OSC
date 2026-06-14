@@ -1023,12 +1023,14 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
   const importFn = useServerFn(importEntrants);
   const broadcastFn = useServerFn(broadcastMessage);
   const listMsgs = useServerFn(listMessages);
+  const getCountsFn = useServerFn(getBroadcastAudienceCounts);
 
   const [csv, setCsv] = useState("");
   const [importResult, setImportResult] = useState<{ inserted: number; skipped: number; errors: Array<{ row: number; reason: string }> } | null>(null);
   const [importing, setImporting] = useState(false);
 
-  const [audience, setAudience] = useState<"all" | "alive" | "eliminated" | "paid" | "unpaid">("alive");
+  type Audience = "all" | "alive" | "eliminated" | "eliminated_last_gw" | "paid" | "unpaid";
+  const [audience, setAudience] = useState<Audience>("alive");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -1038,6 +1040,26 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
     queryKey: ["admin-messages", compId],
     queryFn: () => listMsgs({ data: { competitionId: compId, pin } }),
   });
+
+  const { data: counts, refetch: refetchCounts } = useQuery({
+    queryKey: ["broadcast-audience-counts", compId],
+    queryFn: () => getCountsFn({ data: { competitionId: compId, pin } }),
+  });
+
+  const audienceLabels: Record<Audience, string> = {
+    all: "All players",
+    alive: "Still alive",
+    eliminated: "All eliminated",
+    eliminated_last_gw: "Eliminated in last GW",
+    paid: "Paid",
+    unpaid: "Unpaid",
+  };
+
+  function countFor(a: Audience): number | null {
+    if (!counts) return null;
+    return counts[a] ?? 0;
+  }
+
 
   function parseCsv(text: string): Array<{ fullName: string; email: string; phone?: string; paid?: boolean }> {
     const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
