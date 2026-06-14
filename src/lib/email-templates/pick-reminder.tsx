@@ -23,6 +23,7 @@ const Email = ({
   playersRemaining = 0,
   usedTeams = [],
   magicLink = '#',
+  stats,
   theme,
 }: Props) => {
   const s = buildStyles(theme)
