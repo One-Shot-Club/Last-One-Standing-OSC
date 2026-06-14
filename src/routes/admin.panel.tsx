@@ -1269,15 +1269,28 @@ function Emails({ compId, pin }: { compId: string; pin: string }) {
   const listFn = useServerFn(listEmailTemplates);
   const sendFn = useServerFn(sendTestEmail);
   const logFn = useServerFn(listRecentEmailLog);
+  const sendAudienceFn = useServerFn(sendTemplateToAudience);
+  const getCountsFn = useServerFn(getBroadcastAudienceCounts);
+
+  type Audience = "all" | "alive" | "eliminated" | "eliminated_last_gw" | "paid" | "unpaid";
 
   const [template, setTemplate] = useState<string>("entry-confirmation");
   const [recipient, setRecipient] = useState<string>("");
+  const [audience, setAudience] = useState<Audience>("alive");
   const [busy, setBusy] = useState(false);
+  const [audienceBusy, setAudienceBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [audienceMsg, setAudienceMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const { data: templates } = useQuery({
     queryKey: ["email-templates", compId],
     queryFn: () => listFn({ data: { competitionId: compId, pin } }),
+    enabled: !!compId,
+  });
+
+  const { data: counts, refetch: refetchCounts } = useQuery({
+    queryKey: ["broadcast-audience-counts", compId],
+    queryFn: () => getCountsFn({ data: { competitionId: compId, pin } }),
     enabled: !!compId,
   });
 
@@ -1287,6 +1300,20 @@ function Emails({ compId, pin }: { compId: string; pin: string }) {
     enabled: !!compId,
     refetchInterval: 5000,
   });
+
+  const audienceLabels: Record<Audience, string> = {
+    all: "All players",
+    alive: "Still alive",
+    eliminated: "All eliminated",
+    eliminated_last_gw: "Eliminated in last GW",
+    paid: "Paid",
+    unpaid: "Unpaid",
+  };
+
+  function countFor(a: Audience): number | null {
+    if (!counts) return null;
+    return (counts as Record<string, number | null>)[a] ?? 0;
+  }
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
@@ -1302,6 +1329,30 @@ function Emails({ compId, pin }: { compId: string; pin: string }) {
       setMsg({ ok: false, text: err instanceof Error ? err.message : "Send failed" });
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onSendAudience() {
+    setAudienceMsg(null);
+    const n = countFor(audience);
+    const tmpl = (templates ?? []).find((t) => t.name === template);
+    const label = tmpl?.displayName ?? template;
+    if (!confirm(`Send "${label}" to ${n ?? "?"} ${audienceLabels[audience]} recipient(s)?`)) return;
+    setAudienceBusy(true);
+    try {
+      const res = await sendAudienceFn({
+        data: { competitionId: compId, pin, templateName: template, audience },
+      });
+      setAudienceMsg({
+        ok: true,
+        text: `Queued ${res.queued} of ${res.targeted} (${res.skipped} skipped).`,
+      });
+      refetchLog();
+      refetchCounts();
+    } catch (err) {
+      setAudienceMsg({ ok: false, text: err instanceof Error ? err.message : "Send failed" });
+    } finally {
+      setAudienceBusy(false);
     }
   }
 
@@ -1351,6 +1402,65 @@ function Emails({ compId, pin }: { compId: string; pin: string }) {
           )}
         </form>
       </Card>
+
+      <Card>
+        <Eyebrow>Send template to audience</Eyebrow>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Sends the selected template to every player in the chosen audience.
+          Each recipient gets their own first name, magic link, and tenant branding.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted-foreground">Template</span>
+            <select
+              className="w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm text-foreground"
+              value={template}
+              onChange={(e) => setTemplate(e.target.value)}
+            >
+              {(templates ?? []).map((t) => (
+                <option key={t.name} value={t.name} disabled={!t.hasPreview}>
+                  {t.displayName}{t.hasPreview ? "" : " (no preview data)"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted-foreground">Audience</span>
+            <select
+              className="w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm text-foreground"
+              value={audience}
+              onChange={(e) => setAudience(e.target.value as Audience)}
+            >
+              {(["all", "alive", "eliminated", "eliminated_last_gw", "paid", "unpaid"] as const).map((a) => {
+                const n = countFor(a);
+                const noLastGw = a === "eliminated_last_gw" && counts && (counts as { last_gw_week: number | null }).last_gw_week == null;
+                const suffix = noLastGw ? " (no completed GW)" : n == null ? " (…)" : ` (${n})`;
+                return (
+                  <option key={a} value={a} disabled={!!noLastGw}>
+                    {audienceLabels[a]}{suffix}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+        </div>
+        <div className="mt-3 flex items-center gap-3">
+          <Btn onClick={onSendAudience} disabled={audienceBusy}>
+            {audienceBusy ? "Sending…" : "Send to audience"}
+          </Btn>
+          {audienceMsg && (
+            <span
+              className={cn(
+                "text-xs",
+                audienceMsg.ok ? "text-emerald-600" : "text-destructive",
+              )}
+            >
+              {audienceMsg.text}
+            </span>
+          )}
+        </div>
+      </Card>
+
 
       <Card>
         <div className="flex items-center justify-between">
