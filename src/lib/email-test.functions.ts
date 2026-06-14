@@ -105,3 +105,148 @@ export const listRecentEmailLog = createServerFn({ method: "POST" })
     if (error) throw error;
     return rows ?? [];
   });
+
+// Send a registered template to a filtered audience (alive / eliminated /
+// paid / unpaid / etc.) using each recipient's own profile data merged
+// over the template's previewData defaults. Mirrors broadcastMessage's
+// audience resolution but uses real registered templates.
+type SendAudience =
+  | "all"
+  | "alive"
+  | "eliminated"
+  | "eliminated_last_gw"
+  | "paid"
+  | "unpaid";
+
+export const sendTemplateToAudience = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      pin: string;
+      templateName: string;
+      audience: SendAudience;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+
+    const { TEMPLATES } = await import("@/lib/email-templates/registry");
+    const template = TEMPLATES[data.templateName];
+    if (!template) throw new Error(`Unknown template: ${data.templateName}`);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadEmailThemeForCompetition } = await import(
+      "@/lib/email/tenant-theme.server"
+    );
+    const { enqueueTemplatedEmail } = await import("@/lib/email/send.server");
+
+    // Resolve recipients with the same rules as broadcast.
+    type Recipient = {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      magic_token: string | null;
+    };
+    let recipients: Recipient[] = [];
+    if (data.audience === "eliminated_last_gw") {
+      const { data: gw } = await supabaseAdmin
+        .from("gameweeks")
+        .select("week_number, processed_at")
+        .eq("competition_id", data.competitionId)
+        .not("processed_at", "is", null)
+        .order("week_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const week = (gw?.week_number as number | undefined) ?? null;
+      if (week != null) {
+        const { data: losingPicks } = await supabaseAdmin
+          .from("picks")
+          .select("player_id")
+          .eq("competition_id", data.competitionId)
+          .eq("week", week)
+          .eq("result", "loss");
+        const ids = Array.from(
+          new Set((losingPicks ?? []).map((p) => p.player_id as string)),
+        );
+        if (ids.length > 0) {
+          const { data: players } = await supabaseAdmin
+            .from("players")
+            .select("id, full_name, email, magic_token")
+            .in("id", ids);
+          recipients = (players as Recipient[] | null) ?? [];
+        }
+      }
+    } else {
+      let query = supabaseAdmin
+        .from("players")
+        .select("id, full_name, email, magic_token, alive, paid")
+        .eq("competition_id", data.competitionId);
+      if (data.audience === "alive") query = query.eq("alive", true);
+      else if (data.audience === "eliminated") query = query.eq("alive", false);
+      else if (data.audience === "paid") query = query.eq("paid", true);
+      else if (data.audience === "unpaid") query = query.eq("paid", false);
+      const { data: players, error } = await query;
+      if (error) throw error;
+      recipients = (players as Recipient[] | null) ?? [];
+    }
+
+    const theme = await loadEmailThemeForCompetition(comp.id);
+    const themeProp = {
+      primaryColor: theme.primaryColor,
+      accentColor: theme.accentColor,
+      panelTextColor: theme.panelTextColor,
+      metaTextColor: theme.metaTextColor,
+      logoUrl: theme.logoUrl,
+      clubName: theme.clubName,
+    };
+    const previewData = template.previewData ?? {};
+
+    const runId = crypto.randomUUID();
+    let queued = 0;
+    let skipped = 0;
+    for (const r of recipients) {
+      if (!r.email) {
+        skipped++;
+        continue;
+      }
+      const firstName = (r.full_name ?? "Player").split(/\s+/)[0];
+      const templateData = {
+        ...previewData,
+        firstName,
+        fullName: r.full_name ?? firstName,
+        clubName: theme.clubName ?? previewData.clubName,
+        magicLink: r.magic_token
+          ? `https://last-one-standing.oneshotclub.ie/pick?token=${r.magic_token}`
+          : previewData.magicLink,
+        theme: themeProp,
+      };
+      const res = await enqueueTemplatedEmail({
+        templateName: data.templateName,
+        to: r.email,
+        idempotencyKey: `audience-${runId}-${r.id}`,
+        fromName: theme.fromName,
+        templateData,
+      });
+      if (res.ok) queued++;
+      else skipped++;
+    }
+
+    const { logAction } = await import("@/lib/admin-ops.server");
+    await logAction(
+      comp.tenant_id,
+      "email.send_audience",
+      comp.actorLabel,
+      "email",
+      null,
+      {
+        template: data.templateName,
+        audience: data.audience,
+        queued,
+        skipped,
+        targeted: recipients.length,
+      },
+    );
+
+    return { ok: true, queued, skipped, targeted: recipients.length };
+  });
+
