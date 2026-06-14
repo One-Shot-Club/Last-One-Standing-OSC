@@ -1,31 +1,22 @@
 ## Goal
-Extend the admin Broadcast panel so admins can target more audiences and see the recipient count for each before sending.
+Make the broadcast + audience selector easier to find by giving it its own top-level tab in the admin panel, instead of being buried inside the Emails tab.
 
-## Audiences (final list)
-- All players
-- Still alive
-- All eliminated
-- Eliminated in last gameweek
-- (keep) Paid / Unpaid
+## Changes (single file: `src/routes/admin.panel.tsx`)
 
-Each option in the dropdown shows its live count, e.g. `Still alive (42)`.
+1. **Add a new tab key** `"broadcast"` to the `Tab` union and to the visible `tabs` array, placed right after `"emails"` so the order is:
+   `players, entries, picks, gameweeks, teams, stats, emails, broadcast`.
 
-## Changes
+2. **Extract** the existing Broadcast card (the "SEND MESSAGE" card with the Audience dropdown) and the "Recent broadcasts" card from the `Emails` component into a new `Broadcast` component in the same file. It reuses the same props (`compId`, `pin`) and the same server functions (`broadcastMessage`, `getBroadcastAudienceCounts`, `listBroadcasts`) — no server-side changes.
 
-### 1. Server: `src/lib/admin-ops.functions.ts`
-- Add `"eliminated_last_gw"` to the `audience` union on `broadcastMessage`. Resolve it by finding the most recently completed gameweek for the competition and selecting players whose pick that week has `result = 'loss'` (and who are not alive).
-- New server fn `getBroadcastAudienceCounts({ competitionId, pin })` returning `{ all, alive, eliminated, eliminated_last_gw, paid, unpaid, last_gw_week }`. PIN-verified like the other admin fns.
+3. **Render** `{tab === "broadcast" && <Broadcast compId={compId!} pin={pin!} />}` alongside the other tab renderers.
 
-### 2. UI: `src/routes/admin.panel.tsx` Broadcast card
-- Extend `audience` state union with `"eliminated_last_gw"`.
-- Fetch counts via the new server fn on mount + after each successful broadcast; re-fetch when the admin opens the Broadcast tab.
-- Render dropdown options with counts inline, e.g. `All players (128)`, `Still alive (42)`, `All eliminated (86)`, `Eliminated in last GW (11)`, `Paid (120)`, `Unpaid (8)`.
-- Disable "Eliminated in last GW" option when no completed gameweek exists yet (label it `Eliminated in last GW (none yet)`).
-- Update the confirm dialog to show the selected count: `Send broadcast to N "<audience>" players?`.
-
-### 3. Recent broadcasts list
-- Map the new key to a friendly label ("Eliminated in last GW") in the Recent Broadcasts list.
+4. **Emails tab** keeps the email template editor / preview / test-send UI but no longer contains the broadcast composer.
 
 ## Out of scope
-- No template changes; the existing `broadcast` email template is reused.
-- No DB migration — derived from existing `picks` / `gameweeks` / `players` tables.
+- No DB migration.
+- No server function changes.
+- No template changes.
+- No styling overhaul — the new tab reuses existing `Card` / `Field` / `Btn` styles.
+
+## Result
+Admin lands on `/admin/panel`, clicks the **Broadcast** tab, and sees the audience selector (with live counts) + subject/body + recent broadcasts as the only content on that tab.
