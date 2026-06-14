@@ -1244,7 +1244,7 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
               <div className="flex items-center justify-between">
                 <span className="font-semibold">{m.subject}</span>
                 <span className="text-xs text-muted-foreground">
-                  {m.audience} · {m.recipient_count ?? 0} sent
+                  {(audienceLabels[m.audience as Audience] ?? m.audience)} · {m.recipient_count ?? 0} sent
                 </span>
               </div>
               <div className="text-xs text-muted-foreground">
