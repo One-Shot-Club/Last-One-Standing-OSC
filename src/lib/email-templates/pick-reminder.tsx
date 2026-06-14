@@ -89,6 +89,16 @@ export const template = {
     playersRemaining: 24,
     usedTeams: ['Liverpool', 'Man City', 'Arsenal'],
     magicLink: 'https://example.com/pick?token=abc',
+    stats: {
+      alive: 11,
+      eliminated: 1,
+      total: 12,
+      picksPerWeek: [
+        { week: 1, count: 12 },
+        { week: 2, count: 12 },
+        { week: 3, count: 11 },
+      ],
+    },
   },
 } satisfies TemplateEntry
 
