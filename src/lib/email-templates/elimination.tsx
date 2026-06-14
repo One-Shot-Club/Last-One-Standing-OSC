@@ -13,6 +13,7 @@ interface Props {
   pickHistory?: Array<{ week: string; team: string }>
   shareUrl?: string
   noPick?: boolean
+  stats?: CompetitionStats
   theme?: EmailThemeProp
 }
 
