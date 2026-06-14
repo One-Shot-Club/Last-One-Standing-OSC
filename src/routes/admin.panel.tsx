@@ -1465,7 +1465,8 @@ function Broadcast({ compId, pin }: { compId: string; pin: string }) {
         <Eyebrow>Broadcast</Eyebrow>
         <h2 className="display mt-1 text-xl">SEND MESSAGE</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Audience">
+          <label className="block text-sm">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Audience</span>
             <select
               value={audience}
               onChange={(e) => setAudience(e.target.value as Audience)}
@@ -1487,17 +1488,19 @@ function Broadcast({ compId, pin }: { compId: string; pin: string }) {
             {counts?.last_gw_week != null && audience === "eliminated_last_gw" && (
               <p className="mt-1 text-xs text-muted-foreground">Last completed gameweek: GW{counts.last_gw_week}</p>
             )}
-          </Field>
-          <Field label="Subject">
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject</span>
             <input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               maxLength={200}
               className="w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
             />
-          </Field>
+          </label>
         </div>
-        <Field label="Body">
+        <label className="mt-3 block text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Body</span>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -1505,7 +1508,8 @@ function Broadcast({ compId, pin }: { compId: string; pin: string }) {
             className="h-40 w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
             placeholder="Use blank lines to separate paragraphs."
           />
-        </Field>
+        </label>
+
         <div className="mt-3 flex items-center gap-3">
           <Btn onClick={handleBroadcast} disabled={sending}>
             {sending ? "Sending…" : "Send broadcast"}
