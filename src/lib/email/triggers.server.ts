@@ -96,6 +96,32 @@ async function countPlayers(competitionId: string, aliveOnly = false): Promise<n
   return count ?? 0
 }
 
+interface CompetitionStatsPayload {
+  alive: number
+  eliminated: number
+  total: number
+  picksPerWeek: Array<{ week: number; count: number }>
+}
+
+async function loadCompetitionStats(competitionId: string): Promise<CompetitionStatsPayload> {
+  const { data: players } = await supabaseAdmin
+    .from('players').select('id, alive').eq('competition_id', competitionId)
+  const total = players?.length ?? 0
+  const alive = (players ?? []).filter((p: any) => p.alive).length
+  const eliminated = total - alive
+
+  const { data: picks } = await supabaseAdmin
+    .from('picks').select('week').eq('competition_id', competitionId)
+  const counts = new Map<number, number>()
+  for (const p of picks ?? []) {
+    counts.set(p.week as number, (counts.get(p.week as number) ?? 0) + 1)
+  }
+  const picksPerWeek = Array.from(counts.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([week, count]) => ({ week, count }))
+  return { alive, eliminated, total, picksPerWeek }
+}
+
 // 1. Entry confirmation — automated, fires after first pick is recorded.
 export async function sendEntryConfirmation(playerId: string, week: number): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', playerId).maybeSingle()
@@ -154,6 +180,7 @@ export async function sendElimination(opts: {
     .from('picks').select('week, team').eq('player_id', opts.playerId).order('week', { ascending: true })
   const pickHistory = (picks ?? []).map((p) => ({ week: `GW${p.week}`, team: p.team }))
   const survived = opts.noPick ? pickHistory.length : Math.max(0, pickHistory.length - 1)
+  const stats = await loadCompetitionStats(player.competition_id)
 
   await enqueueTemplatedEmail({
     templateName: 'elimination',
@@ -170,6 +197,7 @@ export async function sendElimination(opts: {
       pickHistory,
       shareUrl: competitionShareUrl(player.competition_id),
       noPick: !!opts.noPick,
+      stats,
       theme: themePropFor(theme),
     },
   })
@@ -193,6 +221,7 @@ export async function sendProgression(opts: {
   const { data: priorPicks } = await supabaseAdmin
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
+  const stats = await loadCompetitionStats(player.competition_id)
 
   await enqueueTemplatedEmail({
     templateName: 'progression',
@@ -210,6 +239,7 @@ export async function sendProgression(opts: {
       countdownCopy: opts.nextDeadline ? humanCountdown(opts.nextDeadline) : '',
       magicLink: magicLinkFor(player.magic_token),
       usedTeams,
+      stats,
       theme: themePropFor(theme),
     },
   })
@@ -232,6 +262,7 @@ export async function sendPickReminder(opts: {
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
   const remaining = await countPlayers(player.competition_id, true)
+  const stats = await loadCompetitionStats(player.competition_id)
 
   await enqueueTemplatedEmail({
     templateName: 'pick-reminder',
@@ -249,6 +280,7 @@ export async function sendPickReminder(opts: {
       playersRemaining: remaining,
       magicLink: magicLinkFor(player.magic_token),
       usedTeams,
+      stats,
       theme: themePropFor(theme),
     },
   })

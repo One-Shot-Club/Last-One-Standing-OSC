@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Body, Container, Head, Heading, Html, Preview, Text, Section } from '@react-email/components'
 import type { TemplateEntry } from './registry'
-import { buildStyles, Brand, Footer, Panel, type EmailThemeProp } from './_shared'
+import { buildStyles, Brand, Footer, Panel, StatsBlock, type CompetitionStats, type EmailThemeProp } from './_shared'
 
 interface Props {
   firstName?: string
@@ -12,6 +12,7 @@ interface Props {
   countdownCopy?: string
   magicLink?: string
   usedTeams?: string[]
+  stats?: CompetitionStats
   theme?: EmailThemeProp
 }
 
@@ -24,6 +25,7 @@ const Email = ({
   countdownCopy = '',
   magicLink = '#',
   usedTeams = [],
+  stats,
   theme,
 }: Props) => {
   const s = buildStyles(theme)
@@ -52,6 +54,9 @@ const Email = ({
                 €{prizePool}
               </Text>
             </Section>
+
+            <StatsBlock stats={stats} theme={theme} />
+
 
             <Text style={s.meta}>Next gameweek deadline</Text>
             <Text style={{ ...s.text, fontSize: '18px', color: accent, fontWeight: 700 }}>{deadline}</Text>
@@ -91,6 +96,16 @@ export const template = {
     countdownCopy: 'You have 6 days 4 hours to make your pick',
     magicLink: 'https://example.com/pick?token=abc',
     usedTeams: ['Liverpool', 'Arsenal', 'Man City'],
+    stats: {
+      alive: 11,
+      eliminated: 1,
+      total: 12,
+      picksPerWeek: [
+        { week: 1, count: 12 },
+        { week: 2, count: 12 },
+        { week: 3, count: 11 },
+      ],
+    },
   },
 } satisfies TemplateEntry
 

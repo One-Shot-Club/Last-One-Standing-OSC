@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Body, Container, Head, Heading, Html, Preview, Text, Section } from '@react-email/components'
 import type { TemplateEntry } from './registry'
-import { buildStyles, Brand, Footer, Panel, type EmailThemeProp } from './_shared'
+import { buildStyles, Brand, Footer, Panel, StatsBlock, type CompetitionStats, type EmailThemeProp } from './_shared'
 
 interface Props {
   firstName?: string
@@ -11,6 +11,7 @@ interface Props {
   playersRemaining?: number
   usedTeams?: string[]
   magicLink?: string
+  stats?: CompetitionStats
   theme?: EmailThemeProp
 }
 
@@ -22,6 +23,7 @@ const Email = ({
   playersRemaining = 0,
   usedTeams = [],
   magicLink = '#',
+  stats,
   theme,
 }: Props) => {
   const s = buildStyles(theme)
@@ -48,6 +50,9 @@ const Email = ({
 
             <Text style={s.meta}>Players remaining</Text>
             <Text style={s.text}>{playersRemaining}</Text>
+
+            <StatsBlock stats={stats} theme={theme} />
+
 
             <Section style={s.ctaWrap}>
               <a href={magicLink} style={s.cta}>Make your pick now →</a>
@@ -84,6 +89,16 @@ export const template = {
     playersRemaining: 24,
     usedTeams: ['Liverpool', 'Man City', 'Arsenal'],
     magicLink: 'https://example.com/pick?token=abc',
+    stats: {
+      alive: 11,
+      eliminated: 1,
+      total: 12,
+      picksPerWeek: [
+        { week: 1, count: 12 },
+        { week: 2, count: 12 },
+        { week: 3, count: 11 },
+      ],
+    },
   },
 } satisfies TemplateEntry
 

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Body, Container, Head, Heading, Html, Preview, Text, Section } from '@react-email/components'
 import type { TemplateEntry } from './registry'
-import { buildStyles, Brand, Footer, Panel, type EmailThemeProp } from './_shared'
+import { buildStyles, Brand, Footer, Panel, StatsBlock, type CompetitionStats, type EmailThemeProp } from './_shared'
 
 interface Props {
   firstName?: string
@@ -13,6 +13,7 @@ interface Props {
   pickHistory?: Array<{ week: string; team: string }>
   shareUrl?: string
   noPick?: boolean
+  stats?: CompetitionStats
   theme?: EmailThemeProp
 }
 
@@ -26,6 +27,7 @@ const Email = ({
   pickHistory = [],
   shareUrl = '#',
   noPick = false,
+  stats,
   theme,
 }: Props) => {
   const s = buildStyles(theme)
@@ -70,6 +72,8 @@ const Email = ({
               )}
             </Section>
 
+            <StatsBlock stats={stats} theme={theme} />
+
             <Text style={s.text}>
               Thank you for playing and for supporting {clubName}. Every entry goes into the prize pool and back into the club.
             </Text>
@@ -102,6 +106,16 @@ export const template = {
       { week: 'GW3', team: 'Arsenal' },
     ],
     shareUrl: 'https://example.com/?c=demo',
+    stats: {
+      alive: 11,
+      eliminated: 1,
+      total: 12,
+      picksPerWeek: [
+        { week: 1, count: 12 },
+        { week: 2, count: 12 },
+        { week: 3, count: 11 },
+      ],
+    },
   },
 } satisfies TemplateEntry
 
