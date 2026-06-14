@@ -96,6 +96,16 @@ export const template = {
     countdownCopy: 'You have 6 days 4 hours to make your pick',
     magicLink: 'https://example.com/pick?token=abc',
     usedTeams: ['Liverpool', 'Arsenal', 'Man City'],
+    stats: {
+      alive: 11,
+      eliminated: 1,
+      total: 12,
+      picksPerWeek: [
+        { week: 1, count: 12 },
+        { week: 2, count: 12 },
+        { week: 3, count: 11 },
+      ],
+    },
   },
 } satisfies TemplateEntry
 
