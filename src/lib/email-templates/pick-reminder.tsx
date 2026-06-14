@@ -51,6 +51,9 @@ const Email = ({
             <Text style={s.meta}>Players remaining</Text>
             <Text style={s.text}>{playersRemaining}</Text>
 
+            <StatsBlock stats={stats} theme={theme} />
+
+
             <Section style={s.ctaWrap}>
               <a href={magicLink} style={s.cta}>Make your pick now →</a>
             </Section>
