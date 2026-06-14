@@ -25,6 +25,7 @@ const Email = ({
   countdownCopy = '',
   magicLink = '#',
   usedTeams = [],
+  stats,
   theme,
 }: Props) => {
   const s = buildStyles(theme)
