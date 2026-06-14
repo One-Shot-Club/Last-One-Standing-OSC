@@ -1188,11 +1188,12 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
         <Eyebrow>Broadcast</Eyebrow>
         <h2 className="display mt-1 text-xl">SEND MESSAGE</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Audience">
+          <label className="block">
+            <span className="mb-1.5 block text-xs uppercase tracking-widest text-muted-foreground">Audience</span>
             <select
               value={audience}
               onChange={(e) => setAudience(e.target.value as Audience)}
-              className="w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
+              className="h-12 w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--input)] px-4 text-sm text-foreground focus:border-primary focus:outline-none"
             >
               {(["all", "alive", "eliminated", "eliminated_last_gw", "paid", "unpaid"] as const).map((a) => {
                 const n = countFor(a);
@@ -1210,25 +1211,27 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
             {counts?.last_gw_week != null && audience === "eliminated_last_gw" && (
               <p className="mt-1 text-xs text-muted-foreground">Last completed gameweek: GW{counts.last_gw_week}</p>
             )}
-          </Field>
-          <Field label="Subject">
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs uppercase tracking-widest text-muted-foreground">Subject</span>
             <input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               maxLength={200}
-              className="w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
+              className="h-12 w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--input)] px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
-          </Field>
+          </label>
         </div>
-        <Field label="Body">
+        <label className="block">
+          <span className="mb-1.5 block text-xs uppercase tracking-widest text-muted-foreground">Body</span>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             maxLength={5000}
-            className="h-40 w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
+            className="h-40 w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--input)] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             placeholder="Use blank lines to separate paragraphs."
           />
-        </Field>
+        </label>
         <div className="mt-3 flex items-center gap-3">
           <Btn onClick={handleBroadcast} disabled={sending}>
             {sending ? "Sending…" : "Send broadcast"}
