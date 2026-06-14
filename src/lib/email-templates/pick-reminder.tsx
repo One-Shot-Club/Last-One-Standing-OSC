@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Body, Container, Head, Heading, Html, Preview, Text, Section } from '@react-email/components'
 import type { TemplateEntry } from './registry'
-import { buildStyles, Brand, Footer, Panel, type EmailThemeProp } from './_shared'
+import { buildStyles, Brand, Footer, Panel, StatsBlock, type CompetitionStats, type EmailThemeProp } from './_shared'
 
 interface Props {
   firstName?: string
