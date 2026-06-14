@@ -6,8 +6,6 @@ import { buildStyles, Brand, Footer, Panel, type EmailThemeProp } from './_share
 interface Props {
   firstName?: string
   clubName?: string
-  weekLabel?: string
-  nextWeekLabel?: string
   playersRemaining?: number
   prizePool?: number
   deadline?: string
@@ -20,8 +18,6 @@ interface Props {
 const Email = ({
   firstName = 'Player',
   clubName = 'Last Man Standing',
-  weekLabel = 'GW3',
-  nextWeekLabel = 'GW4',
   playersRemaining = 0,
   prizePool = 0,
   deadline = 'TBC',
@@ -35,15 +31,15 @@ const Email = ({
   return (
     <Html lang="en">
       <Head />
-      <Preview>Through to {nextWeekLabel} — make your next pick.</Preview>
+      <Preview>You're through to the next gameweek.</Preview>
       <Body style={s.main}>
         <Container style={s.container}>
           <Brand theme={theme} />
           <Panel theme={theme}>
-            <Text style={s.eyebrow}>Through · {weekLabel}</Text>
+            <Text style={s.eyebrow}>Through</Text>
             <Heading style={s.heading}>You're through, {firstName}</Heading>
             <Text style={s.text}>
-              Congratulations — you've survived {weekLabel}. On to {nextWeekLabel}.
+              Congratulations — you've survived this gameweek. You're through to the next gameweek.
             </Text>
 
             <Section style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '16px', borderRadius: '8px', margin: '12px 0' }}>
@@ -57,7 +53,7 @@ const Email = ({
               </Text>
             </Section>
 
-            <Text style={s.meta}>{nextWeekLabel} deadline</Text>
+            <Text style={s.meta}>Next gameweek deadline</Text>
             <Text style={{ ...s.text, fontSize: '18px', color: accent, fontWeight: 700 }}>{deadline}</Text>
             {countdownCopy && <Text style={s.text}>{countdownCopy}</Text>}
 
@@ -71,7 +67,7 @@ const Email = ({
             )}
 
             <Section style={s.ctaWrap}>
-              <a href={magicLink} style={s.cta}>Make your {nextWeekLabel} pick →</a>
+              <a href={magicLink} style={s.cta}>Make your next pick →</a>
             </Section>
           </Panel>
           <Footer clubName={clubName} theme={theme} />
@@ -84,13 +80,11 @@ const Email = ({
 export const template = {
   component: Email,
   subject: (d: Record<string, any>) =>
-    `You're through, ${d.firstName ?? 'Player'} — make your ${d.nextWeekLabel ?? 'next'} pick`,
+    `You're through, ${d.firstName ?? 'Player'} — make your next pick`,
   displayName: 'Progression',
   previewData: {
     firstName: 'Tom',
     clubName: 'Last Man Standing',
-    weekLabel: 'GW3',
-    nextWeekLabel: 'GW4',
     playersRemaining: 24,
     prizePool: 1200,
     deadline: 'Sat 30 Aug, 13:30',
