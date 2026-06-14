@@ -262,6 +262,7 @@ export async function sendPickReminder(opts: {
     .from('picks').select('team').eq('player_id', opts.playerId)
   const usedTeams = (priorPicks ?? []).map((p) => p.team)
   const remaining = await countPlayers(player.competition_id, true)
+  const stats = await loadCompetitionStats(player.competition_id)
 
   await enqueueTemplatedEmail({
     templateName: 'pick-reminder',
@@ -279,6 +280,7 @@ export async function sendPickReminder(opts: {
       playersRemaining: remaining,
       magicLink: magicLinkFor(player.magic_token),
       usedTeams,
+      stats,
       theme: themePropFor(theme),
     },
   })
