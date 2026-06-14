@@ -1113,7 +1113,8 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
       setSendResult("Subject and body are required.");
       return;
     }
-    if (!confirm(`Send broadcast to "${audience}" players?`)) return;
+    const n = countFor(audience);
+    if (!confirm(`Send broadcast to ${n ?? "?"} ${audienceLabels[audience]} recipient(s)?`)) return;
     setSending(true);
     setSendResult(null);
     try {
