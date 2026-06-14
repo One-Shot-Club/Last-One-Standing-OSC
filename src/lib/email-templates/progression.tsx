@@ -55,6 +55,9 @@ const Email = ({
               </Text>
             </Section>
 
+            <StatsBlock stats={stats} theme={theme} />
+
+
             <Text style={s.meta}>Next gameweek deadline</Text>
             <Text style={{ ...s.text, fontSize: '18px', color: accent, fontWeight: 700 }}>{deadline}</Text>
             {countdownCopy && <Text style={s.text}>{countdownCopy}</Text>}
