@@ -6,7 +6,6 @@ import { buildStyles, Brand, Footer, Panel, type EmailThemeProp } from './_share
 interface Props {
   firstName?: string
   clubName?: string
-  nextWeekLabel?: string
   deadline?: string
   countdownCopy?: string
   playersRemaining?: number
@@ -18,7 +17,6 @@ interface Props {
 const Email = ({
   firstName = 'Player',
   clubName = 'Last Man Standing',
-  nextWeekLabel = 'GW4',
   deadline = 'TBC',
   countdownCopy = '',
   playersRemaining = 0,
@@ -31,15 +29,15 @@ const Email = ({
   return (
     <Html lang="en">
       <Head />
-      <Preview>Don't forget — make your {nextWeekLabel} pick.</Preview>
+      <Preview>Don't forget — make your next gameweek pick.</Preview>
       <Body style={s.main}>
         <Container style={s.container}>
           <Brand theme={theme} />
           <Panel theme={theme}>
             <Text style={s.eyebrow}>Pick reminder</Text>
-            <Heading style={s.heading}>Pick your {nextWeekLabel} team, {firstName}</Heading>
+            <Heading style={s.heading}>Pick your next gameweek team, {firstName}</Heading>
             <Text style={s.text}>
-              You haven't made your {nextWeekLabel} pick yet. Picks lock at the deadline below — no pick means you're out.
+              You haven't made your next gameweek pick yet. Picks lock at the deadline below — no pick means you're out.
             </Text>
 
             <Text style={s.meta}>Deadline</Text>
@@ -76,12 +74,11 @@ const Email = ({
 export const template = {
   component: Email,
   subject: (d: Record<string, any>) =>
-    `Reminder, ${d.firstName ?? 'Player'} — pick your ${d.nextWeekLabel ?? 'next'} team`,
+    `Reminder, ${d.firstName ?? 'Player'} — pick your next gameweek team`,
   displayName: 'Pick Reminder',
   previewData: {
     firstName: 'Tom',
     clubName: 'Last Man Standing',
-    nextWeekLabel: 'GW4',
     deadline: 'Sat 30 Aug, 13:30',
     countdownCopy: 'You have 1 day 4 hours to make your pick',
     playersRemaining: 24,

@@ -3,8 +3,6 @@ import { template as entryConfirmation } from './entry-confirmation'
 import { template as elimination } from './elimination'
 import { template as progression } from './progression'
 import { template as pickReminder } from './pick-reminder'
-import { template as reminder24h } from './reminder-24h'
-import { template as reminder1h } from './reminder-1h'
 import { template as broadcast } from './broadcast'
 
 export interface TemplateEntry {
@@ -21,9 +19,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'elimination': elimination,
   'progression': progression,
   'pick-reminder': pickReminder,
-  // Legacy reminder templates retained for any in-flight queue messages;
-  // new sends use 'pick-reminder'.
-  'reminder-24h': reminder24h,
-  'reminder-1h': reminder1h,
   'broadcast': broadcast,
 }
