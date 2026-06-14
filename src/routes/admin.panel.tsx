@@ -1123,6 +1123,7 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
       setSubject("");
       setBody("");
       refetchMsgs();
+      refetchCounts();
     } catch (e: unknown) {
       setSendResult(`Error: ${(e as Error).message}`);
     } finally {
