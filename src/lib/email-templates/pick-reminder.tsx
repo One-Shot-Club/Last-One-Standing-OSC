@@ -11,6 +11,7 @@ interface Props {
   playersRemaining?: number
   usedTeams?: string[]
   magicLink?: string
+  stats?: CompetitionStats
   theme?: EmailThemeProp
 }
 
