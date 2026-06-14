@@ -1,41 +1,31 @@
 ## Goal
+Extend the admin Broadcast panel so admins can target more audiences and see the recipient count for each before sending.
 
-Remove unused legacy reminder templates and make the Progression + Pick Reminder emails use generic "Next Gameweek" wording instead of dynamic gameweek labels (e.g. "GW4").
+## Audiences (final list)
+- All players
+- Still alive
+- All eliminated
+- Eliminated in last gameweek
+- (keep) Paid / Unpaid
+
+Each option in the dropdown shows its live count, e.g. `Still alive (42)`.
 
 ## Changes
 
-### 1. Delete legacy reminder templates
-- Delete `src/lib/email-templates/reminder-1h.tsx`
-- Delete `src/lib/email-templates/reminder-24h.tsx`
-- Remove their imports and registry entries from `src/lib/email-templates/registry.ts` (the `reminder-24h` and `reminder-1h` keys). Active sends already use `pick-reminder`, so no trigger code changes are needed.
+### 1. Server: `src/lib/admin-ops.functions.ts`
+- Add `"eliminated_last_gw"` to the `audience` union on `broadcastMessage`. Resolve it by finding the most recently completed gameweek for the competition and selecting players whose pick that week has `result = 'loss'` (and who are not alive).
+- New server fn `getBroadcastAudienceCounts({ competitionId, pin })` returning `{ all, alive, eliminated, eliminated_last_gw, paid, unpaid, last_gw_week }`. PIN-verified like the other admin fns.
 
-### 2. Progression email — drop gameweek names
-In `src/lib/email-templates/progression.tsx`:
-- Remove the `weekLabel` / `nextWeekLabel` props (and their preview data).
-- Preview text: "You're through to the next gameweek."
-- Eyebrow: "Through"
-- Heading: "You're through, {firstName}"
-- Body: "Congratulations — you've survived this gameweek. You're through to the next gameweek."
-- Deadline label: "Next gameweek deadline"
-- CTA button: "Make your next pick →"
-- Subject: "You're through, {firstName} — make your next pick"
+### 2. UI: `src/routes/admin.panel.tsx` Broadcast card
+- Extend `audience` state union with `"eliminated_last_gw"`.
+- Fetch counts via the new server fn on mount + after each successful broadcast; re-fetch when the admin opens the Broadcast tab.
+- Render dropdown options with counts inline, e.g. `All players (128)`, `Still alive (42)`, `All eliminated (86)`, `Eliminated in last GW (11)`, `Paid (120)`, `Unpaid (8)`.
+- Disable "Eliminated in last GW" option when no completed gameweek exists yet (label it `Eliminated in last GW (none yet)`).
+- Update the confirm dialog to show the selected count: `Send broadcast to N "<audience>" players?`.
 
-### 3. Pick Reminder email — drop gameweek names
-In `src/lib/email-templates/pick-reminder.tsx`:
-- Remove the `nextWeekLabel` prop (and preview data).
-- Preview text: "Don't forget — make your next gameweek pick."
-- Heading: "Pick your next gameweek team, {firstName}"
-- Body: "You haven't made your next gameweek pick yet. Picks lock at the deadline below — no pick means you're out."
-- CTA: "Make your pick now →" (unchanged)
-- Subject: "Reminder, {firstName} — pick your next gameweek team"
+### 3. Recent broadcasts list
+- Map the new key to a friendly label ("Eliminated in last GW") in the Recent Broadcasts list.
 
-### 4. Trigger call sites
-`src/lib/email/triggers.server.ts` currently passes `weekLabel` / `nextWeekLabel` in `templateData` for both templates. Leave the call sites untouched — the templates will simply ignore the now-unused fields. No behavioural change needed in `admin-tasks.functions.ts` or `results-engine.server.ts`.
-
-## Files touched
-
-- delete: `src/lib/email-templates/reminder-1h.tsx`
-- delete: `src/lib/email-templates/reminder-24h.tsx`
-- edit: `src/lib/email-templates/registry.ts`
-- edit: `src/lib/email-templates/progression.tsx`
-- edit: `src/lib/email-templates/pick-reminder.tsx`
+## Out of scope
+- No template changes; the existing `broadcast` email template is reused.
+- No DB migration — derived from existing `picks` / `gameweeks` / `players` tables.

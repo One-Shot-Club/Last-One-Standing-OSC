@@ -27,6 +27,7 @@ import {
   importEntrants,
   broadcastMessage,
   listMessages,
+  getBroadcastAudienceCounts,
 } from "@/lib/admin-ops.functions";
 import { listEmailTemplates, sendTestEmail, listRecentEmailLog } from "@/lib/email-test.functions";
 import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
@@ -1022,12 +1023,14 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
   const importFn = useServerFn(importEntrants);
   const broadcastFn = useServerFn(broadcastMessage);
   const listMsgs = useServerFn(listMessages);
+  const getCountsFn = useServerFn(getBroadcastAudienceCounts);
 
   const [csv, setCsv] = useState("");
   const [importResult, setImportResult] = useState<{ inserted: number; skipped: number; errors: Array<{ row: number; reason: string }> } | null>(null);
   const [importing, setImporting] = useState(false);
 
-  const [audience, setAudience] = useState<"all" | "alive" | "eliminated" | "paid" | "unpaid">("alive");
+  type Audience = "all" | "alive" | "eliminated" | "eliminated_last_gw" | "paid" | "unpaid";
+  const [audience, setAudience] = useState<Audience>("alive");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -1037,6 +1040,26 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
     queryKey: ["admin-messages", compId],
     queryFn: () => listMsgs({ data: { competitionId: compId, pin } }),
   });
+
+  const { data: counts, refetch: refetchCounts } = useQuery({
+    queryKey: ["broadcast-audience-counts", compId],
+    queryFn: () => getCountsFn({ data: { competitionId: compId, pin } }),
+  });
+
+  const audienceLabels: Record<Audience, string> = {
+    all: "All players",
+    alive: "Still alive",
+    eliminated: "All eliminated",
+    eliminated_last_gw: "Eliminated in last GW",
+    paid: "Paid",
+    unpaid: "Unpaid",
+  };
+
+  function countFor(a: Audience): number | null {
+    if (!counts) return null;
+    return counts[a] ?? 0;
+  }
+
 
   function parseCsv(text: string): Array<{ fullName: string; email: string; phone?: string; paid?: boolean }> {
     const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -1090,7 +1113,8 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
       setSendResult("Subject and body are required.");
       return;
     }
-    if (!confirm(`Send broadcast to "${audience}" players?`)) return;
+    const n = countFor(audience);
+    if (!confirm(`Send broadcast to ${n ?? "?"} ${audienceLabels[audience]} recipient(s)?`)) return;
     setSending(true);
     setSendResult(null);
     try {
@@ -1099,6 +1123,7 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
       setSubject("");
       setBody("");
       refetchMsgs();
+      refetchCounts();
     } catch (e: unknown) {
       setSendResult(`Error: ${(e as Error).message}`);
     } finally {
@@ -1165,15 +1190,25 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
           <Field label="Audience">
             <select
               value={audience}
-              onChange={(e) => setAudience(e.target.value as typeof audience)}
+              onChange={(e) => setAudience(e.target.value as Audience)}
               className="w-full rounded-md border border-[color:var(--border)] bg-background p-2 text-sm"
             >
-              <option value="alive">Alive players</option>
-              <option value="eliminated">Eliminated players</option>
-              <option value="paid">Paid players</option>
-              <option value="unpaid">Unpaid players</option>
-              <option value="all">All players</option>
+              {(["all", "alive", "eliminated", "eliminated_last_gw", "paid", "unpaid"] as const).map((a) => {
+                const n = countFor(a);
+                const noLastGw = a === "eliminated_last_gw" && counts && counts.last_gw_week == null;
+                const suffix = noLastGw
+                  ? " (no completed GW)"
+                  : n == null ? " (…)" : ` (${n})`;
+                return (
+                  <option key={a} value={a} disabled={!!noLastGw}>
+                    {audienceLabels[a]}{suffix}
+                  </option>
+                );
+              })}
             </select>
+            {counts?.last_gw_week != null && audience === "eliminated_last_gw" && (
+              <p className="mt-1 text-xs text-muted-foreground">Last completed gameweek: GW{counts.last_gw_week}</p>
+            )}
           </Field>
           <Field label="Subject">
             <input
@@ -1209,7 +1244,7 @@ function Tools({ compId, pin }: { compId: string; pin: string }) {
               <div className="flex items-center justify-between">
                 <span className="font-semibold">{m.subject}</span>
                 <span className="text-xs text-muted-foreground">
-                  {m.audience} · {m.recipient_count ?? 0} sent
+                  {(audienceLabels[m.audience as Audience] ?? m.audience)} · {m.recipient_count ?? 0} sent
                 </span>
               </div>
               <div className="text-xs text-muted-foreground">
