@@ -12,6 +12,7 @@ interface Props {
   countdownCopy?: string
   magicLink?: string
   usedTeams?: string[]
+  stats?: CompetitionStats
   theme?: EmailThemeProp
 }
 
