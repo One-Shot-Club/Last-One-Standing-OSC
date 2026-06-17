@@ -35,8 +35,8 @@ function Welcome() {
   });
   const { logoUrl: tenantLogo, bgUrl } = useCompetitionBranding(c);
 
-  const allTokens = tokens ? tokens.split(",") : [token];
-  const allNames = names ? names.split("|") : ["Your entry"];
+  const allTokens: string[] = tokens ? tokens.split(",") : [token];
+  const allNames: string[] = names ? names.split("|") : ["Your entry"];
 
   return (
     <Shell bgUrl={bgUrl ?? undefined} bgBlur={6}>
