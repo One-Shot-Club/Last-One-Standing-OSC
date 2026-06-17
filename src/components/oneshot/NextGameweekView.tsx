@@ -143,6 +143,30 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError, tena
 
       <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
 
+      {siblings.length > 1 && (
+        <div className="mt-4">
+          <label className="block text-[10px] uppercase tracking-widest text-muted-foreground">
+            Picking for
+          </label>
+          <select
+            value={player.id}
+            onChange={(e) => {
+              const next = siblings.find((s) => s.playerId === e.target.value);
+              if (next && next.magicToken) {
+                window.location.assign(`/pick?token=${encodeURIComponent(next.magicToken)}`);
+              }
+            }}
+            className="mt-1 w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm font-semibold"
+          >
+            {siblings.map((s) => (
+              <option key={s.entryId} value={s.playerId ?? ""}>
+                {s.displayName}{!s.alive ? " — eliminated" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Hero: through to GWx */}
       <div className="mt-6 text-center">
         <Eyebrow>Through to {gameweek.week_label}</Eyebrow>
