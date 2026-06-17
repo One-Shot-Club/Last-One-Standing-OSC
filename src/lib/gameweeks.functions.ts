@@ -420,6 +420,11 @@ export const submitPickV2 = createServerFn({ method: 'POST' })
       competition_id: player.competition_id,
       week: gw.week_number,
       team: data.team,
+      entry_id: (await supabaseAdmin
+        .from('competition_entries')
+        .select('id')
+        .eq('player_id', player.id)
+        .maybeSingle()).data?.id ?? null,
     } as never).select('*').single()
     if (error) throw error
     return pick
