@@ -81,7 +81,7 @@ export const listEntries = createServerFn({ method: "POST" })
 
     const { data: entries } = await supabaseAdmin
       .from("competition_entries")
-      .select("id, paid, alive, player_id, entrant_id, created_at")
+      .select("id, paid, alive, player_id, entrant_id, display_name, created_at")
       .eq("competition_id", data.competitionId)
       .order("created_at", { ascending: true });
 
@@ -115,6 +115,8 @@ export const listEntries = createServerFn({ method: "POST" })
       playerId: e.player_id,
       paid: e.paid,
       alive: e.alive,
+      displayName: (e as any).display_name ?? null,
+      accountId: e.entrant_id,
       createdAt: e.created_at,
       entrant: entrantMap.get(e.entrant_id) ?? null,
       payments: paymentsByEntry.get(e.id) ?? [],

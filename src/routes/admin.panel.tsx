@@ -118,20 +118,23 @@ function Panel() {
       </div>
 
       <nav className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-[color:var(--border)] bg-card p-3 text-sm tracking-wide">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "rounded-md px-3 py-2 font-bold capitalize transition-colors",
-              tab === t
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t}
-          </button>
-        ))}
+        {tabs.map((t) => {
+          const label = t === "players" ? "picks grid" : t;
+          return (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "rounded-md px-3 py-2 font-bold capitalize transition-colors",
+                tab === t
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
       </nav>
 
 
@@ -772,6 +775,7 @@ function Entries({ compId, pin, onChange }: { compId: string; pin: string; onCha
   const recordPay = useServerFn(recordPayment);
   const setPaid = useServerFn(setEntryPaid);
   const qc = useQueryClient();
+  const [groupByAccount, setGroupByAccount] = useState(false);
 
   const { data: entries = [], refetch } = useQuery({
     queryKey: ["entries", compId, pin],
@@ -869,10 +873,20 @@ function Entries({ compId, pin, onChange }: { compId: string; pin: string; onCha
       </Card>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <Eyebrow>All entries ({entries.length})</Eyebrow>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            {entries.filter((e: any) => e.paid).length} paid · {entries.filter((e: any) => !e.paid).length} unpaid
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={groupByAccount}
+                onChange={(ev) => setGroupByAccount(ev.target.checked)}
+              />
+              Group by account
+            </label>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {entries.filter((e: any) => e.paid).length} paid · {entries.filter((e: any) => !e.paid).length} unpaid
+            </div>
           </div>
         </div>
 
@@ -880,101 +894,134 @@ function Entries({ compId, pin, onChange }: { compId: string; pin: string; onCha
           <p className="py-6 text-center text-sm text-muted-foreground">No entries yet.</p>
         )}
 
-        {entries.map((e: any) => (
-          <Card key={e.id} className="space-y-2 p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="truncate font-semibold">{e.entrant?.full_name ?? "—"}</div>
-                <div className="truncate text-[11px] text-muted-foreground">
-                  {e.entrant?.email ?? e.entrant?.phone ?? "no contact"} · {e.entrant?.source ?? "—"}
-                </div>
-                {e.payments.length > 0 && (
-                  <div className="mt-1 text-[10px] text-muted-foreground">
-                    last: €{Number(e.payments[0].amount).toFixed(2)} · {e.payments[0].method}
+        {(() => {
+          const renderEntry = (e: any) => (
+            <Card key={e.id} className="space-y-2 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-semibold">{e.displayName ?? e.entrant?.full_name ?? "—"}</div>
+                  <div className="truncate text-[11px] text-muted-foreground">
+                    {e.entrant?.full_name && e.entrant.full_name !== e.displayName
+                      ? `${e.entrant.full_name} · `
+                      : ""}
+                    {e.entrant?.email ?? e.entrant?.phone ?? "no contact"}
                   </div>
-                )}
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                    e.paid ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive",
+                  {e.payments.length > 0 && (
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      last: €{Number(e.payments[0].amount).toFixed(2)} · {e.payments[0].method}
+                    </div>
                   )}
-                >
-                  {e.paid ? "Paid" : "Unpaid"}
-                </span>
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                    e.alive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {e.alive ? "Alive" : "Out"}
-                </span>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+                      e.paid ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive",
+                    )}
+                  >
+                    {e.paid ? "Paid" : "Unpaid"}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+                      e.alive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {e.alive ? "Alive" : "Out"}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-wrap gap-2">
-              {!e.paid && (
+              <div className="flex flex-wrap gap-2">
+                {!e.paid && (
+                  <button
+                    className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[11px] uppercase tracking-widest"
+                    onClick={() => {
+                      setOpenRow(openRow === e.id ? null : e.id);
+                      setRowMethod("cash"); setRowAmount(""); setRowNote("");
+                    }}
+                  >
+                    {openRow === e.id ? "Cancel" : "Record payment"}
+                  </button>
+                )}
                 <button
                   className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[11px] uppercase tracking-widest"
-                  onClick={() => {
-                    setOpenRow(openRow === e.id ? null : e.id);
-                    setRowMethod("cash"); setRowAmount(""); setRowNote("");
-                  }}
-                >
-                  {openRow === e.id ? "Cancel" : "Record payment"}
-                </button>
-              )}
-              <button
-                className="rounded-md border border-[color:var(--border)] px-2 py-1 text-[11px] uppercase tracking-widest"
-                onClick={async () => {
-                  await setPaid({ data: { competitionId: compId, pin, entryId: e.id, paid: !e.paid } });
-                  await refresh();
-                }}
-              >
-                Mark {e.paid ? "unpaid" : "paid"}
-              </button>
-            </div>
-
-            {openRow === e.id && (
-              <div className="space-y-2 rounded-md border border-[color:var(--border)] p-3">
-                <label className="block text-xs uppercase tracking-widest text-muted-foreground">
-                  Method
-                  <select
-                    value={rowMethod}
-                    onChange={(ev) => setRowMethod(ev.target.value)}
-                    className="mt-1 block w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm"
-                  >
-                    {PAYMENT_METHODS.map((m) => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <Field label="Amount (EUR)" type="number" value={rowAmount} onChange={(ev) => setRowAmount(ev.target.value)} />
-                <Field label="Note (optional)" value={rowNote} onChange={(ev) => setRowNote(ev.target.value)} />
-                <Btn
                   onClick={async () => {
-                    await recordPay({
-                      data: {
-                        competitionId: compId,
-                        pin,
-                        entryId: e.id,
-                        method: rowMethod as never,
-                        amount: Number(rowAmount || 0),
-                        note: rowNote || null,
-                      },
-                    });
-                    setOpenRow(null);
+                    await setPaid({ data: { competitionId: compId, pin, entryId: e.id, paid: !e.paid } });
                     await refresh();
                   }}
                 >
-                  Save payment
-                </Btn>
+                  Mark {e.paid ? "unpaid" : "paid"}
+                </button>
               </div>
-            )}
-          </Card>
-        ))}
+
+              {openRow === e.id && (
+                <div className="space-y-2 rounded-md border border-[color:var(--border)] p-3">
+                  <label className="block text-xs uppercase tracking-widest text-muted-foreground">
+                    Method
+                    <select
+                      value={rowMethod}
+                      onChange={(ev) => setRowMethod(ev.target.value)}
+                      className="mt-1 block w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm"
+                    >
+                      {PAYMENT_METHODS.map((m) => (
+                        <option key={m.value} value={m.value}>{m.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <Field label="Amount (EUR)" type="number" value={rowAmount} onChange={(ev) => setRowAmount(ev.target.value)} />
+                  <Field label="Note (optional)" value={rowNote} onChange={(ev) => setRowNote(ev.target.value)} />
+                  <Btn
+                    onClick={async () => {
+                      await recordPay({
+                        data: {
+                          competitionId: compId,
+                          pin,
+                          entryId: e.id,
+                          method: rowMethod as never,
+                          amount: Number(rowAmount || 0),
+                          note: rowNote || null,
+                        },
+                      });
+                      setOpenRow(null);
+                      await refresh();
+                    }}
+                  >
+                    Save payment
+                  </Btn>
+                </div>
+              )}
+            </Card>
+          );
+
+          if (!groupByAccount) {
+            return entries.map((e: any) => renderEntry(e));
+          }
+          // Group by account (entrant_id), preserving original order
+          const groups = new Map<string, any[]>();
+          for (const e of entries as any[]) {
+            const key = e.accountId ?? e.id;
+            const arr = groups.get(key) ?? [];
+            arr.push(e);
+            groups.set(key, arr);
+          }
+          return Array.from(groups.values()).map((group) => {
+            const head = group[0];
+            return (
+              <div key={head.accountId ?? head.id} className="space-y-2">
+                <div className="mt-2 flex items-baseline justify-between border-b border-[color:var(--border)] pb-1">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+                    {head.entrant?.email ?? head.entrant?.full_name ?? "Account"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {group.length} {group.length === 1 ? "entry" : "entries"}
+                  </span>
+                </div>
+                {group.map((e) => renderEntry(e))}
+              </div>
+            );
+          });
+        })()}
       </div>
     </div>
   );

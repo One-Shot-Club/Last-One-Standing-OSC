@@ -25,6 +25,13 @@ export interface NextGameweekData {
   topPicksLastWeek: Array<{ team: string; count: number }>;
   lastWeekLabel: string | null;
   preview?: boolean;
+  siblingEntries?: Array<{
+    entryId: string;
+    playerId: string | null;
+    displayName: string;
+    magicToken: string;
+    alive: boolean;
+  }>;
 }
 
 function useCountdown(target: string | null | undefined) {
@@ -62,8 +69,9 @@ interface Props {
 }
 
 export function NextGameweekView({ data, onSubmit, submitting, submitError, tenantLogoUrl, tenantBgUrl }: Props) {
-  const { player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, lastWeekLabel, preview } = data;
+  const { player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, lastWeekLabel, preview, siblingEntries } = data;
   const cd = useCountdown(gameweek?.deadline_at ?? null);
+  const siblings = siblingEntries ?? [];
 
   const usedTeams = useMemo(
     () => new Set((picks ?? []).filter((p) => !gameweek || p.week !== gameweek.week_number).map((p) => p.team)),
@@ -134,6 +142,30 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError, tena
       )}
 
       <ClubHeader clubName={competition?.club_name ?? "Last Man Standing"} logoUrl={logoUrl} />
+
+      {siblings.length > 1 && (
+        <div className="mt-4">
+          <label className="block text-[10px] uppercase tracking-widest text-muted-foreground">
+            Picking for
+          </label>
+          <select
+            value={player.id}
+            onChange={(e) => {
+              const next = siblings.find((s) => s.playerId === e.target.value);
+              if (next && next.magicToken) {
+                window.location.assign(`/pick?token=${encodeURIComponent(next.magicToken)}`);
+              }
+            }}
+            className="mt-1 w-full rounded-md border border-[color:var(--border)] bg-background px-3 py-2 text-sm font-semibold"
+          >
+            {siblings.map((s) => (
+              <option key={s.entryId} value={s.playerId ?? ""}>
+                {s.displayName}{!s.alive ? " — eliminated" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Hero: through to GWx */}
       <div className="mt-6 text-center">

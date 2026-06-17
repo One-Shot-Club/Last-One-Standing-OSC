@@ -1,18 +1,18 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   getCompetition,
-  joinCompetition,
   setPaymentLink,
   submitPick,
 } from "@/lib/oneshot.functions";
+import { createAccountWithEntries } from "@/lib/accounts.functions";
 import { Btn, Card, Eyebrow, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 
-type Search = { c: string; n: string; e: string; p: string; t: string; o?: string };
+type Search = { c: string; n: string; e: string; p: string; t: string; o?: string; ns?: string };
 
 export const Route = createFileRoute("/pay")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/pay")({
     p: String(s.p ?? ""),
     t: String(s.t ?? ""),
     o: s.o ? String(s.o) : undefined,
+    ns: s.ns ? String(s.ns) : undefined,
   }),
 
   beforeLoad: ({ search }) => {
@@ -41,7 +42,7 @@ const LABELS: Record<Kind, string> = {
 };
 
 function Pay() {
-  const { c, n, e, p, t, o } = Route.useSearch();
+  const { c, n, e, p, t, o, ns } = Route.useSearch();
   const nav = useNavigate();
   const qc = useQueryClient();
   const fetchComp = useServerFn(getCompetition);
@@ -51,13 +52,26 @@ function Pay() {
     enabled: !!c,
   });
   const { logoUrl: tenantLogo, bgUrl } = useCompetitionBranding(c);
-  const join = useServerFn(joinCompetition);
+  const createAccount = useServerFn(createAccountWithEntries);
   const pick = useServerFn(submitPick);
 
   const [paidClicked, setPaidClicked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [setupKind, setSetupKind] = useState<Kind | null>(null);
+
+  const extraNames = useMemo<string[]>(
+    () => (ns ? ns.split("|") : []).map((s: string) => s.trim()),
+    [ns],
+  );
+  const entryNames = useMemo<string[]>(() => {
+    const list: string[] = [n || "Entry 1"];
+    extraNames.forEach((nm: string, i: number) => list.push(nm || `Entry ${i + 2}`));
+    return list;
+  }, [n, extraNames]);
+
+  const fee = Number(comp?.entry_fee ?? 10);
+  const total = fee * entryNames.length;
 
   const links: Record<Kind, string | null> = {
     stripe: comp?.stripe_link ?? null,
@@ -69,19 +83,41 @@ function Pay() {
     setLoading(true);
     setError(null);
     try {
-      const player = await join({
-        data: { competitionId: c, fullName: n, email: e, phone: p, offline: o === "1" },
-      });
-
-      await pick({
+      const res = await createAccount({
         data: {
-          playerId: player.id,
           competitionId: c,
-          week: comp?.current_week ?? 1,
-          team: t,
+          buyerName: n,
+          email: e,
+          phone: p,
+          offline: o === "1",
+          entries: entryNames.map((displayName) => ({ displayName })),
         },
       });
-      nav({ to: "/welcome", search: { token: player.magic_token, team: t, c } });
+
+      // GW1 pick belongs to the primary (first) entry only.
+      const primary = res.entries[0];
+      if (primary?.playerId) {
+        await pick({
+          data: {
+            playerId: primary.playerId,
+            competitionId: c,
+            week: comp?.current_week ?? 1,
+            team: t,
+          },
+        });
+      }
+      const tokens = res.entries.map((x) => x.magicToken).join(",");
+      const names = res.entries.map((x) => x.displayName).join("|");
+      nav({
+        to: "/welcome",
+        search: {
+          token: primary.magicToken,
+          team: t,
+          c,
+          tokens,
+          names,
+        },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -95,21 +131,36 @@ function Pay() {
 
       <div className="mt-8">
         <Eyebrow>Step 3 of 3</Eyebrow>
-        <h1 className="display mt-2 text-3xl">Pay your entry</h1>
+        <h1 className="display mt-2 text-3xl">Pay your entries</h1>
       </div>
 
-      <Card className="mt-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Player</span>
-          <span className="text-sm">{n}</span>
+      <Card className="mt-4 space-y-2">
+        <div className="text-xs uppercase tracking-widest text-muted-foreground">
+          {entryNames.length === 1 ? "Entry" : `${entryNames.length} entries`}
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Week 1 pick</span>
-          <span className="text-sm font-semibold text-primary">{t}</span>
-        </div>
-        <div className="mt-3 flex items-center justify-between border-t border-[color:var(--border)] pt-3">
-          <span className="text-sm text-muted-foreground">Entry fee</span>
-          <span className="display text-2xl text-primary">€{comp?.entry_fee ?? 10}</span>
+        <ul className="divide-y divide-[color:var(--border)]">
+          {entryNames.map((name, i) => (
+            <li key={i} className="flex items-center justify-between py-2 text-sm">
+              <span>
+                {name}
+                {i === 0 && (
+                  <span className="ml-2 text-[10px] uppercase tracking-widest text-primary">
+                    GW1: {t}
+                  </span>
+                )}
+                {i > 0 && (
+                  <span className="ml-2 text-[10px] text-muted-foreground">
+                    pick after payment
+                  </span>
+                )}
+              </span>
+              <span className="text-muted-foreground">€{fee}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-3">
+          <span className="text-sm font-semibold">Total</span>
+          <span className="display text-2xl text-primary">€{total}</span>
         </div>
       </Card>
 
@@ -133,7 +184,7 @@ function Pay() {
 
       <div className="mt-6">
         <Btn variant="ghost" disabled={!paidClicked || loading} onClick={confirm}>
-          {loading ? "Saving…" : "I've Paid — Continue →"}
+          {loading ? "Saving…" : `I've Paid — Continue →`}
         </Btn>
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         <p className="mt-3 text-center text-xs text-muted-foreground">
