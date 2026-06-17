@@ -237,6 +237,36 @@ export const getPickContext = createServerFn({ method: 'GET' })
       gameweek?.week_number ?? null,
     )
 
+    // Sibling entries — every entry on the same account in this competition.
+    // Holding any one magic_token grants the switcher access to all siblings.
+    let siblingEntries: Array<{
+      entryId: string
+      playerId: string | null
+      displayName: string
+      magicToken: string
+      alive: boolean
+    }> = []
+    const { data: myEntry } = await supabaseAdmin
+      .from('competition_entries')
+      .select('entrant_id')
+      .eq('player_id', player.id)
+      .maybeSingle()
+    if (myEntry?.entrant_id) {
+      const { data: siblings } = await supabaseAdmin
+        .from('competition_entries')
+        .select('id, player_id, display_name, magic_token, alive, created_at')
+        .eq('entrant_id', myEntry.entrant_id)
+        .eq('competition_id', player.competition_id)
+        .order('created_at', { ascending: true })
+      siblingEntries = (siblings ?? []).map((s: any) => ({
+        entryId: s.id,
+        playerId: s.player_id ?? null,
+        displayName: s.display_name ?? 'Entry',
+        magicToken: s.magic_token,
+        alive: !!s.alive,
+      }))
+    }
+
     return {
       player: { id: player.id, full_name: player.full_name, alive: player.alive, email: player.email },
       competition: comp,
@@ -245,6 +275,7 @@ export const getPickContext = createServerFn({ method: 'GET' })
       fixtures,
       badges,
       now: nowIso,
+      siblingEntries,
       ...extras,
       preview: false,
     }
