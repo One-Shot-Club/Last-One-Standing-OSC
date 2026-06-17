@@ -775,6 +775,7 @@ function Entries({ compId, pin, onChange }: { compId: string; pin: string; onCha
   const recordPay = useServerFn(recordPayment);
   const setPaid = useServerFn(setEntryPaid);
   const qc = useQueryClient();
+  const [groupByAccount, setGroupByAccount] = useState(false);
 
   const { data: entries = [], refetch } = useQuery({
     queryKey: ["entries", compId, pin],
