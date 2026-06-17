@@ -133,7 +133,6 @@ export type Database = {
           alive: boolean
           competition_id: string
           created_at: string
-          display_name: string
           entrant_id: string
           id: string
           magic_token: string
@@ -146,7 +145,6 @@ export type Database = {
           alive?: boolean
           competition_id: string
           created_at?: string
-          display_name?: string
           entrant_id: string
           id?: string
           magic_token?: string
@@ -159,7 +157,6 @@ export type Database = {
           alive?: boolean
           competition_id?: string
           created_at?: string
-          display_name?: string
           entrant_id?: string
           id?: string
           magic_token?: string
@@ -615,7 +612,6 @@ export type Database = {
         Row: {
           competition_id: string
           created_at: string
-          entry_id: string | null
           id: string
           player_id: string
           result: string | null
@@ -626,7 +622,6 @@ export type Database = {
         Insert: {
           competition_id: string
           created_at?: string
-          entry_id?: string | null
           id?: string
           player_id: string
           result?: string | null
@@ -637,7 +632,6 @@ export type Database = {
         Update: {
           competition_id?: string
           created_at?: string
-          entry_id?: string | null
           id?: string
           player_id?: string
           result?: string | null
@@ -651,13 +645,6 @@ export type Database = {
             columns: ["competition_id"]
             isOneToOne: false
             referencedRelation: "competitions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "picks_entry_id_fkey"
-            columns: ["entry_id"]
-            isOneToOne: false
-            referencedRelation: "competition_entries"
             referencedColumns: ["id"]
           },
           {
@@ -750,7 +737,6 @@ export type Database = {
       }
       reminders_sent: {
         Row: {
-          entry_id: string | null
           gameweek_id: string | null
           id: string
           kind: string
@@ -759,7 +745,6 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
-          entry_id?: string | null
           gameweek_id?: string | null
           id?: string
           kind: string
@@ -768,7 +753,6 @@ export type Database = {
           tenant_id: string
         }
         Update: {
-          entry_id?: string | null
           gameweek_id?: string | null
           id?: string
           kind?: string
@@ -777,13 +761,6 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "reminders_sent_entry_id_fkey"
-            columns: ["entry_id"]
-            isOneToOne: false
-            referencedRelation: "competition_entries"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "reminders_sent_tenant_id_fkey"
             columns: ["tenant_id"]

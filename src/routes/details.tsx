@@ -21,8 +21,6 @@ export const Route = createFileRoute("/details")({
   component: Details,
 });
 
-const MAX_ENTRIES = 6;
-
 function Details() {
   const { c, t } = Route.useSearch();
   const nav = useNavigate();
@@ -36,21 +34,8 @@ function Details() {
 
   const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
   const [offline, setOffline] = useState(false);
-  const [count, setCount] = useState(1);
-  const [extraNames, setExtraNames] = useState<string[]>([]);
   const emailReady = offline ? true : !!form.email.trim();
-  const valid = form.fullName.trim() && emailReady;
-
-  function updateCount(next: number) {
-    const n = Math.max(1, Math.min(MAX_ENTRIES, next));
-    setCount(n);
-    setExtraNames((prev) => {
-      const arr = [...prev];
-      while (arr.length < n - 1) arr.push("");
-      arr.length = n - 1;
-      return arr;
-    });
-  }
+  const valid = form.fullName.trim() && emailReady && form.phone.trim();
 
   return (
     <Shell bgUrl={bgUrl ?? undefined} bgBlur={6}>
@@ -72,7 +57,7 @@ function Details() {
       </Card>
 
       <Card className="mt-6 space-y-4">
-        <p className="eyebrow">Account holder</p>
+        <p className="eyebrow">Enter the comp</p>
         <Field
           label="Full name"
           placeholder="Tom Murphy"
@@ -113,68 +98,11 @@ function Details() {
         )}
 
         <Field
-          label="Mobile (optional)"
+          label="Mobile"
           placeholder="087 123 4567"
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
         />
-      </Card>
-
-      <Card className="mt-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="eyebrow">How many entries?</p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => updateCount(count - 1)}
-              disabled={count <= 1}
-              className="h-9 w-9 rounded-md border border-[color:var(--border)] text-lg disabled:opacity-40"
-              aria-label="Fewer entries"
-            >
-              −
-            </button>
-            <span className="display w-8 text-center text-2xl text-primary">{count}</span>
-            <button
-              type="button"
-              onClick={() => updateCount(count + 1)}
-              disabled={count >= MAX_ENTRIES}
-              className="h-9 w-9 rounded-md border border-[color:var(--border)] text-lg disabled:opacity-40"
-              aria-label="More entries"
-            >
-              +
-            </button>
-          </div>
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          Buying for the family? Add an entry for each person — they all share this account.
-        </p>
-
-        {count > 1 && (
-          <div className="space-y-2 rounded-md border border-[color:var(--border)] p-3">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Entry names (optional)
-            </p>
-            <Field
-              label="Entry 1"
-              value={form.fullName}
-              disabled
-              placeholder="Account holder"
-            />
-            {extraNames.map((n, i) => (
-              <Field
-                key={i}
-                label={`Entry ${i + 2}`}
-                placeholder={`Entry ${i + 2}`}
-                value={n}
-                onChange={(e) => {
-                  const arr = [...extraNames];
-                  arr[i] = e.target.value;
-                  setExtraNames(arr);
-                }}
-              />
-            ))}
-          </div>
-        )}
       </Card>
 
       <div className="mt-6">
@@ -189,7 +117,6 @@ function Details() {
                 n: form.fullName,
                 e: offline ? "" : form.email,
                 p: form.phone,
-                ns: extraNames.join("|"),
                 ...(offline ? { o: "1" } : {}),
               },
             })
