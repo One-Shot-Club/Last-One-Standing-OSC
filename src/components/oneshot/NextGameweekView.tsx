@@ -25,6 +25,13 @@ export interface NextGameweekData {
   topPicksLastWeek: Array<{ team: string; count: number }>;
   lastWeekLabel: string | null;
   preview?: boolean;
+  siblingEntries?: Array<{
+    entryId: string;
+    playerId: string | null;
+    displayName: string;
+    magicToken: string;
+    alive: boolean;
+  }>;
 }
 
 function useCountdown(target: string | null | undefined) {
