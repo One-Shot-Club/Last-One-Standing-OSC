@@ -60,13 +60,13 @@ function Pay() {
   const [error, setError] = useState<string | null>(null);
   const [setupKind, setSetupKind] = useState<Kind | null>(null);
 
-  const extraNames = useMemo(
-    () => (ns ? ns.split("|") : []).map((s) => s.trim()),
+  const extraNames = useMemo<string[]>(
+    () => (ns ? ns.split("|") : []).map((s: string) => s.trim()),
     [ns],
   );
-  const entryNames = useMemo(() => {
-    const list = [n || "Entry 1"];
-    extraNames.forEach((nm, i) => list.push(nm || `Entry ${i + 2}`));
+  const entryNames = useMemo<string[]>(() => {
+    const list: string[] = [n || "Entry 1"];
+    extraNames.forEach((nm: string, i: number) => list.push(nm || `Entry ${i + 2}`));
     return list;
   }, [n, extraNames]);
 
