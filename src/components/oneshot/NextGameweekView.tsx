@@ -69,8 +69,9 @@ interface Props {
 }
 
 export function NextGameweekView({ data, onSubmit, submitting, submitError, tenantLogoUrl, tenantBgUrl }: Props) {
-  const { player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, lastWeekLabel, preview } = data;
+  const { player, competition, gameweek, fixtures, badges, picks, survivalStats, topPicksLastWeek, lastWeekLabel, preview, siblingEntries } = data;
   const cd = useCountdown(gameweek?.deadline_at ?? null);
+  const siblings = siblingEntries ?? [];
 
   const usedTeams = useMemo(
     () => new Set((picks ?? []).filter((p) => !gameweek || p.week !== gameweek.week_number).map((p) => p.team)),
