@@ -118,20 +118,23 @@ function Panel() {
       </div>
 
       <nav className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-[color:var(--border)] bg-card p-3 text-sm tracking-wide">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "rounded-md px-3 py-2 font-bold capitalize transition-colors",
-              tab === t
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t}
-          </button>
-        ))}
+        {tabs.map((t) => {
+          const label = t === "players" ? "picks grid" : t;
+          return (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "rounded-md px-3 py-2 font-bold capitalize transition-colors",
+                tab === t
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
       </nav>
 
 
