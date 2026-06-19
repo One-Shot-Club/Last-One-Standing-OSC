@@ -222,7 +222,9 @@ export async function sendElimination(opts: {
   noPick?: boolean
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
-  if (!player || !player.email) return
+  if (!player) return
+  const recipient = await resolveRecipientEmail(player)
+  if (!recipient) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
   const theme = await loadEmailThemeForCompetition(player.competition_id)
@@ -235,7 +237,7 @@ export async function sendElimination(opts: {
 
   await enqueueTemplatedEmail({
     templateName: 'elimination',
-    to: player.email,
+    to: recipient,
     idempotencyKey: `elim-${opts.playerId}-${opts.gameweekId}`,
     fromName: theme.fromName,
     templateData: {
