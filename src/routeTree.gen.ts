@@ -14,6 +14,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as PickRouteImport } from './routes/pick'
 import { Route as PayRouteImport } from './routes/pay'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as DetailsAddRouteImport } from './routes/details-add'
 import { Route as DetailsRouteImport } from './routes/details'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -62,6 +63,11 @@ const PayRoute = PayRouteImport.update({
 const HowItWorksRoute = HowItWorksRouteImport.update({
   id: '/how-it-works',
   path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DetailsAddRoute = DetailsAddRouteImport.update({
+  id: '/details-add',
+  path: '/details-add',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DetailsRoute = DetailsRouteImport.update({
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/details': typeof DetailsRoute
+  '/details-add': typeof DetailsAddRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/details': typeof DetailsRoute
+  '/details-add': typeof DetailsAddRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/details': typeof DetailsRoute
+  '/details-add': typeof DetailsAddRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/details'
+    | '/details-add'
     | '/how-it-works'
     | '/pay'
     | '/pick'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/details'
+    | '/details-add'
     | '/how-it-works'
     | '/pay'
     | '/pick'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/details'
+    | '/details-add'
     | '/how-it-works'
     | '/pay'
     | '/pick'
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DetailsRoute: typeof DetailsRoute
+  DetailsAddRoute: typeof DetailsAddRoute
   HowItWorksRoute: typeof HowItWorksRoute
   PayRoute: typeof PayRoute
   PickRoute: typeof PickRoute
@@ -440,6 +453,13 @@ declare module '@tanstack/react-router' {
       path: '/how-it-works'
       fullPath: '/how-it-works'
       preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/details-add': {
+      id: '/details-add'
+      path: '/details-add'
+      fullPath: '/details-add'
+      preLoaderRoute: typeof DetailsAddRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/details': {
@@ -644,6 +664,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DetailsRoute: DetailsRoute,
+  DetailsAddRoute: DetailsAddRoute,
   HowItWorksRoute: HowItWorksRoute,
   PayRoute: PayRoute,
   PickRoute: PickRoute,
