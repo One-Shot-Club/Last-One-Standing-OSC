@@ -144,15 +144,21 @@ export function TenantEntry({
                   e: addMode.e,
                   p: addMode.p,
                   ...(addMode.o ? { o: addMode.o } : {}),
+                  ...(tenantSlug ? { s: tenantSlug } : {}),
                 },
               });
             } else {
               nav({
                 to: "/details",
-                search: { c: competition!.id, t: selected! },
+                search: {
+                  c: competition!.id,
+                  t: selected!,
+                  ...(tenantSlug ? { s: tenantSlug } : {}),
+                },
               });
             }
           }}
+
         >
           {selected ? `Continue with ${selected} →` : "Select a team"}
         </Btn>
