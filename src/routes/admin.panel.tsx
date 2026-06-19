@@ -535,6 +535,71 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
             </div>
           </div>
 
+          <Card className="space-y-2 p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Premier League data (FPL)</div>
+                <div className="text-xs text-foreground">
+                  {fpl?.hasFixtures
+                    ? `${fpl.finished}/${fpl.total} matches finished`
+                    : "No FPL fixtures imported yet"}
+                  {fpl?.lastSyncedAt && (
+                    <span className="ml-2 text-muted-foreground">
+                      · synced {new Date(fpl.lastSyncedAt).toLocaleTimeString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Btn
+                disabled={busy || activeGw.results_locked}
+                onClick={async () => {
+                  setBusy(true);
+                  setErr(null);
+                  try {
+                    const out = await fplImport({ data: { competitionId: compId, pin, weekNumber: activeWeek } });
+                    await qc.invalidateQueries({ queryKey: ["results", "gw", activeWeek, activeGw.id] });
+                    await qc.invalidateQueries({ queryKey: ["gws", compId, pin] });
+                    await refetchFpl();
+                    alert(`Imported ${out.imported} fixtures from FPL (event ${out.fplEvent}).`);
+                  } catch (e) {
+                    setErr(e instanceof Error ? e.message : "FPL import failed");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {fpl?.hasFixtures ? "Re-import fixtures" : "Import fixtures from FPL"}
+              </Btn>
+              {fpl?.hasFixtures && !activeGw.results_locked && (
+                <Btn
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setErr(null);
+                    try {
+                      const out = await fplSync({ data: { competitionId: compId, pin, weekNumber: activeWeek } });
+                      await qc.invalidateQueries({ queryKey: ["results", "gw", activeWeek, activeGw.id] });
+                      await refetchFpl();
+                      alert(`Synced ${out.updated}/${out.total} fixtures. ${out.allFinished ? "All matches finished." : "Some still pending."}`);
+                    } catch (e) {
+                      setErr(e instanceof Error ? e.message : "FPL sync failed");
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Sync results now
+                </Btn>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Scores auto-refresh every 20 min during match windows. When the last match goes full-time, the gameweek processes automatically and elimination/progression/reminder email tasks appear in the Emails tab.
+            </p>
+          </Card>
+
+
           <div className="space-y-2">
             {(results as any[]).length === 0 && (
               <p className="py-6 text-center text-sm text-muted-foreground">
