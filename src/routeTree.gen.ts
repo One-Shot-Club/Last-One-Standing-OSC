@@ -36,6 +36,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTenantAssetsSplatRouteImport } from './routes/api/public/tenant-assets/$'
+import { Route as ApiPublicCronSyncFplResultsRouteImport } from './routes/api/public/cron/sync-fpl-results'
 import { Route as ApiPublicCronCheckRemindersRouteImport } from './routes/api/public/cron/check-reminders'
 
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -179,6 +180,12 @@ const ApiPublicTenantAssetsSplatRoute =
     path: '/api/public/tenant-assets/$',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronSyncFplResultsRoute =
+  ApiPublicCronSyncFplResultsRouteImport.update({
+    id: '/api/public/cron/sync-fpl-results',
+    path: '/api/public/cron/sync-fpl-results',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronCheckRemindersRoute =
   ApiPublicCronCheckRemindersRouteImport.update({
     id: '/api/public/cron/check-reminders',
@@ -208,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
   '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
+  '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -236,6 +244,7 @@ export interface FileRoutesByTo {
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
   '/oneshotclub/Master': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
+  '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -267,6 +276,7 @@ export interface FileRoutesById {
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
   '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
+  '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/oneshotclub/Master/admin'
     | '/oneshotclub/Master/'
     | '/api/public/cron/check-reminders'
+    | '/api/public/cron/sync-fpl-results'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/oneshotclub/Master/admin'
     | '/oneshotclub/Master'
     | '/api/public/cron/check-reminders'
+    | '/api/public/cron/sync-fpl-results'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -356,6 +368,7 @@ export interface FileRouteTypes {
     | '/oneshotclub/Master/admin'
     | '/oneshotclub/Master/'
     | '/api/public/cron/check-reminders'
+    | '/api/public/cron/sync-fpl-results'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -383,6 +396,7 @@ export interface RootRouteChildren {
   TenantSlugIndexRoute: typeof TenantSlugIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicCronCheckRemindersRoute: typeof ApiPublicCronCheckRemindersRoute
+  ApiPublicCronSyncFplResultsRoute: typeof ApiPublicCronSyncFplResultsRoute
   ApiPublicTenantAssetsSplatRoute: typeof ApiPublicTenantAssetsSplatRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -582,6 +596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTenantAssetsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/sync-fpl-results': {
+      id: '/api/public/cron/sync-fpl-results'
+      path: '/api/public/cron/sync-fpl-results'
+      fullPath: '/api/public/cron/sync-fpl-results'
+      preLoaderRoute: typeof ApiPublicCronSyncFplResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/check-reminders': {
       id: '/api/public/cron/check-reminders'
       path: '/api/public/cron/check-reminders'
@@ -637,6 +658,7 @@ const rootRouteChildren: RootRouteChildren = {
   TenantSlugIndexRoute: TenantSlugIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicCronCheckRemindersRoute: ApiPublicCronCheckRemindersRoute,
+  ApiPublicCronSyncFplResultsRoute: ApiPublicCronSyncFplResultsRoute,
   ApiPublicTenantAssetsSplatRoute: ApiPublicTenantAssetsSplatRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
@@ -647,13 +669,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

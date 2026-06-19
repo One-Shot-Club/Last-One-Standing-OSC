@@ -16,6 +16,11 @@ import {
 
 } from "@/lib/gameweeks.functions";
 import {
+  importGameweekFromFPL,
+  syncGameweekFromFPL,
+  getFPLStatus,
+} from "@/lib/fpl.functions";
+import {
   addManualEntrant,
   listEntries,
   recordPayment,
@@ -448,6 +453,9 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
   const fetchResults = useServerFn(listResults);
   const processGw = useServerFn(processGameweekResults);
   const unlockGw = useServerFn(unlockGameweek);
+  const fplImport = useServerFn(importGameweekFromFPL);
+  const fplSync = useServerFn(syncGameweekFromFPL);
+  const fplStatus = useServerFn(getFPLStatus);
 
   const qc = useQueryClient();
 
@@ -486,6 +494,12 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
     enabled: !!activeGw,
   });
 
+  const { data: fpl, refetch: refetchFpl } = useQuery({
+    queryKey: ["fpl-status", compId, activeWeek, activeGw?.id],
+    queryFn: () => fplStatus({ data: { competitionId: compId, pin, weekNumber: activeWeek } }),
+    enabled: !!activeGw,
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex gap-1 overflow-x-auto rounded-lg border border-[color:var(--border)] bg-card p-1">
@@ -520,6 +534,71 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
               {(results as any[]).filter((r) => r.winner).length} / {(results as any[]).length} set
             </div>
           </div>
+
+          <Card className="space-y-2 p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Premier League data (FPL)</div>
+                <div className="text-xs text-foreground">
+                  {fpl?.hasFixtures
+                    ? `${fpl.finished}/${fpl.total} matches finished`
+                    : "No FPL fixtures imported yet"}
+                  {fpl?.lastSyncedAt && (
+                    <span className="ml-2 text-muted-foreground">
+                      · synced {new Date(fpl.lastSyncedAt).toLocaleTimeString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Btn
+                disabled={busy || activeGw.results_locked}
+                onClick={async () => {
+                  setBusy(true);
+                  setErr(null);
+                  try {
+                    const out = await fplImport({ data: { competitionId: compId, pin, weekNumber: activeWeek } });
+                    await qc.invalidateQueries({ queryKey: ["results", "gw", activeWeek, activeGw.id] });
+                    await qc.invalidateQueries({ queryKey: ["gws", compId, pin] });
+                    await refetchFpl();
+                    alert(`Imported ${out.imported} fixtures from FPL (event ${out.fplEvent}).`);
+                  } catch (e) {
+                    setErr(e instanceof Error ? e.message : "FPL import failed");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {fpl?.hasFixtures ? "Re-import fixtures" : "Import fixtures from FPL"}
+              </Btn>
+              {fpl?.hasFixtures && !activeGw.results_locked && (
+                <Btn
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setErr(null);
+                    try {
+                      const out = await fplSync({ data: { competitionId: compId, pin, weekNumber: activeWeek } });
+                      await qc.invalidateQueries({ queryKey: ["results", "gw", activeWeek, activeGw.id] });
+                      await refetchFpl();
+                      alert(`Synced ${out.updated}/${out.total} fixtures. ${out.allFinished ? "All matches finished." : "Some still pending."}`);
+                    } catch (e) {
+                      setErr(e instanceof Error ? e.message : "FPL sync failed");
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Sync results now
+                </Btn>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Scores auto-refresh every 20 min during match windows. When the last match goes full-time, the gameweek processes automatically and elimination/progression/reminder email tasks appear in the Emails tab.
+            </p>
+          </Card>
+
 
           <div className="space-y-2">
             {(results as any[]).length === 0 && (
