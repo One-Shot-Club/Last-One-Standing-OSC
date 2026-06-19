@@ -7,6 +7,7 @@ export type Fixture = {
   away: string;
   homeBadge: string;
   awayBadge: string;
+  kickoffAt: string | null;
 };
 
 const B = (id: number) =>
@@ -35,11 +36,12 @@ export const TEAMS: Record<string, number> = {
   "Wolverhampton Wanderers": 39,
 };
 
-const fx = (home: string, away: string): Fixture => ({
+const fx = (home: string, away: string, kickoffAt: string | null = null): Fixture => ({
   home,
   away,
   homeBadge: B(TEAMS[home]),
   awayBadge: B(TEAMS[away]),
+  kickoffAt,
 });
 
 // Sample GW1 fixtures used by marketing/preview pages only.
