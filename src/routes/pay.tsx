@@ -12,7 +12,7 @@ import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 import { clearCart, readCart, removeFromCart, type CartEntry } from "@/lib/entry-cart";
 
-type Search = { c: string; n: string; e: string; p: string; t: string; o?: string };
+type Search = { c: string; n: string; e: string; p: string; t: string; o?: string; s?: string };
 
 export const Route = createFileRoute("/pay")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -22,12 +22,14 @@ export const Route = createFileRoute("/pay")({
     p: String(s.p ?? ""),
     t: String(s.t ?? ""),
     o: s.o ? String(s.o) : undefined,
+    s: s.s ? String(s.s) : undefined,
   }),
   beforeLoad: ({ search }) => {
     if (!search.c || !search.t) throw redirect({ to: "/" });
   },
   component: Pay,
 });
+
 
 type Kind = "stripe" | "revolut" | "payment";
 
@@ -38,7 +40,7 @@ const LABELS: Record<Kind, string> = {
 };
 
 function Pay() {
-  const { c, n, e, p, t, o } = Route.useSearch();
+  const { c, n, e, p, t, o, s: tenantSlug } = Route.useSearch();
   const nav = useNavigate();
   const qc = useQueryClient();
   const fetchComp = useServerFn(getCompetition);
@@ -90,17 +92,15 @@ function Pay() {
   }
 
   function addAnother() {
-    // Hop back to the tenant landing in "additional entry" mode, carrying
-    // owner contact along so we can return here after the next pick+name.
-    // We don't know the slug from /pay so we use root `/` which redirects to
-    // the master tenant; if the user came from a sub-tenant they'll need to
-    // re-pick there. Realistically this flow is one tenant per checkout.
+    // Hop back to the same tenant's landing in "additional entry" mode,
+    // carrying owner contact + tenant slug so we return here after pick+name.
     nav({
       to: "/$tenantSlug",
-      params: { tenantSlug: "oneshotclub" },
+      params: { tenantSlug: tenantSlug || "oneshotclub" },
       search: { add: "1", n, e, p, ...(o ? { o } : {}) },
     });
   }
+
 
   function removeEntry(idx: number) {
     removeFromCart(c, idx);

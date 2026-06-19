@@ -52,13 +52,16 @@ export function TenantEntry({
   gameweek,
   fixtures,
   addMode,
+  tenantSlug,
 }: {
   tenant: TenantBranding | null;
   competition: EntryCompetition | null;
   gameweek?: { id: string; week_number: number; deadline_at: string | null } | null;
   fixtures?: TenantEntryFixture[];
   addMode?: { n: string; e: string; p: string; o?: string } | null;
+  tenantSlug?: string;
 }) {
+
   useTenantBranding(tenant);
   const nav = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
@@ -141,15 +144,21 @@ export function TenantEntry({
                   e: addMode.e,
                   p: addMode.p,
                   ...(addMode.o ? { o: addMode.o } : {}),
+                  ...(tenantSlug ? { s: tenantSlug } : {}),
                 },
               });
             } else {
               nav({
                 to: "/details",
-                search: { c: competition!.id, t: selected! },
+                search: {
+                  c: competition!.id,
+                  t: selected!,
+                  ...(tenantSlug ? { s: tenantSlug } : {}),
+                },
               });
             }
           }}
+
         >
           {selected ? `Continue with ${selected} →` : "Select a team"}
         </Btn>

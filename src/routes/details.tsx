@@ -9,12 +9,13 @@ import { cn } from "@/lib/utils";
 import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 import { clearCart } from "@/lib/entry-cart";
 
-type Search = { c: string; t: string };
+type Search = { c: string; t: string; s?: string };
 
 export const Route = createFileRoute("/details")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     c: String(s.c ?? ""),
     t: String(s.t ?? ""),
+    s: s.s ? String(s.s) : undefined,
   }),
   beforeLoad: ({ search }) => {
     if (!search.c || !search.t) throw redirect({ to: "/" });
@@ -22,8 +23,9 @@ export const Route = createFileRoute("/details")({
   component: Details,
 });
 
+
 function Details() {
-  const { c, t } = Route.useSearch();
+  const { c, t, s: tenantSlug } = Route.useSearch();
   const nav = useNavigate();
   const fetchComp = useServerFn(getCompetition);
   const { data: comp } = useQuery({
@@ -123,8 +125,10 @@ function Details() {
                 e: offline ? "" : form.email,
                 p: form.phone,
                 ...(offline ? { o: "1" } : {}),
+                ...(tenantSlug ? { s: tenantSlug } : {}),
               },
             })
+
           }
         >
           Continue to payment →

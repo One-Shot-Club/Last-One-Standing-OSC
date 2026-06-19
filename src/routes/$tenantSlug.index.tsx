@@ -83,6 +83,7 @@ function TenantLanding() {
       competition={data.competition}
       gameweek={data.gameweek}
       fixtures={data.fixtures}
+      tenantSlug={tenantSlug}
       addMode={
         search.add === "1" && search.n
           ? { n: search.n, e: search.e ?? "", p: search.p ?? "", o: search.o }
@@ -90,4 +91,5 @@ function TenantLanding() {
       }
     />
   );
+
 }

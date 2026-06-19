@@ -53,6 +53,8 @@ function MasterPage() {
       competition={data.competition}
       gameweek={data.gameweek}
       fixtures={data.fixtures}
+      tenantSlug="oneshotclub"
     />
   );
+
 }

@@ -16,6 +16,7 @@ type Search = {
   e: string;
   p: string;
   o?: string;
+  s?: string;
 };
 
 export const Route = createFileRoute("/details-add")({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/details-add")({
     e: String(s.e ?? ""),
     p: String(s.p ?? ""),
     o: s.o ? String(s.o) : undefined,
+    s: s.s ? String(s.s) : undefined,
   }),
   beforeLoad: ({ search }) => {
     if (!search.c || !search.t || !search.n) throw redirect({ to: "/" });
@@ -33,8 +35,9 @@ export const Route = createFileRoute("/details-add")({
   component: DetailsAdd,
 });
 
+
 function DetailsAdd() {
-  const { c, t, n, e, p, o } = Route.useSearch();
+  const { c, t, n, e, p, o, s: tenantSlug } = Route.useSearch();
   const nav = useNavigate();
   const fetchComp = useServerFn(getCompetition);
   const { data: comp } = useQuery({
@@ -53,8 +56,9 @@ function DetailsAdd() {
 
   function save() {
     addToCart(c, { fullName: entrantName.trim(), team: t });
-    nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}) } });
+    nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}), ...(tenantSlug ? { s: tenantSlug } : {}) } });
   }
+
 
   return (
     <Shell bgUrl={bgUrl ?? undefined} bgBlur={6}>
@@ -87,7 +91,7 @@ function DetailsAdd() {
         <Btn disabled={!valid} onClick={save}>
           Add this entry →
         </Btn>
-        <Btn variant="ghost" onClick={() => nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}) } })}>
+        <Btn variant="ghost" onClick={() => nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}), ...(tenantSlug ? { s: tenantSlug } : {}) } })}>
           Cancel
         </Btn>
       </div>
