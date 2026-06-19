@@ -35,6 +35,10 @@ function Details() {
 
   const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
   const [offline, setOffline] = useState(false);
+  // A fresh owner flow wipes any leftover additional-entries cart for this comp.
+  useEffect(() => {
+    if (c) clearCart(c);
+  }, [c]);
   const emailReady = offline ? true : !!form.email.trim();
   const valid = form.fullName.trim() && emailReady && form.phone.trim();
 
