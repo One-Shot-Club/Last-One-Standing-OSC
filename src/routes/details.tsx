@@ -1,12 +1,13 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getCompetition } from "@/lib/oneshot.functions";
 import { Btn, Card, Eyebrow, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { cn } from "@/lib/utils";
 import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
+import { clearCart } from "@/lib/entry-cart";
 
 type Search = { c: string; t: string };
 
