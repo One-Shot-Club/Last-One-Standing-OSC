@@ -150,7 +150,7 @@ function Pay() {
       </div>
 
       <div className="mt-6 space-y-3">
-        {(Object.keys(LABELS) as Kind[]).map((k) => (
+        {(Object.keys(LABELS) as Kind[]).filter((k) => links[k]).map((k) => (
           <PayOption
             key={k}
             kind={k}
