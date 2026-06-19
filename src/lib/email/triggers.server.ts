@@ -280,7 +280,7 @@ export async function sendProgression(opts: {
 
   await enqueueTemplatedEmail({
     templateName: 'progression',
-    to: player.email,
+    to: recipient,
     idempotencyKey: `progress-${opts.playerId}-${opts.gameweekId}`,
     fromName: theme.fromName,
     templateData: {
