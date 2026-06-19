@@ -51,11 +51,13 @@ export function TenantEntry({
   competition,
   gameweek,
   fixtures,
+  addMode,
 }: {
   tenant: TenantBranding | null;
   competition: EntryCompetition | null;
   gameweek?: { id: string; week_number: number; deadline_at: string | null } | null;
   fixtures?: TenantEntryFixture[];
+  addMode?: { n: string; e: string; p: string; o?: string } | null;
 }) {
   useTenantBranding(tenant);
   const nav = useNavigate();
