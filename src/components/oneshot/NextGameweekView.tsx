@@ -49,6 +49,20 @@ function useCountdown(target: string | null | undefined) {
   return { label, ms, locked: false, urgent };
 }
 
+function formatKickoff(iso: string): string | null {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleString("en-IE", {
+    timeZone: "Europe/Dublin",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 interface Props {
   data: NextGameweekData;
   /** When provided, lock-in is live. Omit for preview mode. */
