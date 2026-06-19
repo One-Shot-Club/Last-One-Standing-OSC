@@ -82,6 +82,13 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
     };
   });
 
+export type TenantEntryFixture = {
+  home: string;
+  away: string;
+  homeBadge: string | null;
+  awayBadge: string | null;
+};
+
 export type TenantEntryContext = {
   tenant: TenantBranding;
   competition: {
@@ -92,6 +99,8 @@ export type TenantEntryContext = {
     club_name: string | null;
     club_logo_url: string | null;
   } | null;
+  gameweek: { id: string; week_number: number; deadline_at: string | null } | null;
+  fixtures: TenantEntryFixture[];
 };
 
 export const getTenantEntryContext = createServerFn({ method: "GET" })
@@ -121,6 +130,57 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
+    // Pick the gameweek to display fixtures for: prefer the next gameweek with
+    // a future deadline; otherwise fall back to the earliest gameweek.
+    let gameweek: { id: string; week_number: number; deadline_at: string | null } | null = null;
+    let fixtures: TenantEntryFixture[] = [];
+    if (comp) {
+      const nowIso = new Date().toISOString();
+      const { data: upcoming } = await supabaseAdmin
+        .from("gameweeks")
+        .select("id, week_number, deadline_at")
+        .eq("competition_id", comp.id)
+        .gt("deadline_at", nowIso)
+        .order("week_number", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      let gw = upcoming;
+      if (!gw) {
+        const { data: earliest } = await supabaseAdmin
+          .from("gameweeks")
+          .select("id, week_number, deadline_at")
+          .eq("competition_id", comp.id)
+          .order("week_number", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        gw = earliest ?? null;
+      }
+      if (gw) {
+        gameweek = {
+          id: gw.id as string,
+          week_number: gw.week_number as number,
+          deadline_at: (gw.deadline_at as string | null) ?? null,
+        };
+        const { data: results } = await supabaseAdmin
+          .from("results")
+          .select("home_team, away_team, kickoff_at")
+          .eq("gameweek_id", gameweek.id)
+          .order("kickoff_at", { ascending: true, nullsFirst: false });
+        const { data: teams } = await supabaseAdmin
+          .from("teams")
+          .select("name, badge_url")
+          .eq("competition_id", MASTER_TEAMS_COMPETITION_ID);
+        const badges: Record<string, string | null> = {};
+        for (const t of teams ?? []) badges[t.name as string] = (t.badge_url as string | null) ?? null;
+        fixtures = (results ?? []).map((r) => ({
+          home: r.home_team as string,
+          away: r.away_team as string,
+          homeBadge: badges[r.home_team as string] ?? null,
+          awayBadge: badges[r.away_team as string] ?? null,
+        }));
+      }
+    }
+
     return {
       tenant: {
         id: tenant.id as string,
@@ -149,6 +209,8 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
             club_logo_url: (comp.club_logo_url as string | null) ?? null,
           }
         : null,
+      gameweek,
+      fixtures,
     };
   });
 
