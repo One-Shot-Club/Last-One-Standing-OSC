@@ -1,0 +1,2 @@
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS owner_player_id UUID NULL REFERENCES public.players(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_players_owner ON public.players(owner_player_id);
