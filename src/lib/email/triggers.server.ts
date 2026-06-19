@@ -308,7 +308,9 @@ export async function sendPickReminder(opts: {
   deadline: string | null
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
-  if (!player || !player.email) return
+  if (!player) return
+  const recipient = await resolveRecipientEmail(player)
+  if (!recipient) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
   const theme = await loadEmailThemeForCompetition(player.competition_id)
@@ -321,7 +323,7 @@ export async function sendPickReminder(opts: {
 
   await enqueueTemplatedEmail({
     templateName: 'pick-reminder',
-    to: player.email,
+    to: recipient,
     // Note: idempotencyKey scoped to gameweek_id so one reminder per player per gw.
     // If an admin wants to nudge again, dismiss + recreate the task.
     idempotencyKey: `reminder-${opts.playerId}-${opts.gameweekId}`,
