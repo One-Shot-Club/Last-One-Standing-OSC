@@ -237,7 +237,7 @@ export const submitPick = createServerFn({ method: "POST" })
     }
 
     const thisWeek = existing?.find((p) => p.week === data.week);
-    let pick: unknown;
+    let pick: Record<string, unknown>;
     let isFirstPick = !existing || existing.length === 0;
 
     if (thisWeek) {
