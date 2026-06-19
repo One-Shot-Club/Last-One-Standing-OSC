@@ -43,7 +43,7 @@ const fx = (home: string, away: string): Fixture => ({
 });
 
 // Sample GW1 fixtures used by marketing/preview pages only.
-const SAMPLE_GW1: Fixture[] = [
+export const SAMPLE_GW1: Fixture[] = [
   fx("Liverpool", "Tottenham"),
   fx("Manchester City", "Newcastle"),
   fx("Crystal Palace", "Arsenal"),

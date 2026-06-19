@@ -48,6 +48,11 @@ function MasterPage() {
   const { data } = useSuspenseQuery(tenantEntryQuery);
 
   return (
-    <TenantEntry tenant={data.tenant} competition={data.competition} />
+    <TenantEntry
+      tenant={data.tenant}
+      competition={data.competition}
+      gameweek={data.gameweek}
+      fixtures={data.fixtures}
+    />
   );
 }

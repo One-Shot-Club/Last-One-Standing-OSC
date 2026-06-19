@@ -61,5 +61,12 @@ function TenantLanding() {
   if (MASTER_ALIASES.has(tenantSlug)) {
     return <MasterTenantLanding tenant={data.tenant} />;
   }
-  return <TenantEntry tenant={data.tenant} competition={data.competition} />;
+  return (
+    <TenantEntry
+      tenant={data.tenant}
+      competition={data.competition}
+      gameweek={data.gameweek}
+      fixtures={data.fixtures}
+    />
+  );
 }

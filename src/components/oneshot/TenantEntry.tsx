@@ -4,8 +4,8 @@ import { Btn, Card, Eyebrow, Shell, StickyCTA } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useTenantBranding } from "@/lib/tenant/branding";
 import { cn } from "@/lib/utils";
-import { getFixtures, type Fixture } from "@/lib/fixtures";
-import type { TenantBranding } from "@/lib/tenant.functions";
+import { SAMPLE_GW1 } from "@/lib/fixtures";
+import type { TenantBranding, TenantEntryFixture } from "@/lib/tenant.functions";
 
 export type EntryCompetition = {
   id: string;
@@ -13,6 +13,13 @@ export type EntryCompetition = {
   prize_pool: number | string | null;
   club_name: string | null;
   club_logo_url: string | null;
+};
+
+type EntryFixture = {
+  home: string;
+  away: string;
+  homeBadge: string | null;
+  awayBadge: string | null;
 };
 
 const RULES = [
@@ -26,14 +33,21 @@ const RULES = [
 export function TenantEntry({
   tenant,
   competition,
+  gameweek,
+  fixtures,
 }: {
   tenant: TenantBranding | null;
   competition: EntryCompetition | null;
+  gameweek?: { id: string; week_number: number; deadline_at: string | null } | null;
+  fixtures?: TenantEntryFixture[];
 }) {
   useTenantBranding(tenant);
   const nav = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
-  const fixtures = getFixtures(1);
+  const liveFixtures: EntryFixture[] =
+    fixtures && fixtures.length > 0 ? fixtures : SAMPLE_GW1;
+  const weekNumber = gameweek?.week_number ?? 1;
+
 
   const clubName =
     tenant?.name ?? competition?.club_name ?? "LAST MAN STANDING";
@@ -58,7 +72,7 @@ export function TenantEntry({
       </Card>
 
       <div className="mt-8">
-        <Eyebrow>Gameweek 1 fixtures</Eyebrow>
+        <Eyebrow>Gameweek {weekNumber} fixtures</Eyebrow>
         <h2 className="display mt-2 text-2xl">Make your pick</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Tap the team you back to win.
@@ -66,7 +80,7 @@ export function TenantEntry({
       </div>
 
       <div className="mt-3 space-y-1.5 pb-6">
-        {fixtures.map((f, i) => (
+        {liveFixtures.map((f, i) => (
           <FixtureCard
             key={i}
             fixture={f}
@@ -112,7 +126,7 @@ function FixtureCard({
   selected,
   onSelect,
 }: {
-  fixture: Fixture;
+  fixture: EntryFixture;
   selected: string | null;
   onSelect: (t: string) => void;
 }) {
@@ -144,7 +158,7 @@ function TeamBtn({
   onClick,
 }: {
   name: string;
-  badge: string;
+  badge: string | null;
   selected: boolean;
   onClick: () => void;
 }) {
@@ -158,7 +172,7 @@ function TeamBtn({
         selected ? "border-primary ring-1 ring-primary" : "hover:border-primary/60",
       )}
     >
-      <img src={badge} alt={name} className="h-5 w-5 object-contain" />
+      {badge ? <img src={badge} alt={name} className="h-5 w-5 object-contain" /> : null}
       <span className="text-[10px] font-semibold leading-tight">{name}</span>
     </button>
   );
