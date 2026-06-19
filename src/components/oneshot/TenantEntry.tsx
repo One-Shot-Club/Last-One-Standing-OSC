@@ -126,7 +126,7 @@ function FixtureCard({
   selected,
   onSelect,
 }: {
-  fixture: Fixture;
+  fixture: EntryFixture;
   selected: string | null;
   onSelect: (t: string) => void;
 }) {
