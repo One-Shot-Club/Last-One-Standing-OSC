@@ -56,8 +56,9 @@ function DetailsAdd() {
 
   function save() {
     addToCart(c, { fullName: entrantName.trim(), team: t });
-    nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}) } });
+    nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}), ...(tenantSlug ? { s: tenantSlug } : {}) } });
   }
+
 
   return (
     <Shell bgUrl={bgUrl ?? undefined} bgBlur={6}>
