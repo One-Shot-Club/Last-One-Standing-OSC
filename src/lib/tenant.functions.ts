@@ -87,6 +87,7 @@ export type TenantEntryFixture = {
   away: string;
   homeBadge: string | null;
   awayBadge: string | null;
+  kickoffAt: string | null;
 };
 
 export type TenantEntryContext = {
@@ -177,6 +178,7 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
           away: r.away_team as string,
           homeBadge: badges[r.home_team as string] ?? null,
           awayBadge: badges[r.away_team as string] ?? null,
+          kickoffAt: (r.kickoff_at as string | null) ?? null,
         }));
       }
     }
