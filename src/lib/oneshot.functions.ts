@@ -237,7 +237,7 @@ export const submitPick = createServerFn({ method: "POST" })
     }
 
     const thisWeek = existing?.find((p) => p.week === data.week);
-    let pick: Record<string, unknown>;
+    let pick: { id: string; player_id: string; competition_id: string; week: number; team: string } | null = null;
     let isFirstPick = !existing || existing.length === 0;
 
     if (thisWeek) {
