@@ -1,3 +1,7 @@
+// Minimal static fixture sample. Used only by the marketing/preview pages
+// (/how-it-works, TenantEntry, BrandPreview) which always render GW1.
+// Real competition fixtures live in the DB and are populated via the
+// "Import fixtures from FPL" button in the admin panel.
 export type Fixture = {
   home: string;
   away: string;
@@ -8,7 +12,6 @@ export type Fixture = {
 const B = (id: number) =>
   `https://resources.premierleague.com/premierleague/badges/70/t${id}.png`;
 
-// Premier League team -> official badge code
 export const TEAMS: Record<string, number> = {
   "Arsenal": 3,
   "Aston Villa": 7,
@@ -39,46 +42,19 @@ const fx = (home: string, away: string): Fixture => ({
   awayBadge: B(TEAMS[away]),
 });
 
-export const FIXTURES_BY_WEEK: Record<number, Fixture[]> = {
-  1: [
-    fx("Brighton", "Manchester United"),
-    fx("Burnley", "Wolverhampton Wanderers"),
-    fx("Crystal Palace", "Arsenal"),
-    fx("Fulham", "Bournemouth"),
-    fx("Liverpool", "Tottenham"),
-    fx("Manchester City", "Newcastle"),
-    fx("Nottingham Forest", "Chelsea"),
-    fx("Sunderland", "Aston Villa"),
-    fx("West Ham", "Brentford"),
-    fx("Leeds United", "Everton"),
-  ],
-  2: [
-    fx("Bournemouth", "Newcastle"),
-    fx("Fulham", "Manchester City"),
-    fx("Sunderland", "West Ham"),
-    fx("Liverpool", "Crystal Palace"),
-    fx("Manchester United", "Aston Villa"),
-    fx("Burnley", "Everton"),
-    fx("Nottingham Forest", "Chelsea"),
-    fx("Leeds United", "Arsenal"),
-    fx("Tottenham", "Brighton"),
-    fx("Wolverhampton Wanderers", "Brentford"),
-  ],
+// Sample GW1 fixtures used by marketing/preview pages only.
+const SAMPLE_GW1: Fixture[] = [
+  fx("Liverpool", "Tottenham"),
+  fx("Manchester City", "Newcastle"),
+  fx("Crystal Palace", "Arsenal"),
+  fx("Brighton", "Manchester United"),
+  fx("West Ham", "Brentford"),
+];
 
-  3: [
-    fx("Arsenal", "Newcastle"),
-    fx("Brighton", "Chelsea"),
-    fx("Burnley", "Tottenham"),
-    fx("Crystal Palace", "Bournemouth"),
-    fx("Fulham", "Wolverhampton Wanderers"),
-    fx("Leeds United", "Manchester United"),
-    fx("Liverpool", "Aston Villa"),
-    fx("Manchester City", "Brentford"),
-    fx("Nottingham Forest", "Everton"),
-    fx("Sunderland", "West Ham"),
-  ],
+export const FIXTURES_BY_WEEK: Record<number, Fixture[]> = {
+  1: SAMPLE_GW1,
 };
 
-export function getFixtures(week: number): Fixture[] {
-  return FIXTURES_BY_WEEK[week] ?? FIXTURES_BY_WEEK[1];
+export function getFixtures(_week: number): Fixture[] {
+  return SAMPLE_GW1;
 }
