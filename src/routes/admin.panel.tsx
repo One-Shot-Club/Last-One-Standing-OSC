@@ -94,7 +94,7 @@ function Panel() {
     );
   }
 
-  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats", "emails", "broadcast"];
+  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "payments", "stats", "emails", "broadcast"];
 
   return (
     <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
