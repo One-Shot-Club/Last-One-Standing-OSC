@@ -61,9 +61,9 @@ function Pay() {
   const [setupKind, setSetupKind] = useState<Kind | null>(null);
 
   const links: Record<Kind, string | null> = {
-    stripe: comp?.stripe_link ?? null,
-    revolut: comp?.revolut_link ?? null,
-    payment: comp?.payment_link ?? null,
+    stripe: (comp as { stripe_enabled?: boolean } | null)?.stripe_enabled === false ? null : comp?.stripe_link ?? null,
+    revolut: (comp as { revolut_enabled?: boolean } | null)?.revolut_enabled === false ? null : comp?.revolut_link ?? null,
+    payment: (comp as { payment_enabled?: boolean } | null)?.payment_enabled === false ? null : comp?.payment_link ?? null,
   };
 
   const fee = Number(comp?.entry_fee ?? 10);
@@ -150,7 +150,7 @@ function Pay() {
       </div>
 
       <div className="mt-6 space-y-3">
-        {(Object.keys(LABELS) as Kind[]).map((k) => (
+        {(Object.keys(LABELS) as Kind[]).filter((k) => links[k]).map((k) => (
           <PayOption
             key={k}
             kind={k}

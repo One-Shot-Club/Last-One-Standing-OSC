@@ -201,9 +201,12 @@ export type Database = {
           entry_fee: number
           id: string
           name: string
+          payment_enabled: boolean
           payment_link: string | null
           prize_pool: number
+          revolut_enabled: boolean
           revolut_link: string | null
+          stripe_enabled: boolean
           stripe_link: string | null
           tenant_id: string
           whatsapp_link: string | null
@@ -216,9 +219,12 @@ export type Database = {
           entry_fee?: number
           id?: string
           name: string
+          payment_enabled?: boolean
           payment_link?: string | null
           prize_pool?: number
+          revolut_enabled?: boolean
           revolut_link?: string | null
+          stripe_enabled?: boolean
           stripe_link?: string | null
           tenant_id: string
           whatsapp_link?: string | null
@@ -231,9 +237,12 @@ export type Database = {
           entry_fee?: number
           id?: string
           name?: string
+          payment_enabled?: boolean
           payment_link?: string | null
           prize_pool?: number
+          revolut_enabled?: boolean
           revolut_link?: string | null
+          stripe_enabled?: boolean
           stripe_link?: string | null
           tenant_id?: string
           whatsapp_link?: string | null

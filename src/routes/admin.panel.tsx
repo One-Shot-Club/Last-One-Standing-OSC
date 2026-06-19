@@ -1733,6 +1733,16 @@ function Broadcast({ compId, pin }: { compId: string; pin: string }) {
   );
 }
 
+type CompPayShape = {
+  entry_fee?: number | null;
+  stripe_link?: string | null;
+  revolut_link?: string | null;
+  payment_link?: string | null;
+  stripe_enabled?: boolean | null;
+  revolut_enabled?: boolean | null;
+  payment_enabled?: boolean | null;
+};
+
 function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
   const fetchComp = useServerFn(getCompetition);
   const saveFn = useServerFn(setCompetitionPaymentSettings);
@@ -1745,18 +1755,23 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
   const [stripeLink, setStripeLink] = useState("");
   const [revolutLink, setRevolutLink] = useState("");
   const [paymentLink, setPaymentLink] = useState("");
-  const [whatsappLink, setWhatsappLink] = useState("");
+  const [stripeEnabled, setStripeEnabled] = useState(true);
+  const [revolutEnabled, setRevolutEnabled] = useState(true);
+  const [paymentEnabled, setPaymentEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!comp) return;
-    setEntryFee(String(comp.entry_fee ?? 10));
-    setStripeLink(comp.stripe_link ?? "");
-    setRevolutLink(comp.revolut_link ?? "");
-    setPaymentLink(comp.payment_link ?? "");
-    setWhatsappLink(comp.whatsapp_link ?? "");
+    const c = comp as CompPayShape;
+    setEntryFee(String(c.entry_fee ?? 10));
+    setStripeLink(c.stripe_link ?? "");
+    setRevolutLink(c.revolut_link ?? "");
+    setPaymentLink(c.payment_link ?? "");
+    setStripeEnabled(c.stripe_enabled !== false);
+    setRevolutEnabled(c.revolut_enabled !== false);
+    setPaymentEnabled(c.payment_enabled !== false);
   }, [comp]);
 
   async function save() {
@@ -1772,10 +1787,12 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
           stripeLink,
           revolutLink,
           paymentLink,
-          whatsappLink,
+          stripeEnabled,
+          revolutEnabled,
+          paymentEnabled,
         },
       });
-      setMsg("Saved. Changes are live on the join/pay screen now.");
+      setMsg("Saved. Changes are live on the pay screen now.");
       refetch();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Save failed");
@@ -1786,14 +1803,22 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
 
   if (!comp) return <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>;
 
+  const fee = Number(entryFee) || 0;
+  type Method = { key: "stripe" | "revolut" | "payment"; label: string; url: string; enabled: boolean };
+  const methods: Method[] = [
+    { key: "stripe", label: "Pay with Stripe", url: stripeLink, enabled: stripeEnabled },
+    { key: "revolut", label: "Pay with Revolut", url: revolutLink, enabled: revolutEnabled },
+    { key: "payment", label: "Payment Link", url: paymentLink, enabled: paymentEnabled },
+  ];
+  const visible = methods.filter((m) => m.enabled && m.url.trim());
+
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 md:grid-cols-2">
       <Card className="space-y-4">
         <div>
           <h3 className="display text-lg">Payment settings</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Controls what appears on the <span className="font-mono">/pay</span> screen for this club.
-            Leave a link blank to hide that payment option.
+            Controls what appears on the pay screen for this club. Use the toggle to hide a method without losing the saved URL.
           </p>
         </div>
 
@@ -1803,32 +1828,33 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
           value={entryFee}
           onChange={(e) => setEntryFee(e.target.value)}
         />
-        <Field
+
+        <PayMethodRow
           label="Stripe link"
           placeholder="https://buy.stripe.com/…"
           value={stripeLink}
-          onChange={(e) => setStripeLink(e.target.value)}
+          onChange={setStripeLink}
+          enabled={stripeEnabled}
+          onToggle={setStripeEnabled}
         />
-        <Field
+        <PayMethodRow
           label="Revolut link"
           placeholder="https://revolut.me/…"
           value={revolutLink}
-          onChange={(e) => setRevolutLink(e.target.value)}
+          onChange={setRevolutLink}
+          enabled={revolutEnabled}
+          onToggle={setRevolutEnabled}
         />
-        <Field
+        <PayMethodRow
           label="Other payment link (bank transfer / generic)"
           placeholder="https://…"
           value={paymentLink}
-          onChange={(e) => setPaymentLink(e.target.value)}
-        />
-        <Field
-          label="WhatsApp group link"
-          placeholder="https://chat.whatsapp.com/…"
-          value={whatsappLink}
-          onChange={(e) => setWhatsappLink(e.target.value)}
+          onChange={setPaymentLink}
+          enabled={paymentEnabled}
+          onToggle={setPaymentEnabled}
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pt-2">
           <Btn onClick={save} disabled={saving}>
             {saving ? "Saving…" : "Save payment settings"}
           </Btn>
@@ -1836,6 +1862,88 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
           {err && <span className="text-xs text-destructive">{err}</span>}
         </div>
       </Card>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Eyebrow>Live preview — pay screen</Eyebrow>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Unsaved changes shown</span>
+        </div>
+        <Card className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Account owner</span>
+            <span className="text-sm">Tom Murphy</span>
+          </div>
+          <div className="border-t border-[color:var(--border)] pt-3 space-y-2">
+            <p className="eyebrow">Entries</p>
+            <div className="flex items-center justify-between text-sm">
+              <div>
+                <div className="font-medium">Tom Murphy <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground">account owner</span></div>
+                <div className="text-xs text-primary">Arsenal</div>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-3">
+            <span className="text-sm text-muted-foreground">1 × €{fee}</span>
+            <span className="display text-2xl text-primary">€{fee}</span>
+          </div>
+
+          <div className="space-y-2 border-t border-[color:var(--border)] pt-3">
+            {visible.length === 0 && (
+              <p className="rounded-md border border-dashed border-[color:var(--border)] p-3 text-center text-xs text-muted-foreground">
+                No payment methods will be shown. Enable at least one method with a URL.
+              </p>
+            )}
+            {visible.map((m) => (
+              <div key={m.key} className="rounded-md border border-[color:var(--border)] bg-primary/10 px-4 py-3 text-center text-sm font-semibold text-primary">
+                {m.label} →
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-[color:var(--border)] pt-3 text-center text-xs text-muted-foreground">
+            Just one entry — I've paid →
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function PayMethodRow({
+  label,
+  placeholder,
+  value,
+  onChange,
+  enabled,
+  onToggle,
+}: {
+  label: string;
+  placeholder?: string;
+  value: string;
+  onChange: (v: string) => void;
+  enabled: boolean;
+  onToggle: (v: boolean) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-[color:var(--border)] p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
+        <label className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => onToggle(e.target.checked)}
+            className="h-4 w-4 accent-[color:var(--primary)]"
+          />
+          {enabled ? "Visible" : "Hidden"}
+        </label>
+      </div>
+      <Field
+        label=""
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
