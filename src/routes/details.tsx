@@ -125,8 +125,10 @@ function Details() {
                 e: offline ? "" : form.email,
                 p: form.phone,
                 ...(offline ? { o: "1" } : {}),
+                ...(tenantSlug ? { s: tenantSlug } : {}),
               },
             })
+
           }
         >
           Continue to payment →
