@@ -4,8 +4,8 @@ import { Btn, Card, Eyebrow, Shell, StickyCTA } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useTenantBranding } from "@/lib/tenant/branding";
 import { cn } from "@/lib/utils";
-import { getFixtures, type Fixture } from "@/lib/fixtures";
-import type { TenantBranding } from "@/lib/tenant.functions";
+import { SAMPLE_GW1 } from "@/lib/fixtures";
+import type { TenantBranding, TenantEntryFixture } from "@/lib/tenant.functions";
 
 export type EntryCompetition = {
   id: string;
@@ -13,6 +13,13 @@ export type EntryCompetition = {
   prize_pool: number | string | null;
   club_name: string | null;
   club_logo_url: string | null;
+};
+
+type EntryFixture = {
+  home: string;
+  away: string;
+  homeBadge: string | null;
+  awayBadge: string | null;
 };
 
 const RULES = [
@@ -26,14 +33,21 @@ const RULES = [
 export function TenantEntry({
   tenant,
   competition,
+  gameweek,
+  fixtures,
 }: {
   tenant: TenantBranding | null;
   competition: EntryCompetition | null;
+  gameweek?: { id: string; week_number: number; deadline_at: string | null } | null;
+  fixtures?: TenantEntryFixture[];
 }) {
   useTenantBranding(tenant);
   const nav = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
-  const fixtures = getFixtures(1);
+  const liveFixtures: EntryFixture[] =
+    fixtures && fixtures.length > 0 ? fixtures : SAMPLE_GW1;
+  const weekNumber = gameweek?.week_number ?? 1;
+
 
   const clubName =
     tenant?.name ?? competition?.club_name ?? "LAST MAN STANDING";
