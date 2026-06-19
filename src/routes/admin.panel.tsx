@@ -97,7 +97,7 @@ function Panel() {
   const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "payments", "stats", "emails", "broadcast"];
 
   return (
-    <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
+    <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined} wide>
       <header className="flex items-center justify-between">
         <Logo />
         <div className="flex items-center gap-3">
@@ -122,7 +122,7 @@ function Panel() {
         <GameweekTasks compId={compId!} pin={pin ?? ""} />
       </div>
 
-      <nav className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-[color:var(--border)] bg-card p-3 text-sm tracking-wide">
+      <nav className="mt-5 grid grid-cols-3 gap-3 rounded-lg border border-[color:var(--border)] bg-card p-3 text-sm tracking-wide sm:grid-cols-5 lg:grid-cols-9">
         {tabs.map((t) => (
           <button
             key={t}

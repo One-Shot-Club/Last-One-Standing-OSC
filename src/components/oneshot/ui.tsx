@@ -2,7 +2,7 @@ import type { ReactNode, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import abbey from "@/assets/pl-lion-bg-sharp.jpeg.asset.json";
 
-export function Shell({ children, className, bgUrl, bgBlur }: { children: ReactNode; className?: string; bgUrl?: string; bgBlur?: number }) {
+export function Shell({ children, className, bgUrl, bgBlur, wide }: { children: ReactNode; className?: string; bgUrl?: string; bgBlur?: number; wide?: boolean }) {
   const url = bgUrl ?? abbey.url;
   return (
     <div className={cn("relative min-h-screen text-foreground", className)}>
@@ -15,7 +15,7 @@ export function Shell({ children, className, bgUrl, bgBlur }: { children: ReactN
           transform: bgBlur ? "scale(1.05)" : undefined,
         }}
       />
-      <div className="relative z-10 mx-auto max-w-md px-5 pb-32 pt-6">{children}</div>
+      <div className={cn("relative z-10 mx-auto px-5 pb-32 pt-6", wide ? "max-w-md lg:max-w-7xl" : "max-w-md")}>{children}</div>
     </div>
   );
 }
