@@ -32,6 +32,35 @@ export const setPaymentLink = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setCompetitionPaymentSettings = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      pin: string;
+      entryFee: number;
+      stripeLink: string | null;
+      revolutLink: string | null;
+      paymentLink: string | null;
+      whatsappLink: string | null;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    await verifyAdmin(data.competitionId, data.pin);
+    const fee = Number.isFinite(data.entryFee) && data.entryFee >= 0 ? data.entryFee : 0;
+    const { error } = await supabaseAdmin
+      .from("competitions")
+      .update({
+        entry_fee: fee,
+        stripe_link: data.stripeLink?.trim() || null,
+        revolut_link: data.revolutLink?.trim() || null,
+        payment_link: data.paymentLink?.trim() || null,
+        whatsapp_link: data.whatsappLink?.trim() || null,
+      })
+      .eq("id", data.competitionId);
+    if (error) throw error;
+    return { ok: true };
+  });
+
 export const getDemoCompetition = createServerFn({ method: "GET" }).handler(
   async () => {
     const { data, error } = await supabaseAdmin

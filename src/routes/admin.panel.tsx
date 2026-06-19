@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { adminGetData } from "@/lib/oneshot.functions";
+import { adminGetData, getCompetition, setCompetitionPaymentSettings } from "@/lib/oneshot.functions";
 import {
   listGameweeks,
   listTeams,
@@ -50,7 +50,7 @@ import {
 
 export const Route = createFileRoute("/admin/panel")({ component: Panel });
 
-type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit" | "tools" | "emails" | "broadcast";
+type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit" | "tools" | "emails" | "broadcast" | "payments";
 
 
 function Panel() {
@@ -94,7 +94,7 @@ function Panel() {
     );
   }
 
-  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "stats", "emails", "broadcast"];
+  const tabs: Tab[] = ["players", "entries", "picks", "gameweeks", "teams", "payments", "stats", "emails", "broadcast"];
 
   return (
     <Shell bgUrl={bgUrl} bgBlur={bgUrl ? 6 : undefined}>
@@ -151,6 +151,7 @@ function Panel() {
         {tab === "tools" && <Tools compId={compId!} pin={pin!} />}
         {tab === "emails" && <Emails compId={compId!} pin={pin!} />}
         {tab === "broadcast" && <Broadcast compId={compId!} pin={pin!} />}
+        {tab === "payments" && <PaymentSettings compId={compId!} pin={pin!} />}
 
       </div>
     </Shell>
@@ -1731,6 +1732,114 @@ function Broadcast({ compId, pin }: { compId: string; pin: string }) {
     </div>
   );
 }
+
+function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
+  const fetchComp = useServerFn(getCompetition);
+  const saveFn = useServerFn(setCompetitionPaymentSettings);
+  const { data: comp, refetch } = useQuery({
+    queryKey: ["comp-payment-settings", compId],
+    queryFn: () => fetchComp({ data: { id: compId } }),
+  });
+
+  const [entryFee, setEntryFee] = useState("");
+  const [stripeLink, setStripeLink] = useState("");
+  const [revolutLink, setRevolutLink] = useState("");
+  const [paymentLink, setPaymentLink] = useState("");
+  const [whatsappLink, setWhatsappLink] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!comp) return;
+    setEntryFee(String(comp.entry_fee ?? 10));
+    setStripeLink(comp.stripe_link ?? "");
+    setRevolutLink(comp.revolut_link ?? "");
+    setPaymentLink(comp.payment_link ?? "");
+    setWhatsappLink(comp.whatsapp_link ?? "");
+  }, [comp]);
+
+  async function save() {
+    setSaving(true);
+    setMsg(null);
+    setErr(null);
+    try {
+      await saveFn({
+        data: {
+          competitionId: compId,
+          pin,
+          entryFee: Number(entryFee) || 0,
+          stripeLink,
+          revolutLink,
+          paymentLink,
+          whatsappLink,
+        },
+      });
+      setMsg("Saved. Changes are live on the join/pay screen now.");
+      refetch();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!comp) return <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>;
+
+  return (
+    <div className="space-y-4">
+      <Card className="space-y-4">
+        <div>
+          <h3 className="display text-lg">Payment settings</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Controls what appears on the <span className="font-mono">/pay</span> screen for this club.
+            Leave a link blank to hide that payment option.
+          </p>
+        </div>
+
+        <Field
+          label="Entry fee (€)"
+          type="number"
+          value={entryFee}
+          onChange={(e) => setEntryFee(e.target.value)}
+        />
+        <Field
+          label="Stripe link"
+          placeholder="https://buy.stripe.com/…"
+          value={stripeLink}
+          onChange={(e) => setStripeLink(e.target.value)}
+        />
+        <Field
+          label="Revolut link"
+          placeholder="https://revolut.me/…"
+          value={revolutLink}
+          onChange={(e) => setRevolutLink(e.target.value)}
+        />
+        <Field
+          label="Other payment link (bank transfer / generic)"
+          placeholder="https://…"
+          value={paymentLink}
+          onChange={(e) => setPaymentLink(e.target.value)}
+        />
+        <Field
+          label="WhatsApp group link"
+          placeholder="https://chat.whatsapp.com/…"
+          value={whatsappLink}
+          onChange={(e) => setWhatsappLink(e.target.value)}
+        />
+
+        <div className="flex items-center gap-3">
+          <Btn onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save payment settings"}
+          </Btn>
+          {msg && <span className="text-xs text-primary">{msg}</span>}
+          {err && <span className="text-xs text-destructive">{err}</span>}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 
 
 
