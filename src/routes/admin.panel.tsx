@@ -16,6 +16,11 @@ import {
 
 } from "@/lib/gameweeks.functions";
 import {
+  importGameweekFromFPL,
+  syncGameweekFromFPL,
+  getFPLStatus,
+} from "@/lib/fpl.functions";
+import {
   addManualEntrant,
   listEntries,
   recordPayment,
@@ -448,6 +453,9 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
   const fetchResults = useServerFn(listResults);
   const processGw = useServerFn(processGameweekResults);
   const unlockGw = useServerFn(unlockGameweek);
+  const fplImport = useServerFn(importGameweekFromFPL);
+  const fplSync = useServerFn(syncGameweekFromFPL);
+  const fplStatus = useServerFn(getFPLStatus);
 
   const qc = useQueryClient();
 
@@ -483,6 +491,12 @@ function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
   const { data: results = [] } = useQuery({
     queryKey: ["results", "gw", activeWeek, activeGw?.id],
     queryFn: () => fetchResults({ data: { competitionId: compId, pin, gameweekId: activeGw!.id } }),
+    enabled: !!activeGw,
+  });
+
+  const { data: fpl, refetch: refetchFpl } = useQuery({
+    queryKey: ["fpl-status", compId, activeWeek, activeGw?.id],
+    queryFn: () => fplStatus({ data: { competitionId: compId, pin, weekNumber: activeWeek } }),
     enabled: !!activeGw,
   });
 
