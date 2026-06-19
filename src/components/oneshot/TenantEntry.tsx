@@ -130,12 +130,26 @@ export function TenantEntry({
       <StickyCTA>
         <Btn
           disabled={!selected || !competition}
-          onClick={() =>
-            nav({
-              to: "/details",
-              search: { c: competition!.id, t: selected! },
-            })
-          }
+          onClick={() => {
+            if (addMode) {
+              nav({
+                to: "/details-add",
+                search: {
+                  c: competition!.id,
+                  t: selected!,
+                  n: addMode.n,
+                  e: addMode.e,
+                  p: addMode.p,
+                  ...(addMode.o ? { o: addMode.o } : {}),
+                },
+              });
+            } else {
+              nav({
+                to: "/details",
+                search: { c: competition!.id, t: selected! },
+              });
+            }
+          }}
         >
           {selected ? `Continue with ${selected} →` : "Select a team"}
         </Btn>
