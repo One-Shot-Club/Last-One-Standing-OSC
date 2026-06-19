@@ -80,13 +80,18 @@ export function TenantEntry({
       </div>
 
       <Card className="mt-8 text-center">
-        <p className="eyebrow">Winner Takes All</p>
+        <p className="eyebrow">{addMode ? "Adding another entry" : "Winner Takes All"}</p>
         <div className="display mt-2 text-6xl text-primary leading-none">
           €{prize.toLocaleString()}
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
           Entry <span className="text-foreground font-semibold">€{fee}</span> · Last Man Standing
         </p>
+        {addMode && (
+          <p className="mt-2 text-xs text-primary">
+            Pick a team for this extra entry — it'll be added to your basket.
+          </p>
+        )}
       </Card>
 
       <div className="mt-8">
