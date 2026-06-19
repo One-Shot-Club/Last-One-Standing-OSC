@@ -92,17 +92,15 @@ function Pay() {
   }
 
   function addAnother() {
-    // Hop back to the tenant landing in "additional entry" mode, carrying
-    // owner contact along so we can return here after the next pick+name.
-    // We don't know the slug from /pay so we use root `/` which redirects to
-    // the master tenant; if the user came from a sub-tenant they'll need to
-    // re-pick there. Realistically this flow is one tenant per checkout.
+    // Hop back to the same tenant's landing in "additional entry" mode,
+    // carrying owner contact + tenant slug so we return here after pick+name.
     nav({
       to: "/$tenantSlug",
-      params: { tenantSlug: "oneshotclub" },
+      params: { tenantSlug: tenantSlug || "oneshotclub" },
       search: { add: "1", n, e, p, ...(o ? { o } : {}) },
     });
   }
+
 
   function removeEntry(idx: number) {
     removeFromCart(c, idx);
