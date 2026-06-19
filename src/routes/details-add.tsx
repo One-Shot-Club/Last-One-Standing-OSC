@@ -91,7 +91,7 @@ function DetailsAdd() {
         <Btn disabled={!valid} onClick={save}>
           Add this entry →
         </Btn>
-        <Btn variant="ghost" onClick={() => nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}) } })}>
+        <Btn variant="ghost" onClick={() => nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}), ...(tenantSlug ? { s: tenantSlug } : {}) } })}>
           Cancel
         </Btn>
       </div>
