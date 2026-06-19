@@ -123,6 +123,8 @@ async function loadCompetitionStats(competitionId: string): Promise<CompetitionS
 }
 
 // 1. Entry confirmation — automated, fires after first pick is recorded.
+// For multi-entry purchases this is sent ONCE to the owner and lists every
+// entry (owner + sub-entries) with its own magic link.
 export async function sendEntryConfirmation(playerId: string, week: number): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', playerId).maybeSingle()
   if (!player || !player.email) return
@@ -130,15 +132,45 @@ export async function sendEntryConfirmation(playerId: string, week: number): Pro
   if (!comp) return
   const theme = await loadEmailThemeForCompetition(player.competition_id)
 
-  const { data: pick } = await supabaseAdmin
-    .from('picks').select('team').eq('player_id', playerId).eq('week', week).maybeSingle()
-  const team = pick?.team ?? '—'
-  const badge = await teamBadgeUrl(player.competition_id, team)
+  // Collect owner + all sub-entries grouped under this player.
+  const { data: subRows } = await supabaseAdmin
+    .from('players')
+    .select('id, full_name, magic_token')
+    .eq('owner_player_id', playerId)
+    .order('created_at', { ascending: true })
+
+  const allPlayers = [
+    { id: player.id, full_name: player.full_name, magic_token: player.magic_token },
+    ...((subRows ?? []) as Array<{ id: string; full_name: string; magic_token: string }>),
+  ]
+
+  // Pick per player for this week
+  const ids = allPlayers.map((p) => p.id)
+  const { data: pickRows } = await supabaseAdmin
+    .from('picks').select('player_id, team').in('player_id', ids).eq('week', week)
+  const teamByPlayer = new Map<string, string>((pickRows ?? []).map((r) => [r.player_id as string, r.team as string]))
+
+  // Hydrate entries with team + badge + magic link
+  const entries = await Promise.all(
+    allPlayers.map(async (p) => {
+      const team = teamByPlayer.get(p.id) ?? '—'
+      const badge = team !== '—' ? await teamBadgeUrl(player.competition_id, team) : null
+      return {
+        name: p.full_name,
+        team,
+        teamBadgeUrl: badge ?? undefined,
+        magicLink: magicLinkFor(p.magic_token),
+        isOwner: p.id === player.id,
+      }
+    }),
+  )
+
   const { data: gw } = await supabaseAdmin
     .from('gameweeks').select('week_label, deadline_at')
     .eq('competition_id', player.competition_id).eq('week_number', week).maybeSingle()
   const weekLabel = gw?.week_label ?? `GW${week}`
   const players = await countPlayers(player.competition_id)
+  const ownerEntry = entries[0]
 
   await enqueueTemplatedEmail({
     templateName: 'entry-confirmation',
@@ -149,13 +181,18 @@ export async function sendEntryConfirmation(playerId: string, week: number): Pro
       firstName: firstNameOf(player.full_name),
       clubName: theme.clubName,
       competitionName: comp.name,
-      team,
-      teamBadgeUrl: badge ?? undefined,
+      // Owner-facing single-entry fields (kept for back-compat with template)
+      team: ownerEntry.team,
+      teamBadgeUrl: ownerEntry.teamBadgeUrl,
+      magicLink: ownerEntry.magicLink,
+      // New: full list of entries (owner + extras) so the template can render
+      // one row per entry, each with its own pick link.
+      entries,
+      entryCount: entries.length,
       weekLabel,
       prizePool: Number(comp.prize_pool ?? 0),
       playersEntered: players,
       deadline: formatDeadline(gw?.deadline_at ?? null),
-      magicLink: magicLinkFor(player.magic_token),
       theme: themePropFor(theme),
     },
   })
