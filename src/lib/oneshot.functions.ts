@@ -208,31 +208,66 @@ export const submitPick = createServerFn({ method: "POST" })
       d,
   )
   .handler(async ({ data }) => {
-    // ensure not used before
+    // Pull existing picks + the gameweek deadline so we can:
+    //  - block re-using a team across weeks
+    //  - allow CHANGING this week's pick before the deadline (magic-link returns)
+    //  - block changes after the deadline has passed
     const { data: existing } = await supabaseAdmin
       .from("picks")
-      .select("team, week")
+      .select("id, team, week")
       .eq("player_id", data.playerId);
-    if (existing?.some((p) => p.team === data.team)) {
+
+    // Team-reuse check (ignore this week's existing row — they may be swapping it)
+    if (
+      existing?.some((p) => p.team === data.team && p.week !== data.week)
+    ) {
       throw new Error(`You already used ${data.team}`);
     }
-    if (existing?.some((p) => p.week === data.week)) {
-      throw new Error("You already picked this week");
-    }
-    const { data: pick, error } = await supabaseAdmin
-      .from("picks")
-      .insert({
-        player_id: data.playerId,
-        competition_id: data.competitionId,
-        week: data.week,
-        team: data.team,
-      } as never)
-      .select("*")
-      .single();
-    if (error) throw error;
 
-    // If this is the player's first pick, fire entry confirmation email.
-    if (!existing || existing.length === 0) {
+    // Deadline gate for the target week
+    const { data: gw } = await supabaseAdmin
+      .from("gameweeks")
+      .select("deadline_at")
+      .eq("competition_id", data.competitionId)
+      .eq("week_number", data.week)
+      .maybeSingle();
+    const deadlineMs = gw?.deadline_at ? new Date(gw.deadline_at).getTime() : null;
+    if (deadlineMs && deadlineMs <= Date.now()) {
+      throw new Error("Deadline has passed — picks are locked.");
+    }
+
+    const thisWeek = existing?.find((p) => p.week === data.week);
+    let pick: unknown;
+    let isFirstPick = !existing || existing.length === 0;
+
+    if (thisWeek) {
+      // Update existing pick (before deadline only — guarded above)
+      const { data: updated, error } = await supabaseAdmin
+        .from("picks")
+        .update({ team: data.team })
+        .eq("id", thisWeek.id)
+        .select("*")
+        .single();
+      if (error) throw error;
+      pick = updated;
+      isFirstPick = false;
+    } else {
+      const { data: inserted, error } = await supabaseAdmin
+        .from("picks")
+        .insert({
+          player_id: data.playerId,
+          competition_id: data.competitionId,
+          week: data.week,
+          team: data.team,
+        } as never)
+        .select("*")
+        .single();
+      if (error) throw error;
+      pick = inserted;
+    }
+
+    // First pick fires confirmation email (single-entry flow).
+    if (isFirstPick) {
       try {
         await sendEntryConfirmation(data.playerId, data.week);
       } catch (e) {
