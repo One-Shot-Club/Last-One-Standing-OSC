@@ -20,7 +20,23 @@ type EntryFixture = {
   away: string;
   homeBadge: string | null;
   awayBadge: string | null;
+  kickoffAt: string | null;
 };
+
+function formatKickoff(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleString("en-IE", {
+    timeZone: "Europe/Dublin",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 
 const RULES = [
   "Pick one Premier League team each gameweek.",
@@ -130,8 +146,14 @@ function FixtureCard({
   selected: string | null;
   onSelect: (t: string) => void;
 }) {
+  const kickoff = formatKickoff(fixture.kickoffAt);
   return (
     <Card className="p-1.5">
+      {kickoff && (
+        <div className="mb-1 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+          {kickoff}
+        </div>
+      )}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
         <TeamBtn
           name={fixture.home}
