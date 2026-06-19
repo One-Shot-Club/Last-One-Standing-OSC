@@ -265,7 +265,9 @@ export async function sendProgression(opts: {
   nextDeadline: string | null
 }): Promise<void> {
   const { data: player } = await supabaseAdmin.from('players').select('*').eq('id', opts.playerId).maybeSingle()
-  if (!player || !player.email) return
+  if (!player) return
+  const recipient = await resolveRecipientEmail(player)
+  if (!recipient) return
   const comp = await getCompetition(player.competition_id)
   if (!comp) return
   const theme = await loadEmailThemeForCompetition(player.competition_id)
