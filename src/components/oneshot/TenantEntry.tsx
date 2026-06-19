@@ -52,13 +52,16 @@ export function TenantEntry({
   gameweek,
   fixtures,
   addMode,
+  tenantSlug,
 }: {
   tenant: TenantBranding | null;
   competition: EntryCompetition | null;
   gameweek?: { id: string; week_number: number; deadline_at: string | null } | null;
   fixtures?: TenantEntryFixture[];
   addMode?: { n: string; e: string; p: string; o?: string } | null;
+  tenantSlug?: string;
 }) {
+
   useTenantBranding(tenant);
   const nav = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
