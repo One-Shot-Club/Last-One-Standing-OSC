@@ -731,6 +731,7 @@ export type Database = {
           id: string
           magic_token: string
           offline: boolean
+          owner_player_id: string | null
           paid: boolean
           phone: string | null
           tenant_id: string
@@ -744,6 +745,7 @@ export type Database = {
           id?: string
           magic_token?: string
           offline?: boolean
+          owner_player_id?: string | null
           paid?: boolean
           phone?: string | null
           tenant_id: string
@@ -757,6 +759,7 @@ export type Database = {
           id?: string
           magic_token?: string
           offline?: boolean
+          owner_player_id?: string | null
           paid?: boolean
           phone?: string | null
           tenant_id?: string
@@ -767,6 +770,13 @@ export type Database = {
             columns: ["competition_id"]
             isOneToOne: false
             referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_owner_player_id_fkey"
+            columns: ["owner_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {

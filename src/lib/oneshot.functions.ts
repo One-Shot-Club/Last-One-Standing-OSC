@@ -88,6 +88,96 @@ export const joinCompetition = createServerFn({ method: "POST" })
     return player;
   });
 
+// Multi-entry purchase: create the owner + any additional sub-entries
+// (grouped under owner_player_id), and write each entry's GW pick in one call.
+export const joinCompetitionWithEntries = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      week: number;
+      owner: {
+        fullName: string;
+        email: string;
+        phone: string;
+        team: string;
+        offline?: boolean;
+      };
+      additional: Array<{ fullName: string; team: string }>;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const isOffline = !!data.owner.offline;
+    const email = data.owner.email?.trim() ? data.owner.email.trim() : null;
+    if (!isOffline && !email) throw new Error("Email is required");
+
+    // 1. Owner
+    const { data: owner, error: ownerErr } = await supabaseAdmin
+      .from("players")
+      .insert({
+        competition_id: data.competitionId,
+        full_name: data.owner.fullName,
+        email,
+        phone: data.owner.phone || null,
+        paid: true,
+        alive: true,
+        offline: isOffline,
+      } as never)
+      .select("*")
+      .single();
+    if (ownerErr) throw ownerErr;
+
+    // 2. Sub-entries (no email/phone — inherit owner's contact)
+    const subPlayers: Array<{ id: string; magic_token: string; full_name: string }> = [];
+    if (data.additional.length > 0) {
+      const { data: subs, error: subErr } = await supabaseAdmin
+        .from("players")
+        .insert(
+          data.additional.map((a) => ({
+            competition_id: data.competitionId,
+            full_name: a.fullName,
+            email: null,
+            phone: null,
+            paid: true,
+            alive: true,
+            offline: true,
+            owner_player_id: owner.id,
+          })) as never,
+        )
+        .select("id, magic_token, full_name");
+      if (subErr) throw subErr;
+      subPlayers.push(...(subs ?? []));
+    }
+
+    // 3. Picks for owner + sub-entries.
+    const picksRows = [
+      {
+        player_id: owner.id,
+        competition_id: data.competitionId,
+        week: data.week,
+        team: data.owner.team,
+      },
+      ...data.additional.map((a, i) => ({
+        player_id: subPlayers[i].id,
+        competition_id: data.competitionId,
+        week: data.week,
+        team: a.team,
+      })),
+    ];
+    const { error: pickErr } = await supabaseAdmin
+      .from("picks")
+      .insert(picksRows as never);
+    if (pickErr) throw pickErr;
+
+    // 4. Single confirmation email to owner listing every entry.
+    try {
+      await sendEntryConfirmation(owner.id, data.week);
+    } catch (e) {
+      console.error("[email] multi-entry confirmation failed", e);
+    }
+
+    return { ownerToken: owner.magic_token, ownerId: owner.id };
+  });
+
 
 export const getPlayerByToken = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => d)
@@ -118,31 +208,66 @@ export const submitPick = createServerFn({ method: "POST" })
       d,
   )
   .handler(async ({ data }) => {
-    // ensure not used before
+    // Pull existing picks + the gameweek deadline so we can:
+    //  - block re-using a team across weeks
+    //  - allow CHANGING this week's pick before the deadline (magic-link returns)
+    //  - block changes after the deadline has passed
     const { data: existing } = await supabaseAdmin
       .from("picks")
-      .select("team, week")
+      .select("id, team, week")
       .eq("player_id", data.playerId);
-    if (existing?.some((p) => p.team === data.team)) {
+
+    // Team-reuse check (ignore this week's existing row — they may be swapping it)
+    if (
+      existing?.some((p) => p.team === data.team && p.week !== data.week)
+    ) {
       throw new Error(`You already used ${data.team}`);
     }
-    if (existing?.some((p) => p.week === data.week)) {
-      throw new Error("You already picked this week");
-    }
-    const { data: pick, error } = await supabaseAdmin
-      .from("picks")
-      .insert({
-        player_id: data.playerId,
-        competition_id: data.competitionId,
-        week: data.week,
-        team: data.team,
-      } as never)
-      .select("*")
-      .single();
-    if (error) throw error;
 
-    // If this is the player's first pick, fire entry confirmation email.
-    if (!existing || existing.length === 0) {
+    // Deadline gate for the target week
+    const { data: gw } = await supabaseAdmin
+      .from("gameweeks")
+      .select("deadline_at")
+      .eq("competition_id", data.competitionId)
+      .eq("week_number", data.week)
+      .maybeSingle();
+    const deadlineMs = gw?.deadline_at ? new Date(gw.deadline_at).getTime() : null;
+    if (deadlineMs && deadlineMs <= Date.now()) {
+      throw new Error("Deadline has passed — picks are locked.");
+    }
+
+    const thisWeek = existing?.find((p) => p.week === data.week);
+    let pick: { id: string; player_id: string; competition_id: string; week: number; team: string } | null = null;
+    let isFirstPick = !existing || existing.length === 0;
+
+    if (thisWeek) {
+      // Update existing pick (before deadline only — guarded above)
+      const { data: updated, error } = await supabaseAdmin
+        .from("picks")
+        .update({ team: data.team })
+        .eq("id", thisWeek.id)
+        .select("*")
+        .single();
+      if (error) throw error;
+      pick = updated;
+      isFirstPick = false;
+    } else {
+      const { data: inserted, error } = await supabaseAdmin
+        .from("picks")
+        .insert({
+          player_id: data.playerId,
+          competition_id: data.competitionId,
+          week: data.week,
+          team: data.team,
+        } as never)
+        .select("*")
+        .single();
+      if (error) throw error;
+      pick = inserted;
+    }
+
+    // First pick fires confirmation email (single-entry flow).
+    if (isFirstPick) {
       try {
         await sendEntryConfirmation(data.playerId, data.week);
       } catch (e) {

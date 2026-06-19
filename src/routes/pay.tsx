@@ -1,16 +1,16 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   getCompetition,
-  joinCompetition,
+  joinCompetitionWithEntries,
   setPaymentLink,
-  submitPick,
 } from "@/lib/oneshot.functions";
 import { Btn, Card, Eyebrow, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
+import { clearCart, readCart, removeFromCart, type CartEntry } from "@/lib/entry-cart";
 
 type Search = { c: string; n: string; e: string; p: string; t: string; o?: string };
 
@@ -23,11 +23,8 @@ export const Route = createFileRoute("/pay")({
     t: String(s.t ?? ""),
     o: s.o ? String(s.o) : undefined,
   }),
-
   beforeLoad: ({ search }) => {
-    if (!search.c || !search.t) {
-      throw redirect({ to: "/" });
-    }
+    if (!search.c || !search.t) throw redirect({ to: "/" });
   },
   component: Pay,
 });
@@ -51,8 +48,10 @@ function Pay() {
     enabled: !!c,
   });
   const { logoUrl: tenantLogo, bgUrl } = useCompetitionBranding(c);
-  const join = useServerFn(joinCompetition);
-  const pick = useServerFn(submitPick);
+  const join = useServerFn(joinCompetitionWithEntries);
+
+  const [cart, setCart] = useState<CartEntry[]>([]);
+  useEffect(() => setCart(readCart(c)), [c]);
 
   const [paidClicked, setPaidClicked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -65,28 +64,47 @@ function Pay() {
     payment: comp?.payment_link ?? null,
   };
 
+  const fee = Number(comp?.entry_fee ?? 10);
+  const totalEntries = 1 + cart.length;
+  const total = fee * totalEntries;
+
   async function confirm() {
     setLoading(true);
     setError(null);
     try {
-      const player = await join({
-        data: { competitionId: c, fullName: n, email: e, phone: p, offline: o === "1" },
-      });
-
-      await pick({
+      const { ownerToken } = await join({
         data: {
-          playerId: player.id,
           competitionId: c,
           week: comp?.current_week ?? 1,
-          team: t,
+          owner: { fullName: n, email: e, phone: p, team: t, offline: o === "1" },
+          additional: cart,
         },
       });
-      nav({ to: "/welcome", search: { token: player.magic_token, team: t, c } });
+      clearCart(c);
+      nav({ to: "/welcome", search: { token: ownerToken, team: t, c } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
+  }
+
+  function addAnother() {
+    // Hop back to the tenant landing in "additional entry" mode, carrying
+    // owner contact along so we can return here after the next pick+name.
+    // We don't know the slug from /pay so we use root `/` which redirects to
+    // the master tenant; if the user came from a sub-tenant they'll need to
+    // re-pick there. Realistically this flow is one tenant per checkout.
+    nav({
+      to: "/$tenantSlug",
+      params: { tenantSlug: "oneshotclub" },
+      search: { add: "1", n, e, p, ...(o ? { o } : {}) },
+    });
+  }
+
+  function removeEntry(idx: number) {
+    removeFromCart(c, idx);
+    setCart(readCart(c));
   }
 
   return (
@@ -95,23 +113,41 @@ function Pay() {
 
       <div className="mt-8">
         <Eyebrow>Step 3 of 3</Eyebrow>
-        <h1 className="display mt-2 text-3xl">Pay your entry</h1>
+        <h1 className="display mt-2 text-3xl">Review &amp; pay</h1>
       </div>
 
-      <Card className="mt-4">
+      <Card className="mt-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Player</span>
+          <span className="text-sm text-muted-foreground">Account owner</span>
           <span className="text-sm">{n}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Week 1 pick</span>
-          <span className="text-sm font-semibold text-primary">{t}</span>
+
+        <div className="border-t border-[color:var(--border)] pt-3 space-y-2">
+          <p className="eyebrow">Entries</p>
+          <EntryRow name={n} team={t} owner />
+          {cart.map((entry, i) => (
+            <EntryRow
+              key={i}
+              name={entry.fullName}
+              team={entry.team}
+              onRemove={() => removeEntry(i)}
+            />
+          ))}
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-[color:var(--border)] pt-3">
-          <span className="text-sm text-muted-foreground">Entry fee</span>
-          <span className="display text-2xl text-primary">€{comp?.entry_fee ?? 10}</span>
+
+        <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-3">
+          <span className="text-sm text-muted-foreground">
+            {totalEntries} × €{fee}
+          </span>
+          <span className="display text-2xl text-primary">€{total}</span>
         </div>
       </Card>
+
+      <div className="mt-4">
+        <Btn variant="ghost" onClick={addAnother}>
+          + Add another entry (for me or someone else)
+        </Btn>
+      </div>
 
       <div className="mt-6 space-y-3">
         {(Object.keys(LABELS) as Kind[]).map((k) => (
@@ -133,7 +169,11 @@ function Pay() {
 
       <div className="mt-6">
         <Btn variant="ghost" disabled={!paidClicked || loading} onClick={confirm}>
-          {loading ? "Saving…" : "I've Paid — Continue →"}
+          {loading
+            ? "Saving…"
+            : totalEntries === 1
+              ? "Just one entry — I've paid →"
+              : `I've paid for ${totalEntries} entries →`}
         </Btn>
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         <p className="mt-3 text-center text-xs text-muted-foreground">
@@ -141,6 +181,43 @@ function Pay() {
         </p>
       </div>
     </Shell>
+  );
+}
+
+function EntryRow({
+  name,
+  team,
+  owner,
+  onRemove,
+}: {
+  name: string;
+  team: string;
+  owner?: boolean;
+  onRemove?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 text-sm">
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium">
+          {name}
+          {owner && (
+            <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+              account owner
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-primary">{team}</div>
+      </div>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-[11px] uppercase tracking-wider text-destructive hover:underline"
+        >
+          Remove
+        </button>
+      )}
+    </div>
   );
 }
 

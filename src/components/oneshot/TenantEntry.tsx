@@ -51,11 +51,13 @@ export function TenantEntry({
   competition,
   gameweek,
   fixtures,
+  addMode,
 }: {
   tenant: TenantBranding | null;
   competition: EntryCompetition | null;
   gameweek?: { id: string; week_number: number; deadline_at: string | null } | null;
   fixtures?: TenantEntryFixture[];
+  addMode?: { n: string; e: string; p: string; o?: string } | null;
 }) {
   useTenantBranding(tenant);
   const nav = useNavigate();
@@ -78,13 +80,18 @@ export function TenantEntry({
       </div>
 
       <Card className="mt-8 text-center">
-        <p className="eyebrow">Winner Takes All</p>
+        <p className="eyebrow">{addMode ? "Adding another entry" : "Winner Takes All"}</p>
         <div className="display mt-2 text-6xl text-primary leading-none">
           €{prize.toLocaleString()}
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
           Entry <span className="text-foreground font-semibold">€{fee}</span> · Last Man Standing
         </p>
+        {addMode && (
+          <p className="mt-2 text-xs text-primary">
+            Pick a team for this extra entry — it'll be added to your basket.
+          </p>
+        )}
       </Card>
 
       <div className="mt-8">
@@ -123,12 +130,26 @@ export function TenantEntry({
       <StickyCTA>
         <Btn
           disabled={!selected || !competition}
-          onClick={() =>
-            nav({
-              to: "/details",
-              search: { c: competition!.id, t: selected! },
-            })
-          }
+          onClick={() => {
+            if (addMode) {
+              nav({
+                to: "/details-add",
+                search: {
+                  c: competition!.id,
+                  t: selected!,
+                  n: addMode.n,
+                  e: addMode.e,
+                  p: addMode.p,
+                  ...(addMode.o ? { o: addMode.o } : {}),
+                },
+              });
+            } else {
+              nav({
+                to: "/details",
+                search: { c: competition!.id, t: selected! },
+              });
+            }
+          }}
         >
           {selected ? `Continue with ${selected} →` : "Select a team"}
         </Btn>
