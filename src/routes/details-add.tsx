@@ -16,6 +16,7 @@ type Search = {
   e: string;
   p: string;
   o?: string;
+  s?: string;
 };
 
 export const Route = createFileRoute("/details-add")({
@@ -26,12 +27,14 @@ export const Route = createFileRoute("/details-add")({
     e: String(s.e ?? ""),
     p: String(s.p ?? ""),
     o: s.o ? String(s.o) : undefined,
+    s: s.s ? String(s.s) : undefined,
   }),
   beforeLoad: ({ search }) => {
     if (!search.c || !search.t || !search.n) throw redirect({ to: "/" });
   },
   component: DetailsAdd,
 });
+
 
 function DetailsAdd() {
   const { c, t, n, e, p, o } = Route.useSearch();
