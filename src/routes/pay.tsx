@@ -12,7 +12,7 @@ import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 import { clearCart, readCart, removeFromCart, type CartEntry } from "@/lib/entry-cart";
 
-type Search = { c: string; n: string; e: string; p: string; t: string; o?: string };
+type Search = { c: string; n: string; e: string; p: string; t: string; o?: string; s?: string };
 
 export const Route = createFileRoute("/pay")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -22,12 +22,14 @@ export const Route = createFileRoute("/pay")({
     p: String(s.p ?? ""),
     t: String(s.t ?? ""),
     o: s.o ? String(s.o) : undefined,
+    s: s.s ? String(s.s) : undefined,
   }),
   beforeLoad: ({ search }) => {
     if (!search.c || !search.t) throw redirect({ to: "/" });
   },
   component: Pay,
 });
+
 
 type Kind = "stripe" | "revolut" | "payment";
 
