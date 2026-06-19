@@ -40,7 +40,7 @@ const LABELS: Record<Kind, string> = {
 };
 
 function Pay() {
-  const { c, n, e, p, t, o } = Route.useSearch();
+  const { c, n, e, p, t, o, s: tenantSlug } = Route.useSearch();
   const nav = useNavigate();
   const qc = useQueryClient();
   const fetchComp = useServerFn(getCompetition);
