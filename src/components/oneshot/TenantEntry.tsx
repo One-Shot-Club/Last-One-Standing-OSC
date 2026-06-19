@@ -172,7 +172,7 @@ function TeamBtn({
         selected ? "border-primary ring-1 ring-primary" : "hover:border-primary/60",
       )}
     >
-      <img src={badge} alt={name} className="h-5 w-5 object-contain" />
+      {badge ? <img src={badge} alt={name} className="h-5 w-5 object-contain" /> : null}
       <span className="text-[10px] font-semibold leading-tight">{name}</span>
     </button>
   );
