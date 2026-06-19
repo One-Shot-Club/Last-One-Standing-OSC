@@ -158,7 +158,7 @@ function TeamBtn({
   onClick,
 }: {
   name: string;
-  badge: string;
+  badge: string | null;
   selected: boolean;
   onClick: () => void;
 }) {
