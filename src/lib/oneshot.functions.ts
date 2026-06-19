@@ -88,6 +88,96 @@ export const joinCompetition = createServerFn({ method: "POST" })
     return player;
   });
 
+// Multi-entry purchase: create the owner + any additional sub-entries
+// (grouped under owner_player_id), and write each entry's GW pick in one call.
+export const joinCompetitionWithEntries = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      week: number;
+      owner: {
+        fullName: string;
+        email: string;
+        phone: string;
+        team: string;
+        offline?: boolean;
+      };
+      additional: Array<{ fullName: string; team: string }>;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const isOffline = !!data.owner.offline;
+    const email = data.owner.email?.trim() ? data.owner.email.trim() : null;
+    if (!isOffline && !email) throw new Error("Email is required");
+
+    // 1. Owner
+    const { data: owner, error: ownerErr } = await supabaseAdmin
+      .from("players")
+      .insert({
+        competition_id: data.competitionId,
+        full_name: data.owner.fullName,
+        email,
+        phone: data.owner.phone || null,
+        paid: true,
+        alive: true,
+        offline: isOffline,
+      } as never)
+      .select("*")
+      .single();
+    if (ownerErr) throw ownerErr;
+
+    // 2. Sub-entries (no email/phone — inherit owner's contact)
+    const subPlayers: Array<{ id: string; magic_token: string; full_name: string }> = [];
+    if (data.additional.length > 0) {
+      const { data: subs, error: subErr } = await supabaseAdmin
+        .from("players")
+        .insert(
+          data.additional.map((a) => ({
+            competition_id: data.competitionId,
+            full_name: a.fullName,
+            email: null,
+            phone: null,
+            paid: true,
+            alive: true,
+            offline: true,
+            owner_player_id: owner.id,
+          })) as never,
+        )
+        .select("id, magic_token, full_name");
+      if (subErr) throw subErr;
+      subPlayers.push(...(subs ?? []));
+    }
+
+    // 3. Picks for owner + sub-entries.
+    const picksRows = [
+      {
+        player_id: owner.id,
+        competition_id: data.competitionId,
+        week: data.week,
+        team: data.owner.team,
+      },
+      ...data.additional.map((a, i) => ({
+        player_id: subPlayers[i].id,
+        competition_id: data.competitionId,
+        week: data.week,
+        team: a.team,
+      })),
+    ];
+    const { error: pickErr } = await supabaseAdmin
+      .from("picks")
+      .insert(picksRows as never);
+    if (pickErr) throw pickErr;
+
+    // 4. Single confirmation email to owner listing every entry.
+    try {
+      await sendEntryConfirmation(owner.id, data.week);
+    } catch (e) {
+      console.error("[email] multi-entry confirmation failed", e);
+    }
+
+    return { ownerToken: owner.magic_token, ownerId: owner.id };
+  });
+
 
 export const getPlayerByToken = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => d)
