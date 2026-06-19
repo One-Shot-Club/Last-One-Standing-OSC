@@ -25,7 +25,7 @@ export const Route = createFileRoute("/details")({
 
 
 function Details() {
-  const { c, t } = Route.useSearch();
+  const { c, t, s: tenantSlug } = Route.useSearch();
   const nav = useNavigate();
   const fetchComp = useServerFn(getCompetition);
   const { data: comp } = useQuery({
