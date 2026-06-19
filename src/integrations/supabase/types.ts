@@ -446,8 +446,10 @@ export type Database = {
           created_at: string
           deadline_at: string
           first_kickoff_at: string
+          fpl_event: number | null
           id: string
           last_match_ends_at: string
+          last_synced_at: string | null
           processed_at: string | null
           results_locked: boolean
           tenant_id: string
@@ -460,8 +462,10 @@ export type Database = {
           created_at?: string
           deadline_at: string
           first_kickoff_at: string
+          fpl_event?: number | null
           id?: string
           last_match_ends_at: string
+          last_synced_at?: string | null
           processed_at?: string | null
           results_locked?: boolean
           tenant_id: string
@@ -474,8 +478,10 @@ export type Database = {
           created_at?: string
           deadline_at?: string
           first_kickoff_at?: string
+          fpl_event?: number | null
           id?: string
           last_match_ends_at?: string
+          last_synced_at?: string | null
           processed_at?: string | null
           results_locked?: boolean
           tenant_id?: string
@@ -676,6 +682,30 @@ export type Database = {
           },
         ]
       }
+      pl_teams: {
+        Row: {
+          badge_url: string | null
+          id: number
+          name: string
+          short_name: string
+          updated_at: string
+        }
+        Insert: {
+          badge_url?: string | null
+          id: number
+          name: string
+          short_name: string
+          updated_at?: string
+        }
+        Update: {
+          badge_url?: string | null
+          id?: number
+          name?: string
+          short_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -798,10 +828,13 @@ export type Database = {
           away_score: number | null
           away_team: string
           created_at: string
+          finished: boolean
+          fpl_fixture_id: number | null
           gameweek_id: string
           home_score: number | null
           home_team: string
           id: string
+          kickoff_at: string | null
           updated_at: string
           winner: string | null
         }
@@ -809,10 +842,13 @@ export type Database = {
           away_score?: number | null
           away_team: string
           created_at?: string
+          finished?: boolean
+          fpl_fixture_id?: number | null
           gameweek_id: string
           home_score?: number | null
           home_team: string
           id?: string
+          kickoff_at?: string | null
           updated_at?: string
           winner?: string | null
         }
@@ -820,10 +856,13 @@ export type Database = {
           away_score?: number | null
           away_team?: string
           created_at?: string
+          finished?: boolean
+          fpl_fixture_id?: number | null
           gameweek_id?: string
           home_score?: number | null
           home_team?: string
           id?: string
+          kickoff_at?: string | null
           updated_at?: string
           winner?: string | null
         }
