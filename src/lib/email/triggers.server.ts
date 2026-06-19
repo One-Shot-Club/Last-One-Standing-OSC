@@ -96,6 +96,20 @@ async function countPlayers(competitionId: string, aliveOnly = false): Promise<n
   return count ?? 0
 }
 
+// Sub-entries (owner_player_id IS NOT NULL) have no email of their own —
+// fall back to the account owner's email. Returns the address to send to,
+// or null if neither path yields one.
+async function resolveRecipientEmail(player: {
+  email: string | null
+  owner_player_id?: string | null
+}): Promise<string | null> {
+  if (player.email) return player.email
+  if (!player.owner_player_id) return null
+  const { data: owner } = await supabaseAdmin
+    .from('players').select('email').eq('id', player.owner_player_id).maybeSingle()
+  return owner?.email ?? null
+}
+
 interface CompetitionStatsPayload {
   alive: number
   eliminated: number
