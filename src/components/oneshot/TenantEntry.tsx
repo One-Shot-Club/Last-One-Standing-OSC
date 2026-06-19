@@ -72,7 +72,7 @@ export function TenantEntry({
       </Card>
 
       <div className="mt-8">
-        <Eyebrow>Gameweek 1 fixtures</Eyebrow>
+        <Eyebrow>Gameweek {weekNumber} fixtures</Eyebrow>
         <h2 className="display mt-2 text-2xl">Make your pick</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Tap the team you back to win.
@@ -80,7 +80,7 @@ export function TenantEntry({
       </div>
 
       <div className="mt-3 space-y-1.5 pb-6">
-        {fixtures.map((f, i) => (
+        {liveFixtures.map((f, i) => (
           <FixtureCard
             key={i}
             fixture={f}
