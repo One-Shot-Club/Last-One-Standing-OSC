@@ -35,7 +35,7 @@ import {
   getBroadcastAudienceCounts,
 } from "@/lib/admin-ops.functions";
 import { listEmailTemplates, sendTestEmail, listRecentEmailLog, sendTemplateToAudience } from "@/lib/email-test.functions";
-import { FIXTURES_BY_WEEK } from "@/lib/fixtures";
+
 
 
 import { Btn, Card, Eyebrow, Field, Logo, Shell } from "@/components/oneshot/ui";
@@ -442,9 +442,9 @@ function Picks({ data, compId, pin, onChange }: { data: Data; compId: string; pi
 
 // ---- Gameweeks (tabbed fixtures + winner picker) ----
 
-const GW_TABS = Object.keys(FIXTURES_BY_WEEK)
-  .map((n) => Number(n))
-  .sort((a, b) => a - b);
+// All 38 Premier League gameweeks — shells are auto-seeded on tab open,
+// then fixtures are populated via "Import fixtures from FPL".
+const GW_TABS = Array.from({ length: 38 }, (_, i) => i + 1);
 
 function Gameweeks({ compId, pin }: { compId: string; pin: string }) {
   const fetchGws = useServerFn(listGameweeks);
