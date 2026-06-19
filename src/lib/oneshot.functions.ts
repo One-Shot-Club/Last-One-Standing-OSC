@@ -41,21 +41,26 @@ export const setCompetitionPaymentSettings = createServerFn({ method: "POST" })
       stripeLink: string | null;
       revolutLink: string | null;
       paymentLink: string | null;
-      whatsappLink: string | null;
+      stripeEnabled: boolean;
+      revolutEnabled: boolean;
+      paymentEnabled: boolean;
     }) => d,
   )
   .handler(async ({ data }) => {
     await verifyAdmin(data.competitionId, data.pin);
     const fee = Number.isFinite(data.entryFee) && data.entryFee >= 0 ? data.entryFee : 0;
+    const update = {
+      entry_fee: fee,
+      stripe_link: data.stripeLink?.trim() || null,
+      revolut_link: data.revolutLink?.trim() || null,
+      payment_link: data.paymentLink?.trim() || null,
+      stripe_enabled: data.stripeEnabled,
+      revolut_enabled: data.revolutEnabled,
+      payment_enabled: data.paymentEnabled,
+    };
     const { error } = await supabaseAdmin
       .from("competitions")
-      .update({
-        entry_fee: fee,
-        stripe_link: data.stripeLink?.trim() || null,
-        revolut_link: data.revolutLink?.trim() || null,
-        payment_link: data.paymentLink?.trim() || null,
-        whatsapp_link: data.whatsappLink?.trim() || null,
-      })
+      .update(update as never)
       .eq("id", data.competitionId);
     if (error) throw error;
     return { ok: true };
