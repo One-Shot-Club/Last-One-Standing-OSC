@@ -50,7 +50,7 @@ import {
 
 export const Route = createFileRoute("/admin/panel")({ component: Panel });
 
-type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit" | "tools" | "emails" | "broadcast";
+type Tab = "players" | "entries" | "picks" | "gameweeks" | "teams" | "stats" | "audit" | "tools" | "emails" | "broadcast" | "payments";
 
 
 function Panel() {
