@@ -18,7 +18,22 @@ const tenantEntryQuery = (slug: string) =>
     queryFn: () => getTenantEntryContext({ data: { slug: resolveSlug(slug) } }),
   });
 
+type LandingSearch = {
+  add?: string;
+  n?: string;
+  e?: string;
+  p?: string;
+  o?: string;
+};
+
 export const Route = createFileRoute("/$tenantSlug/")({
+  validateSearch: (s: Record<string, unknown>): LandingSearch => ({
+    add: s.add ? String(s.add) : undefined,
+    n: s.n ? String(s.n) : undefined,
+    e: s.e ? String(s.e) : undefined,
+    p: s.p ? String(s.p) : undefined,
+    o: s.o ? String(s.o) : undefined,
+  }),
   loader: async ({ params, context }) => {
     try {
       await context.queryClient.ensureQueryData(
@@ -57,6 +72,7 @@ export const Route = createFileRoute("/$tenantSlug/")({
 
 function TenantLanding() {
   const { tenantSlug } = Route.useParams();
+  const search = Route.useSearch();
   const { data } = useSuspenseQuery(tenantEntryQuery(tenantSlug));
   if (MASTER_ALIASES.has(tenantSlug)) {
     return <MasterTenantLanding tenant={data.tenant} />;
@@ -67,6 +83,11 @@ function TenantLanding() {
       competition={data.competition}
       gameweek={data.gameweek}
       fixtures={data.fixtures}
+      addMode={
+        search.add === "1" && search.n
+          ? { n: search.n, e: search.e ?? "", p: search.p ?? "", o: search.o }
+          : null
+      }
     />
   );
 }
