@@ -13,7 +13,7 @@ export interface NextGameweekData {
     week_label: string;
     deadline_at: string;
   } | null;
-  fixtures: Array<{ id: string; home_team: string; away_team: string }>;
+  fixtures: Array<{ id: string; home_team: string; away_team: string; kickoff_at?: string | null }>;
   badges: Record<string, string | null>;
   survivalStats: {
     total: number;
@@ -206,33 +206,41 @@ export function NextGameweekView({ data, onSubmit, submitting, submitError, tena
           {fixtures.length === 0 && (
             <p className="text-sm text-muted-foreground">Fixtures not loaded yet.</p>
           )}
-          {fixtures.map((f) => (
-            <Card key={f.id} className="p-3">
-              <div className="flex items-center justify-between gap-2">
-                <TeamButton
-                  name={f.home_team}
-                  badge={badges[f.home_team]}
-                  used={usedTeams.has(f.home_team)}
-                  selected={selected === f.home_team}
-                  isCurrent={existingPickThisWeek === f.home_team}
-                  locked={cd.locked}
-                  disabled={cd.locked}
-                  onClick={() => setSelected(f.home_team)}
-                />
-                <span className="text-xs text-muted-foreground">vs</span>
-                <TeamButton
-                  name={f.away_team}
-                  badge={badges[f.away_team]}
-                  used={usedTeams.has(f.away_team)}
-                  selected={selected === f.away_team}
-                  isCurrent={existingPickThisWeek === f.away_team}
-                  locked={cd.locked}
-                  disabled={cd.locked}
-                  onClick={() => setSelected(f.away_team)}
-                />
-              </div>
-            </Card>
-          ))}
+          {fixtures.map((f) => {
+            const kickoff = f.kickoff_at ? formatKickoff(f.kickoff_at) : null;
+            return (
+              <Card key={f.id} className="p-3">
+                {kickoff && (
+                  <div className="mb-2 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {kickoff}
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <TeamButton
+                    name={f.home_team}
+                    badge={badges[f.home_team]}
+                    used={usedTeams.has(f.home_team)}
+                    selected={selected === f.home_team}
+                    isCurrent={existingPickThisWeek === f.home_team}
+                    locked={cd.locked}
+                    disabled={cd.locked}
+                    onClick={() => setSelected(f.home_team)}
+                  />
+                  <span className="text-xs text-muted-foreground">vs</span>
+                  <TeamButton
+                    name={f.away_team}
+                    badge={badges[f.away_team]}
+                    used={usedTeams.has(f.away_team)}
+                    selected={selected === f.away_team}
+                    isCurrent={existingPickThisWeek === f.away_team}
+                    locked={cd.locked}
+                    disabled={cd.locked}
+                    onClick={() => setSelected(f.away_team)}
+                  />
+                </div>
+              </Card>
+            );
+          })}
         </div>
 
         <div className="mt-6">
