@@ -91,15 +91,6 @@ function Pay() {
     }
   }
 
-  function addAnother() {
-    // Hop back to the same tenant's landing in "additional entry" mode,
-    // carrying owner contact + tenant slug so we return here after pick+name.
-    nav({
-      to: "/$tenantSlug",
-      params: { tenantSlug: tenantSlug || "oneshotclub" },
-      search: { add: "1", n, e, p, ...(o ? { o } : {}) },
-    });
-  }
 
 
   function removeEntry(idx: number) {
@@ -143,11 +134,6 @@ function Pay() {
         </div>
       </Card>
 
-      <div className="mt-4">
-        <Btn variant="ghost" onClick={addAnother}>
-          + Add another entry (for me or someone else)
-        </Btn>
-      </div>
 
       <div className="mt-6 space-y-3">
         {(Object.keys(LABELS) as Kind[]).filter((k) => links[k]).map((k) => (
