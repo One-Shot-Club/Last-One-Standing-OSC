@@ -112,7 +112,7 @@ function Details() {
         />
       </Card>
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-3">
         <Btn
           disabled={!valid}
           onClick={() =>
@@ -128,11 +128,32 @@ function Details() {
                 ...(tenantSlug ? { s: tenantSlug } : {}),
               },
             })
-
           }
         >
           Continue to payment →
         </Btn>
+        <Btn
+          variant="ghost"
+          disabled={!valid}
+          onClick={() =>
+            nav({
+              to: "/$tenantSlug",
+              params: { tenantSlug: tenantSlug || "oneshotclub" },
+              search: {
+                add: "1",
+                n: form.fullName,
+                e: offline ? "" : form.email,
+                p: form.phone,
+                ...(offline ? { o: "1" } : {}),
+              },
+            })
+          }
+        >
+          + Add another entry (for me or someone else)
+        </Btn>
+        <p className="text-center text-[11px] text-muted-foreground">
+          You can add more entries before paying — pay for them all together.
+        </p>
       </div>
     </Shell>
   );
