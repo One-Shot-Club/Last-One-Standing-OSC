@@ -91,15 +91,6 @@ function Pay() {
     }
   }
 
-  function addAnother() {
-    // Hop back to the same tenant's landing in "additional entry" mode,
-    // carrying owner contact + tenant slug so we return here after pick+name.
-    nav({
-      to: "/$tenantSlug",
-      params: { tenantSlug: tenantSlug || "oneshotclub" },
-      search: { add: "1", n, e, p, ...(o ? { o } : {}) },
-    });
-  }
 
 
   function removeEntry(idx: number) {
