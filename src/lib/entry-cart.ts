@@ -5,6 +5,12 @@
 export type CartEntry = {
   fullName: string;
   team: string;
+  // Optional per-entry contact. When `selfManaged` is true the entrant will
+  // receive their own notifications at this email/phone going forward.
+  // Otherwise email/phone are ignored and the owner's contact is used.
+  email?: string | null;
+  phone?: string | null;
+  selfManaged?: boolean;
 };
 
 const KEY = (competitionId: string) => `losc:cart:${competitionId}`;

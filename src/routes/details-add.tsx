@@ -51,12 +51,38 @@ function DetailsAdd() {
   const existingCart = readCart(c);
   const suggestion = `${n.trim().split(/\s+/)[0]} ${existingCart.length + 2}`;
   const [entrantName, setEntrantName] = useState("");
+  const [selfManaged, setSelfManaged] = useState(false);
+  const [entrantEmail, setEntrantEmail] = useState("");
+  const [entrantPhone, setEntrantPhone] = useState("");
 
-  const valid = entrantName.trim().length > 1;
+  const nameValid = entrantName.trim().length > 1;
+  // If "selects for own picks" is checked, require at least an email so we
+  // can actually send them their magic link.
+  const contactValid = !selfManaged || entrantEmail.trim().length > 3;
+  const valid = nameValid && contactValid;
 
-  function save() {
-    addToCart(c, { fullName: entrantName.trim(), team: t });
+  function saveEntry() {
+    addToCart(c, {
+      fullName: entrantName.trim(),
+      team: t,
+      email: selfManaged ? entrantEmail.trim() || null : null,
+      phone: selfManaged ? entrantPhone.trim() || null : null,
+      selfManaged,
+    });
+  }
+
+  function saveAndPay() {
+    saveEntry();
     nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}), ...(tenantSlug ? { s: tenantSlug } : {}) } });
+  }
+
+  function saveAndAddAnother() {
+    saveEntry();
+    nav({
+      to: "/$tenantSlug",
+      params: { tenantSlug: tenantSlug || "oneshotclub" },
+      search: { add: "1", n, e, p, ...(o ? { o } : {}) },
+    });
   }
 
 
@@ -82,16 +108,62 @@ function DetailsAdd() {
           value={entrantName}
           onChange={(ev) => setEntrantName(ev.target.value)}
         />
-        <p className="text-[11px] text-muted-foreground">
-          All notifications for this entry go to <span className="text-foreground">{e || "you"}</span>.
-        </p>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-md border border-[color:var(--border)] bg-[color:var(--surface-elevated)] p-3">
+          <input
+            type="checkbox"
+            checked={selfManaged}
+            onChange={(ev) => setSelfManaged(ev.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[color:var(--primary)]"
+          />
+          <span className="text-xs leading-snug">
+            <span className="block font-semibold text-foreground">
+              This entrant will manage their own picks going forward
+            </span>
+            <span className="text-muted-foreground">
+              Send their weekly pick reminders and magic link to their own
+              email/phone (optional but recommended).
+            </span>
+          </span>
+        </label>
+
+        {selfManaged && (
+          <div className="space-y-3">
+            <Field
+              label="Entrant email"
+              type="email"
+              placeholder="friend@example.com"
+              value={entrantEmail}
+              onChange={(ev) => setEntrantEmail(ev.target.value)}
+            />
+            <Field
+              label="Entrant mobile (optional)"
+              placeholder="087 123 4567"
+              value={entrantPhone}
+              onChange={(ev) => setEntrantPhone(ev.target.value)}
+            />
+          </div>
+        )}
+
+        {!selfManaged && (
+          <p className="text-[11px] text-muted-foreground">
+            All notifications for this entry go to{" "}
+            <span className="text-foreground">{e || "you"}</span>.
+          </p>
+        )}
       </Card>
 
       <div className="mt-6 space-y-3">
-        <Btn disabled={!valid} onClick={save}>
-          Add this entry →
+        <Btn variant="ghost" disabled={!valid} onClick={saveAndAddAnother}>
+          + Add another entry
         </Btn>
-        <Btn variant="ghost" onClick={() => nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}), ...(tenantSlug ? { s: tenantSlug } : {}) } })}>
+        <Btn disabled={!valid} onClick={saveAndPay}>
+          Continue to payment →
+        </Btn>
+        <Btn
+          variant="ghost"
+          onClick={() => nav({ to: "/pay", search: { c, n, e, p, t, ...(o ? { o } : {}), ...(tenantSlug ? { s: tenantSlug } : {}) } })}
+        >
           Cancel
         </Btn>
       </div>

@@ -135,6 +135,21 @@ function Pay() {
       </Card>
 
 
+      <div className="mt-6">
+        <Btn
+          variant="ghost"
+          onClick={() =>
+            nav({
+              to: "/$tenantSlug",
+              params: { tenantSlug: tenantSlug || "oneshotclub" },
+              search: { add: "1", n, e, p, ...(o ? { o } : {}) },
+            })
+          }
+        >
+          + Add another entry (for me or someone else)
+        </Btn>
+      </div>
+
       <div className="mt-6 space-y-3">
         {(Object.keys(LABELS) as Kind[]).filter((k) => links[k]).map((k) => (
           <PayOption

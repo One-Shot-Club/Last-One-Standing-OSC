@@ -136,7 +136,13 @@ export const joinCompetitionWithEntries = createServerFn({ method: "POST" })
         team: string;
         offline?: boolean;
       };
-      additional: Array<{ fullName: string; team: string }>;
+      additional: Array<{
+        fullName: string;
+        team: string;
+        email?: string | null;
+        phone?: string | null;
+        selfManaged?: boolean;
+      }>;
     }) => d,
   )
   .handler(async ({ data }) => {
@@ -160,22 +166,29 @@ export const joinCompetitionWithEntries = createServerFn({ method: "POST" })
       .single();
     if (ownerErr) throw ownerErr;
 
-    // 2. Sub-entries (no email/phone — inherit owner's contact)
+    // 2. Sub-entries. If `selfManaged` is set and an email was provided we
+    // store the entrant's own contact and mark them online so notifications
+    // are addressed to them directly; otherwise they inherit the owner's
+    // contact (email/phone null, offline=true).
     const subPlayers: Array<{ id: string; magic_token: string; full_name: string }> = [];
     if (data.additional.length > 0) {
       const { data: subs, error: subErr } = await supabaseAdmin
         .from("players")
         .insert(
-          data.additional.map((a) => ({
-            competition_id: data.competitionId,
-            full_name: a.fullName,
-            email: null,
-            phone: null,
-            paid: true,
-            alive: true,
-            offline: true,
-            owner_player_id: owner.id,
-          })) as never,
+          data.additional.map((a) => {
+            const subEmail = a.selfManaged && a.email?.trim() ? a.email.trim() : null;
+            const subPhone = a.selfManaged && a.phone?.trim() ? a.phone.trim() : null;
+            return {
+              competition_id: data.competitionId,
+              full_name: a.fullName,
+              email: subEmail,
+              phone: subPhone,
+              paid: true,
+              alive: true,
+              offline: !subEmail,
+              owner_player_id: owner.id,
+            };
+          }) as never,
         )
         .select("id, magic_token, full_name");
       if (subErr) throw subErr;
