@@ -114,25 +114,6 @@ function Details() {
 
       <div className="mt-6 space-y-3">
         <Btn
-          disabled={!valid}
-          onClick={() =>
-            nav({
-              to: "/pay",
-              search: {
-                c,
-                t,
-                n: form.fullName,
-                e: offline ? "" : form.email,
-                p: form.phone,
-                ...(offline ? { o: "1" } : {}),
-                ...(tenantSlug ? { s: tenantSlug } : {}),
-              },
-            })
-          }
-        >
-          Continue to payment →
-        </Btn>
-        <Btn
           variant="ghost"
           disabled={!valid}
           onClick={() =>
@@ -150,6 +131,25 @@ function Details() {
           }
         >
           + Add another entry (for me or someone else)
+        </Btn>
+        <Btn
+          disabled={!valid}
+          onClick={() =>
+            nav({
+              to: "/pay",
+              search: {
+                c,
+                t,
+                n: form.fullName,
+                e: offline ? "" : form.email,
+                p: form.phone,
+                ...(offline ? { o: "1" } : {}),
+                ...(tenantSlug ? { s: tenantSlug } : {}),
+              },
+            })
+          }
+        >
+          Continue to payment →
         </Btn>
         <p className="text-center text-[11px] text-muted-foreground">
           You can add more entries before paying — pay for them all together.
