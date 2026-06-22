@@ -118,11 +118,12 @@ function DetailsAdd() {
           />
           <span className="text-xs leading-snug">
             <span className="block font-semibold text-foreground">
-              This entrant will manage their own picks going forward
+              I want this entrant to manage their own picks going forward
             </span>
             <span className="text-muted-foreground">
-              Send their weekly pick reminders and magic link to their own
-              email/phone (optional but recommended).
+              Ticking this box will send their weekly pick reminders and magic link
+              to their own email/phone (optional)
+
             </span>
           </span>
         </label>
