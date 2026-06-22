@@ -74,7 +74,15 @@ function TenantLanding() {
   const { tenantSlug } = Route.useParams();
   const search = Route.useSearch();
   const { data } = useSuspenseQuery(tenantEntryQuery(tenantSlug));
-  if (MASTER_ALIASES.has(tenantSlug)) {
+  const addMode =
+    search.add === "1" && search.n
+      ? { n: search.n, e: search.e ?? "", p: search.p ?? "", o: search.o }
+      : null;
+  // Master tenants normally show a list of clubs, but when the user is
+  // looping back to add another entry for an in-progress purchase, render
+  // the picker for the master competition instead of bouncing them to the
+  // club list (which feels like landing on the homepage).
+  if (MASTER_ALIASES.has(tenantSlug) && !addMode) {
     return <MasterTenantLanding tenant={data.tenant} />;
   }
   return (
@@ -84,11 +92,7 @@ function TenantLanding() {
       gameweek={data.gameweek}
       fixtures={data.fixtures}
       tenantSlug={tenantSlug}
-      addMode={
-        search.add === "1" && search.n
-          ? { n: search.n, e: search.e ?? "", p: search.p ?? "", o: search.o }
-          : null
-      }
+      addMode={addMode}
     />
   );
 
