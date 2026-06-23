@@ -267,6 +267,37 @@ export const setPlayerAlive = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// --- Toggle paid status by player id (Players tab) ---
+export const setPlayerPaid = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: { competitionId: string; pin: string; playerId: string; paid: boolean }) => d,
+  )
+  .handler(async ({ data }) => {
+    const comp = await verifyAdmin(data.competitionId, data.pin);
+    const { data: player } = await supabaseAdmin
+      .from("players")
+      .select("id, competition_id, full_name, paid")
+      .eq("id", data.playerId)
+      .maybeSingle();
+    if (!player || player.competition_id !== data.competitionId) {
+      throw new Error("Player not found");
+    }
+    const { error } = await supabaseAdmin
+      .from("players")
+      .update({ paid: data.paid })
+      .eq("id", data.playerId);
+    if (error) throw error;
+    await logAction(
+      comp.tenant_id,
+      data.paid ? "entry.mark_paid" : "entry.mark_unpaid",
+      "admin",
+      "player",
+      data.playerId,
+      { full_name: player.full_name, previous: player.paid },
+    );
+    return { ok: true };
+  });
+
 // --- Override / set a pick on behalf of a player (admin) ---
 export const overridePick = createServerFn({ method: "POST" })
   .inputValidator(
