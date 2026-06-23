@@ -27,6 +27,7 @@ import {
   setEntryPaid,
   listAdminActions,
   setPlayerAlive,
+  setPlayerPaid,
   overridePick,
   deletePick,
   importEntrants,
