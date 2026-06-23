@@ -45,6 +45,7 @@ import { getTenantBrandingForCompetition } from "@/lib/tenant.functions";
 import { useTenantBranding } from "@/lib/tenant/branding";
 
 import { cn } from "@/lib/utils";
+import { Trash2, RotateCcw, Check, CircleDashed, CornerDownRight } from "lucide-react";
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Cell,
 } from "recharts";
