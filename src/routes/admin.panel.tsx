@@ -27,6 +27,7 @@ import {
   setEntryPaid,
   listAdminActions,
   setPlayerAlive,
+  setPlayerPaid,
   overridePick,
   deletePick,
   importEntrants,
@@ -44,6 +45,7 @@ import { getTenantBrandingForCompetition } from "@/lib/tenant.functions";
 import { useTenantBranding } from "@/lib/tenant/branding";
 
 import { cn } from "@/lib/utils";
+import { Trash2, RotateCcw, Check, CircleDashed, CornerDownRight } from "lucide-react";
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Cell,
 } from "recharts";
@@ -166,6 +168,7 @@ const WINDOW_SIZE = 8;
 function Players({ data, compId, pin, onChange }: { data: Data; compId: string; pin: string; onChange: () => void }) {
   const fetchTeams = useServerFn(listTeams);
   const togglePlayer = useServerFn(setPlayerAlive);
+  const togglePaid = useServerFn(setPlayerPaid);
   const overrideP = useServerFn(overridePick);
   const removeP = useServerFn(deletePick);
   const qc = useQueryClient();
@@ -191,6 +194,30 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
     return m;
   }, [data.picks]);
 
+  // Group linked entries: owner first, then its children indented underneath.
+  type Row = { player: (typeof data.players)[number]; depth: number; isChild: boolean; siblingCount: number };
+  const orderedRows = useMemo<Row[]>(() => {
+    const byId = new Map(data.players.map((p) => [p.id, p]));
+    const childrenByOwner = new Map<string, typeof data.players>();
+    const roots: typeof data.players = [];
+    for (const p of data.players) {
+      const ownerId = (p as any).owner_player_id as string | null | undefined;
+      if (ownerId && byId.has(ownerId) && ownerId !== p.id) {
+        if (!childrenByOwner.has(ownerId)) childrenByOwner.set(ownerId, [] as any);
+        childrenByOwner.get(ownerId)!.push(p);
+      } else {
+        roots.push(p);
+      }
+    }
+    const out: Row[] = [];
+    for (const r of roots) {
+      const kids = childrenByOwner.get(r.id) ?? [];
+      out.push({ player: r, depth: 0, isChild: false, siblingCount: kids.length });
+      for (const k of kids) out.push({ player: k, depth: 1, isChild: true, siblingCount: kids.length });
+    }
+    return out;
+  }, [data.players]);
+
   const maxWeek = Math.max(
     data.competition.current_week ?? 1,
     ...data.picks.map((p) => p.week),
@@ -200,6 +227,7 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
   const [start, setStart] = useState(1);
   const end = Math.min(start + WINDOW_SIZE - 1, maxWeek);
   const weeks = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   if (data.players.length === 0) {
     return <p className="py-8 text-center text-sm text-muted-foreground">No players yet.</p>;
@@ -236,6 +264,9 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
               <th className="sticky left-0 z-10 bg-card px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Entrant
               </th>
+              <th className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Paid
+              </th>
               {weeks.map((w) => (
                 <th
                   key={w}
@@ -247,21 +278,59 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
             </tr>
           </thead>
           <tbody>
-            {data.players.map((p) => {
+            {orderedRows.map(({ player: p, depth, isChild, siblingCount }) => {
+              const ownerId = (p as any).owner_player_id as string | null | undefined;
+              if (isChild && ownerId && collapsed.has(ownerId)) return null;
               const picks = picksByPlayer.get(p.id);
+              const paid = !!(p as any).paid;
+              const isOwnerOfGroup = !isChild && siblingCount > 0;
+              const isOpen = isOwnerOfGroup ? !collapsed.has(p.id) : false;
               return (
-                <tr key={p.id} className={cn("border-b border-[color:var(--border)] last:border-0", !p.alive && "opacity-60")}>
+                <tr
+                  key={p.id}
+                  className={cn(
+                    "border-b border-[color:var(--border)] last:border-0",
+                    !p.alive && "opacity-60",
+                    isChild && "bg-muted/10",
+                  )}
+                >
                   <td className="sticky left-0 z-10 bg-background/95 px-3 py-2 align-middle">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" style={{ paddingLeft: depth * 18 }}>
+                      {isChild ? (
+                        <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                      ) : isOwnerOfGroup ? (
+                        <button
+                          onClick={() => {
+                            const next = new Set(collapsed);
+                            if (next.has(p.id)) next.delete(p.id); else next.add(p.id);
+                            setCollapsed(next);
+                          }}
+                          title={isOpen ? "Collapse linked entries" : "Expand linked entries"}
+                          className="shrink-0 rounded text-[10px] font-bold text-muted-foreground hover:text-foreground"
+                        >
+                          {isOpen ? "▾" : "▸"}
+                        </button>
+                      ) : (
+                        <span className="w-3.5 shrink-0" />
+                      )}
                       <div className="min-w-0">
-                        <div className="truncate font-semibold leading-tight">{p.full_name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-semibold leading-tight">{p.full_name}</span>
+                          {isOwnerOfGroup && (
+                            <span className="shrink-0 rounded-full border border-[color:var(--border)] px-1.5 py-px text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+                              +{siblingCount} linked
+                            </span>
+                          )}
+                        </div>
                         <div className="truncate text-[10px] text-muted-foreground">{p.email}</div>
                       </div>
                       <button
-                        title={p.alive ? "Eliminate" : "Reinstate"}
+                        title={p.alive ? "Eliminate entry" : "Reinstate entry"}
                         className={cn(
-                          "shrink-0 rounded-md border border-[color:var(--border)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                          p.alive ? "text-destructive" : "text-success",
+                          "shrink-0 rounded-md border border-[color:var(--border)] p-1.5",
+                          p.alive
+                            ? "text-destructive hover:bg-destructive/10"
+                            : "text-success hover:bg-success/10",
                         )}
                         onClick={async () => {
                           const verb = p.alive ? "Eliminate" : "Reinstate";
@@ -274,9 +343,28 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
                           onChange();
                         }}
                       >
-                        {p.alive ? "Elim" : "Reinst"}
+                        {p.alive ? <Trash2 className="h-3.5 w-3.5" /> : <RotateCcw className="h-3.5 w-3.5" />}
                       </button>
                     </div>
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle">
+                    <button
+                      title={paid ? "Mark unpaid" : "Mark paid"}
+                      onClick={async () => {
+                        if (!window.confirm(`${paid ? "Mark unpaid" : "Mark paid"}: ${p.full_name}?`)) return;
+                        await togglePaid({ data: { competitionId: compId, pin, playerId: p.id, paid: !paid } });
+                        await qc.invalidateQueries({ queryKey: ["admin", compId, pin] });
+                        onChange();
+                      }}
+                      className={cn(
+                        "mx-auto flex h-6 w-6 items-center justify-center rounded-full border",
+                        paid
+                          ? "border-success/60 bg-success/15 text-success"
+                          : "border-[color:var(--border)] text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {paid ? <Check className="h-3.5 w-3.5" /> : <CircleDashed className="h-3.5 w-3.5" />}
+                    </button>
                   </td>
                   {weeks.map((w) => {
                     const pick = picks?.get(w);
@@ -354,7 +442,7 @@ function Players({ data, compId, pin, onChange }: { data: Data; compId: string; 
       </Card>
 
       <p className="text-[11px] text-muted-foreground">
-        Green ring = won · red = lost · grey = draw. Empty cells mean no pick made yet.
+        Green ring = won · red = lost · grey = draw. Linked entries (same account) appear indented under the main entrant — click ▸ to collapse.
       </p>
     </div>
   );
