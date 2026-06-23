@@ -55,7 +55,13 @@ function Pay() {
   const [cart, setCart] = useState<CartEntry[]>([]);
   useEffect(() => setCart(readCart(c)), [c]);
 
-  const [paidClicked, setPaidClicked] = useState(false);
+  // Master tenant (demo/template) bypasses the "click a payment provider
+  // first" gate so admins can submit entries straight from "I've paid".
+  const isMaster =
+    tenantSlug === "oneshotclub" ||
+    tenantSlug === "oneshotclub-master" ||
+    tenantSlug === "Master";
+  const [paidClicked, setPaidClicked] = useState(isMaster);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [setupKind, setSetupKind] = useState<Kind | null>(null);
