@@ -25,7 +25,14 @@ function MasterAdminLogin() {
     try {
       const r = (await loginFn({
         data: { tenantSlug: MASTER_SLUG, username: username.trim(), password },
-      })) as { token: string; competitionId: string | null; tenantSlug: string };
+      })) as
+        | { ok: true; token: string; competitionId: string | null; tenantSlug: string }
+        | { ok: false; error: string };
+      if (!r.ok) {
+        setErr(r.error || "Invalid credentials");
+        setBusy(false);
+        return;
+      }
       if (!r.competitionId) {
         setErr("No competition is set up for this club yet.");
         setBusy(false);
@@ -40,6 +47,7 @@ function MasterAdminLogin() {
       setBusy(false);
     }
   }
+
 
   return (
     <Shell>
