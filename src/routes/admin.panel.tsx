@@ -4,6 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { adminGetData, getCompetition, setCompetitionPaymentSettings } from "@/lib/oneshot.functions";
 import {
+  createConnectOnboardingLink,
+  getConnectStatus,
+  refreshConnectStatus,
+  setCompetitionFeeConfig,
+} from "@/lib/stripe-connect.functions";
+
+import {
   listGameweeks,
   listTeams,
   upsertTeam,
@@ -2041,6 +2048,259 @@ function PayMethodRow({
     </div>
   );
 }
+
+function ConnectAndFeesCard({ compId, pin }: { compId: string; pin: string }) {
+  const fetchStatus = useServerFn(getConnectStatus);
+  const refresh = useServerFn(refreshConnectStatus);
+  const startOnboarding = useServerFn(createConnectOnboardingLink);
+  const saveFees = useServerFn(setCompetitionFeeConfig);
+  const fetchComp = useServerFn(getCompetition);
+
+  const { data: status, refetch: refetchStatus } = useQuery({
+    queryKey: ["connect-status", compId],
+    queryFn: () => fetchStatus({ data: { competitionId: compId, pin } }),
+  });
+  const { data: comp, refetch: refetchComp } = useQuery({
+    queryKey: ["comp-fee-config", compId],
+    queryFn: () => fetchComp({ data: { id: compId } }),
+  });
+
+  const [flat, setFlat] = useState("0");
+  const [pct, setPct] = useState("0");
+  const [feePayer, setFeePayer] = useState<"club" | "player">("club");
+  const [refundPolicy, setRefundPolicy] = useState<
+    "refund_app_fee" | "keep_app_fee" | "ask_each_time"
+  >("ask_each_time");
+  const [cashEnabled, setCashEnabled] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [link, setLink] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!comp) return;
+    const c = comp as {
+      application_fee_flat_cents?: number | null;
+      application_fee_percent_bps?: number | null;
+      fee_payer?: "club" | "player" | null;
+      refund_policy_default?: "refund_app_fee" | "keep_app_fee" | "ask_each_time" | null;
+      cash_enabled?: boolean | null;
+    };
+    setFlat(String(((c.application_fee_flat_cents ?? 0) / 100).toFixed(2)));
+    setPct(String(((c.application_fee_percent_bps ?? 0) / 100).toFixed(2)));
+    setFeePayer((c.fee_payer as "club" | "player") ?? "club");
+    setRefundPolicy(c.refund_policy_default ?? "ask_each_time");
+    setCashEnabled(c.cash_enabled !== false);
+  }, [comp]);
+
+  async function generateLink() {
+    setBusy("link");
+    setErr(null);
+    setLink(null);
+    try {
+      const res = await startOnboarding({
+        data: {
+          competitionId: compId,
+          pin,
+          returnOrigin: window.location.origin,
+        },
+      });
+      setLink(res.url);
+      await refetchStatus();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to generate link");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function doRefresh() {
+    setBusy("refresh");
+    setErr(null);
+    try {
+      await refresh({ data: { competitionId: compId, pin } });
+      await refetchStatus();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Refresh failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveConfig() {
+    setBusy("fees");
+    setErr(null);
+    setMsg(null);
+    try {
+      await saveFees({
+        data: {
+          competitionId: compId,
+          pin,
+          applicationFeeFlatCents: Math.round((Number(flat) || 0) * 100),
+          applicationFeePercentBps: Math.round((Number(pct) || 0) * 100),
+          feePayer,
+          refundPolicyDefault: refundPolicy,
+          cashEnabled,
+        },
+      });
+      setMsg("Fee settings saved.");
+      await refetchComp();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const statusLabel: Record<string, string> = {
+    not_started: "Not started",
+    pending: "Pending verification",
+    active: "Active",
+    restricted: "Action required",
+  };
+  const statusColor: Record<string, string> = {
+    not_started: "bg-muted text-muted-foreground",
+    pending: "bg-amber-500/20 text-amber-700",
+    active: "bg-emerald-500/20 text-emerald-700",
+    restricted: "bg-destructive/20 text-destructive",
+  };
+  const s = status?.status ?? "not_started";
+
+  return (
+    <Card className="space-y-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="display text-lg">Stripe Connect — card payments</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Connect this club's bank account to accept card payments directly. The platform
+            keeps an application fee per entry; the rest is paid out to the club.
+          </p>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor[s]}`}
+        >
+          {statusLabel[s]}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Btn onClick={generateLink} disabled={busy === "link"}>
+          {busy === "link"
+            ? "Generating…"
+            : status?.accountId
+              ? "Re-generate onboarding link"
+              : "Generate onboarding link"}
+        </Btn>
+        {status?.accountId && (
+          <Btn variant="ghost" onClick={doRefresh} disabled={busy === "refresh"}>
+            {busy === "refresh" ? "Refreshing…" : "Refresh status"}
+          </Btn>
+        )}
+      </div>
+
+      {link && (
+        <div className="rounded-md border border-[color:var(--border)] bg-muted/30 p-3 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Share this link with the club admin. They'll enter personal + bank details directly
+            with Stripe. The link expires in ~7 days.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={link}
+              className="flex-1 truncate rounded-md border border-[color:var(--border)] bg-background px-2 py-1 text-xs"
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <Btn
+              variant="ghost"
+              onClick={() => {
+                navigator.clipboard.writeText(link);
+              }}
+            >
+              Copy
+            </Btn>
+            <a href={link} target="_blank" rel="noreferrer">
+              <Btn variant="ghost">Open</Btn>
+            </a>
+          </div>
+        </div>
+      )}
+
+      <div className="border-t border-[color:var(--border)] pt-4 space-y-3">
+        <h4 className="text-sm font-semibold">Application fee &amp; policy</h4>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field
+            label="Flat fee per entry (€)"
+            type="number"
+            value={flat}
+            onChange={(e) => setFlat(e.target.value)}
+          />
+          <Field
+            label="Percentage fee (%)"
+            type="number"
+            value={pct}
+            onChange={(e) => setPct(e.target.value)}
+          />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-xs">
+            <span className="block uppercase tracking-widest text-muted-foreground mb-1">
+              Stripe processing fees paid by
+            </span>
+            <select
+              value={feePayer}
+              onChange={(e) => setFeePayer(e.target.value as "club" | "player")}
+              className="w-full rounded-md border border-[color:var(--border)] bg-background px-2 py-2 text-sm"
+            >
+              <option value="club">Club absorbs fees</option>
+              <option value="player">Pass fees on to player</option>
+            </select>
+          </label>
+
+          <label className="text-xs">
+            <span className="block uppercase tracking-widest text-muted-foreground mb-1">
+              Default refund policy
+            </span>
+            <select
+              value={refundPolicy}
+              onChange={(e) =>
+                setRefundPolicy(
+                  e.target.value as "refund_app_fee" | "keep_app_fee" | "ask_each_time",
+                )
+              }
+              className="w-full rounded-md border border-[color:var(--border)] bg-background px-2 py-2 text-sm"
+            >
+              <option value="ask_each_time">Ask each time</option>
+              <option value="refund_app_fee">Always refund application fee</option>
+              <option value="keep_app_fee">Always keep application fee</option>
+            </select>
+          </label>
+        </div>
+
+        <label className="inline-flex items-center gap-2 text-xs">
+          <input
+            type="checkbox"
+            checked={cashEnabled}
+            onChange={(e) => setCashEnabled(e.target.checked)}
+            className="h-4 w-4 accent-[color:var(--primary)]"
+          />
+          Also accept cash / bank transfer / "I've paid" entries
+        </label>
+
+        <div className="flex items-center gap-3 pt-1">
+          <Btn onClick={saveConfig} disabled={busy === "fees"}>
+            {busy === "fees" ? "Saving…" : "Save fee settings"}
+          </Btn>
+          {msg && <span className="text-xs text-primary">{msg}</span>}
+          {err && <span className="text-xs text-destructive">{err}</span>}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+
 
 
 
