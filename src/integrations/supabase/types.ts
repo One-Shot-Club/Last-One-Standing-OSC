@@ -138,7 +138,11 @@ export type Database = {
           id: string
           magic_token: string
           paid: boolean
+          paid_at: string | null
+          paid_method: string | null
           player_id: string | null
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
           tenant_id: string
           updated_at: string
         }
@@ -151,7 +155,11 @@ export type Database = {
           id?: string
           magic_token?: string
           paid?: boolean
+          paid_at?: string | null
+          paid_method?: string | null
           player_id?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -164,7 +172,11 @@ export type Database = {
           id?: string
           magic_token?: string
           paid?: boolean
+          paid_at?: string | null
+          paid_method?: string | null
           player_id?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -194,16 +206,21 @@ export type Database = {
       }
       competitions: {
         Row: {
+          application_fee_flat_cents: number
+          application_fee_percent_bps: number
+          cash_enabled: boolean
           club_logo_url: string | null
           club_name: string | null
           created_at: string
           current_week: number
           entry_fee: number
+          fee_payer: string
           id: string
           name: string
           payment_enabled: boolean
           payment_link: string | null
           prize_pool: number
+          refund_policy_default: string
           revolut_enabled: boolean
           revolut_link: string | null
           stripe_enabled: boolean
@@ -212,16 +229,21 @@ export type Database = {
           whatsapp_link: string | null
         }
         Insert: {
+          application_fee_flat_cents?: number
+          application_fee_percent_bps?: number
+          cash_enabled?: boolean
           club_logo_url?: string | null
           club_name?: string | null
           created_at?: string
           current_week?: number
           entry_fee?: number
+          fee_payer?: string
           id?: string
           name: string
           payment_enabled?: boolean
           payment_link?: string | null
           prize_pool?: number
+          refund_policy_default?: string
           revolut_enabled?: boolean
           revolut_link?: string | null
           stripe_enabled?: boolean
@@ -230,16 +252,21 @@ export type Database = {
           whatsapp_link?: string | null
         }
         Update: {
+          application_fee_flat_cents?: number
+          application_fee_percent_bps?: number
+          cash_enabled?: boolean
           club_logo_url?: string | null
           club_name?: string | null
           created_at?: string
           current_week?: number
           entry_fee?: number
+          fee_payer?: string
           id?: string
           name?: string
           payment_enabled?: boolean
           payment_link?: string | null
           prize_pool?: number
+          refund_policy_default?: string
           revolut_enabled?: boolean
           revolut_link?: string | null
           stripe_enabled?: boolean
@@ -565,6 +592,7 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          application_fee_cents: number | null
           competition_id: string
           created_at: string
           currency: string
@@ -574,10 +602,16 @@ export type Database = {
           method: Database["public"]["Enums"]["payment_method"]
           note: string | null
           recorded_by: string | null
+          refund_amount_cents: number | null
+          refund_app_fee: boolean | null
+          refunded_at: string | null
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
           tenant_id: string
         }
         Insert: {
           amount: number
+          application_fee_cents?: number | null
           competition_id: string
           created_at?: string
           currency?: string
@@ -587,10 +621,16 @@ export type Database = {
           method: Database["public"]["Enums"]["payment_method"]
           note?: string | null
           recorded_by?: string | null
+          refund_amount_cents?: number | null
+          refund_app_fee?: boolean | null
+          refunded_at?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           tenant_id: string
         }
         Update: {
           amount?: number
+          application_fee_cents?: number | null
           competition_id?: string
           created_at?: string
           currency?: string
@@ -600,6 +640,11 @@ export type Database = {
           method?: Database["public"]["Enums"]["payment_method"]
           note?: string | null
           recorded_by?: string | null
+          refund_amount_cents?: number | null
+          refund_app_fee?: boolean | null
+          refunded_at?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           tenant_id?: string
         }
         Relationships: [
@@ -1090,6 +1135,10 @@ export type Database = {
           name: string
           slug: string
           status: string
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_onboarding_status: string
+          stripe_payouts_enabled: boolean
           updated_at: string
         }
         Insert: {
@@ -1098,6 +1147,10 @@ export type Database = {
           name: string
           slug: string
           status?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_onboarding_status?: string
+          stripe_payouts_enabled?: boolean
           updated_at?: string
         }
         Update: {
@@ -1106,6 +1159,10 @@ export type Database = {
           name?: string
           slug?: string
           status?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_onboarding_status?: string
+          stripe_payouts_enabled?: boolean
           updated_at?: string
         }
         Relationships: []
