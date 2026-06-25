@@ -1996,9 +1996,11 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
           </div>
         </Card>
       </div>
+      </div>
     </div>
   );
 }
+
 
 
 function PayMethodRow({
