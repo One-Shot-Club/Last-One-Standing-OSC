@@ -33,7 +33,14 @@ function ClubAdminLogin() {
     try {
       const r = (await loginFn({
         data: { tenantSlug, username: username.trim(), password },
-      })) as { token: string; competitionId: string | null; tenantSlug: string };
+      })) as
+        | { ok: true; token: string; competitionId: string | null; tenantSlug: string }
+        | { ok: false; error: string };
+      if (!r.ok) {
+        setErr(r.error || "Invalid credentials");
+        setBusy(false);
+        return;
+      }
       if (!r.competitionId) {
         setErr("No competition is set up for this club yet.");
         setBusy(false);
@@ -48,6 +55,7 @@ function ClubAdminLogin() {
       setBusy(false);
     }
   }
+
 
   const bgUrl = tenantData?.tenant?.background_url ?? undefined;
   const logoUrl = tenantData?.tenant?.logo_url ?? undefined;
