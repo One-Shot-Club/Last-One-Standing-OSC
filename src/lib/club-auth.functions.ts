@@ -110,25 +110,27 @@ export const getTenantAdminCredentialsInfo = createServerFn({ method: "POST" })
 export const clubAdminLogin = createServerFn({ method: "POST" })
   .inputValidator((d: { tenantSlug: string; username: string; password: string }) => d)
   .handler(async ({ data }) => {
+    const invalid = { ok: false as const, error: "Invalid credentials" };
+
     const { data: tenant } = await supabaseAdmin
       .from("tenants")
       .select("id, slug, name, status")
       .eq("slug", data.tenantSlug)
       .maybeSingle();
-    if (!tenant) throw new Error("Invalid credentials");
+    if (!tenant) return invalid;
 
     const { data: cred } = await supabaseAdmin
       .from("tenant_admin_credentials")
       .select("username, password_hash")
       .eq("tenant_id", tenant.id)
       .maybeSingle();
-    if (!cred) throw new Error("Invalid credentials");
+    if (!cred) return invalid;
 
     if (
       (cred.username as string).toLowerCase() !== data.username.trim().toLowerCase() ||
       !(await verifyPassword(data.password, cred.password_hash as string))
     ) {
-      throw new Error("Invalid credentials");
+      return invalid;
     }
 
     const token = newToken();
@@ -137,7 +139,6 @@ export const clubAdminLogin = createServerFn({ method: "POST" })
       .from("club_admin_sessions")
       .insert({ token, tenant_id: tenant.id, expires_at });
 
-    // Find first competition for this tenant to land in the panel.
     const { data: comp } = await supabaseAdmin
       .from("competitions")
       .select("id")
@@ -147,6 +148,7 @@ export const clubAdminLogin = createServerFn({ method: "POST" })
       .maybeSingle();
 
     return {
+      ok: true as const,
       token,
       tenantId: tenant.id as string,
       tenantSlug: tenant.slug as string,
@@ -154,6 +156,7 @@ export const clubAdminLogin = createServerFn({ method: "POST" })
       competitionId: comp?.id ?? null,
     };
   });
+
 
 export const clubAdminLogout = createServerFn({ method: "POST" })
   .inputValidator((d: { token: string }) => d)
