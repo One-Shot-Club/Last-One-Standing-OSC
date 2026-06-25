@@ -6,11 +6,13 @@ import {
   getCompetition,
   joinCompetitionWithEntries,
   setPaymentLink,
+  startStripeCheckoutForEntries,
 } from "@/lib/oneshot.functions";
 import { Btn, Card, Eyebrow, Field, Shell } from "@/components/oneshot/ui";
 import { ClubHeader } from "@/components/oneshot/ClubHeader";
 import { useCompetitionBranding } from "@/lib/tenant/use-competition-branding";
 import { clearCart, readCart, removeFromCart, type CartEntry } from "@/lib/entry-cart";
+
 
 type Search = { c: string; n: string; e: string; p: string; t: string; o?: string; s?: string };
 
@@ -51,6 +53,7 @@ function Pay() {
   });
   const { logoUrl: tenantLogo, bgUrl } = useCompetitionBranding(c);
   const join = useServerFn(joinCompetitionWithEntries);
+  const startCheckout = useServerFn(startStripeCheckoutForEntries);
 
   const [cart, setCart] = useState<CartEntry[]>([]);
   useEffect(() => setCart(readCart(c)), [c]);
@@ -63,8 +66,21 @@ function Pay() {
     tenantSlug === "Master";
   const [paidClicked, setPaidClicked] = useState(isMaster);
   const [loading, setLoading] = useState(false);
+  const [cardLoading, setCardLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [setupKind, setSetupKind] = useState<Kind | null>(null);
+
+  // Card payment available only if the club has completed Stripe Connect.
+  const compAny = comp as
+    | {
+        stripe_charges_enabled?: boolean;
+        cash_enabled?: boolean;
+        fee_payer?: "club" | "player";
+      }
+    | null;
+  const cardEnabled = !!compAny?.stripe_charges_enabled;
+  const cashEnabled = compAny?.cash_enabled !== false;
+  const feePayer = compAny?.fee_payer ?? "club";
 
   const links: Record<Kind, string | null> = {
     stripe: (comp as { stripe_enabled?: boolean } | null)?.stripe_enabled === false ? null : comp?.stripe_link ?? null,
@@ -74,7 +90,36 @@ function Pay() {
 
   const fee = Number(comp?.entry_fee ?? 10);
   const totalEntries = 1 + cart.length;
-  const total = fee * totalEntries;
+  const subtotal = fee * totalEntries;
+  // Rough fee-passthrough estimate when fee_payer = 'player': 1.5% + 25c per entry.
+  const passthroughEuros = feePayer === "player" ? subtotal * 0.015 + 0.25 * totalEntries : 0;
+  const total = subtotal + passthroughEuros;
+
+  async function payByCard() {
+    if (!e) {
+      setError("Email is required for card payment");
+      return;
+    }
+    setCardLoading(true);
+    setError(null);
+    try {
+      const { checkoutUrl } = await startCheckout({
+        data: {
+          competitionId: c,
+          week: comp?.current_week ?? 1,
+          origin: window.location.origin,
+          owner: { fullName: n, email: e, phone: p, team: t },
+          additional: cart,
+        },
+      });
+      if (!checkoutUrl) throw new Error("Stripe did not return a checkout URL");
+      clearCart(c);
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Card payment failed to start");
+      setCardLoading(false);
+    }
+  }
 
   async function confirm() {
     setLoading(true);
@@ -96,6 +141,7 @@ function Pay() {
       setLoading(false);
     }
   }
+
 
 
 
@@ -134,9 +180,12 @@ function Pay() {
 
         <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-3">
           <span className="text-sm text-muted-foreground">
-            {totalEntries} × €{fee}
+            {totalEntries} × €{fee.toFixed(2)}
+            {feePayer === "player" && (
+              <span className="ml-1 text-[10px] uppercase tracking-wider">+ card fees</span>
+            )}
           </span>
-          <span className="display text-2xl text-primary">€{total}</span>
+          <span className="display text-2xl text-primary">€{total.toFixed(2)}</span>
         </div>
       </Card>
 
@@ -156,37 +205,53 @@ function Pay() {
         </Btn>
       </div>
 
-      <div className="mt-6 space-y-3">
-        {(Object.keys(LABELS) as Kind[]).filter((k) => links[k]).map((k) => (
-          <PayOption
-            key={k}
-            kind={k}
-            url={links[k]}
-            onPaid={() => setPaidClicked(true)}
-            onSetup={() => setSetupKind(setupKind === k ? null : k)}
-            isSetupOpen={setupKind === k}
-            competitionId={c}
-            onSaved={() => {
-              setSetupKind(null);
-              qc.invalidateQueries({ queryKey: ["comp", c] });
-            }}
-          />
-        ))}
-      </div>
+      {cardEnabled && (
+        <div className="mt-6">
+          <Btn onClick={payByCard} disabled={cardLoading}>
+            {cardLoading ? "Opening Stripe…" : `Pay €${total.toFixed(2)} by card →`}
+          </Btn>
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+            Secure card payment via Stripe. You'll be redirected and brought back automatically.
+          </p>
+        </div>
+      )}
 
-      <div className="mt-6">
-        <Btn variant="ghost" disabled={!paidClicked || loading} onClick={confirm}>
-          {loading
-            ? "Saving…"
-            : totalEntries === 1
-              ? "Just one entry — I've paid →"
-              : `I've paid for ${totalEntries} entries →`}
-        </Btn>
-        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          Tap a payment option, complete the payment, then return and continue.
-        </p>
-      </div>
+      {cashEnabled && (
+        <>
+          <div className="mt-6 space-y-3">
+            {(Object.keys(LABELS) as Kind[]).filter((k) => links[k]).map((k) => (
+              <PayOption
+                key={k}
+                kind={k}
+                url={links[k]}
+                onPaid={() => setPaidClicked(true)}
+                onSetup={() => setSetupKind(setupKind === k ? null : k)}
+                isSetupOpen={setupKind === k}
+                competitionId={c}
+                onSaved={() => {
+                  setSetupKind(null);
+                  qc.invalidateQueries({ queryKey: ["comp", c] });
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <Btn variant="ghost" disabled={!paidClicked || loading} onClick={confirm}>
+              {loading
+                ? "Saving…"
+                : totalEntries === 1
+                  ? "Just one entry — I've paid →"
+                  : `I've paid for ${totalEntries} entries →`}
+            </Btn>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Cash, bank transfer, or paid another way? Use this once payment is sent.
+            </p>
+          </div>
+        </>
+      )}
+
+      {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
     </Shell>
   );
 }
@@ -227,6 +292,7 @@ function EntryRow({
     </div>
   );
 }
+
 
 function PayOption({
   kind,

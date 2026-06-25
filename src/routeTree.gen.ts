@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TenantSlugIndexRouteImport } from './routes/$tenantSlug.index'
+import { Route as StripeReturnRouteImport } from './routes/stripe.return'
 import { Route as OneshotclubMasterRouteImport } from './routes/oneshotclub.Master'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
@@ -28,6 +29,8 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as TenantSlugSelectionsTrackerRouteImport } from './routes/$tenantSlug.selections-tracker'
 import { Route as TenantSlugAdminRouteImport } from './routes/$tenantSlug.admin'
 import { Route as OneshotclubMasterIndexRouteImport } from './routes/oneshotclub.Master.index'
+import { Route as StripeConnectReturnRouteImport } from './routes/stripe.connect.return'
+import { Route as StripeConnectRefreshRouteImport } from './routes/stripe.connect.refresh'
 import { Route as OneshotclubMasterAdminRouteImport } from './routes/oneshotclub.Master.admin'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedPlatformAdminRouteImport } from './routes/_authenticated/platform.admin'
@@ -37,6 +40,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicTenantAssetsSplatRouteImport } from './routes/api/public/tenant-assets/$'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicCronSyncFplResultsRouteImport } from './routes/api/public/cron/sync-fpl-results'
 import { Route as ApiPublicCronCheckRemindersRouteImport } from './routes/api/public/cron/check-reminders'
 
@@ -94,6 +98,11 @@ const TenantSlugIndexRoute = TenantSlugIndexRouteImport.update({
   path: '/$tenantSlug/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StripeReturnRoute = StripeReturnRouteImport.update({
+  id: '/stripe/return',
+  path: '/stripe/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OneshotclubMasterRoute = OneshotclubMasterRouteImport.update({
   id: '/oneshotclub/Master',
   path: '/oneshotclub/Master',
@@ -135,6 +144,16 @@ const OneshotclubMasterIndexRoute = OneshotclubMasterIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => OneshotclubMasterRoute,
+} as any)
+const StripeConnectReturnRoute = StripeConnectReturnRouteImport.update({
+  id: '/stripe/connect/return',
+  path: '/stripe/connect/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StripeConnectRefreshRoute = StripeConnectRefreshRouteImport.update({
+  id: '/stripe/connect/refresh',
+  path: '/stripe/connect/refresh',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OneshotclubMasterAdminRoute = OneshotclubMasterAdminRouteImport.update({
   id: '/admin',
@@ -186,6 +205,12 @@ const ApiPublicTenantAssetsSplatRoute =
     path: '/api/public/tenant-assets/$',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronSyncFplResultsRoute =
   ApiPublicCronSyncFplResultsRouteImport.update({
     id: '/api/public/cron/sync-fpl-results',
@@ -216,13 +241,17 @@ export interface FileRoutesByFullPath {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/oneshotclub/Master': typeof OneshotclubMasterRouteWithChildren
+  '/stripe/return': typeof StripeReturnRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
+  '/stripe/connect/refresh': typeof StripeConnectRefreshRoute
+  '/stripe/connect/return': typeof StripeConnectReturnRoute
   '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -246,13 +275,17 @@ export interface FileRoutesByTo {
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/stripe/return': typeof StripeReturnRoute
   '/$tenantSlug': typeof TenantSlugIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
+  '/stripe/connect/refresh': typeof StripeConnectRefreshRoute
+  '/stripe/connect/return': typeof StripeConnectReturnRoute
   '/oneshotclub/Master': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -279,13 +312,17 @@ export interface FileRoutesById {
   '/admin/panel': typeof AdminPanelRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/oneshotclub/Master': typeof OneshotclubMasterRouteWithChildren
+  '/stripe/return': typeof StripeReturnRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
   '/_authenticated/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
+  '/stripe/connect/refresh': typeof StripeConnectRefreshRoute
+  '/stripe/connect/return': typeof StripeConnectReturnRoute
   '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/tenant-assets/$': typeof ApiPublicTenantAssetsSplatRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -312,13 +349,17 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/oneshotclub/Master'
+    | '/stripe/return'
     | '/$tenantSlug/'
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
+    | '/stripe/connect/refresh'
+    | '/stripe/connect/return'
     | '/oneshotclub/Master/'
     | '/api/public/cron/check-reminders'
     | '/api/public/cron/sync-fpl-results'
+    | '/api/public/payments/webhook'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -342,13 +383,17 @@ export interface FileRouteTypes {
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
     | '/email/unsubscribe'
+    | '/stripe/return'
     | '/$tenantSlug'
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
+    | '/stripe/connect/refresh'
+    | '/stripe/connect/return'
     | '/oneshotclub/Master'
     | '/api/public/cron/check-reminders'
     | '/api/public/cron/sync-fpl-results'
+    | '/api/public/payments/webhook'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -374,13 +419,17 @@ export interface FileRouteTypes {
     | '/admin/panel'
     | '/email/unsubscribe'
     | '/oneshotclub/Master'
+    | '/stripe/return'
     | '/$tenantSlug/'
     | '/_authenticated/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
+    | '/stripe/connect/refresh'
+    | '/stripe/connect/return'
     | '/oneshotclub/Master/'
     | '/api/public/cron/check-reminders'
     | '/api/public/cron/sync-fpl-results'
+    | '/api/public/payments/webhook'
     | '/api/public/tenant-assets/$'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -406,10 +455,14 @@ export interface RootRouteChildren {
   AdminPanelRoute: typeof AdminPanelRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   OneshotclubMasterRoute: typeof OneshotclubMasterRouteWithChildren
+  StripeReturnRoute: typeof StripeReturnRoute
   TenantSlugIndexRoute: typeof TenantSlugIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  StripeConnectRefreshRoute: typeof StripeConnectRefreshRoute
+  StripeConnectReturnRoute: typeof StripeConnectReturnRoute
   ApiPublicCronCheckRemindersRoute: typeof ApiPublicCronCheckRemindersRoute
   ApiPublicCronSyncFplResultsRoute: typeof ApiPublicCronSyncFplResultsRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicTenantAssetsSplatRoute: typeof ApiPublicTenantAssetsSplatRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -497,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TenantSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stripe/return': {
+      id: '/stripe/return'
+      path: '/stripe/return'
+      fullPath: '/stripe/return'
+      preLoaderRoute: typeof StripeReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oneshotclub/Master': {
       id: '/oneshotclub/Master'
       path: '/oneshotclub/Master'
@@ -552,6 +612,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/oneshotclub/Master/'
       preLoaderRoute: typeof OneshotclubMasterIndexRouteImport
       parentRoute: typeof OneshotclubMasterRoute
+    }
+    '/stripe/connect/return': {
+      id: '/stripe/connect/return'
+      path: '/stripe/connect/return'
+      fullPath: '/stripe/connect/return'
+      preLoaderRoute: typeof StripeConnectReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stripe/connect/refresh': {
+      id: '/stripe/connect/refresh'
+      path: '/stripe/connect/refresh'
+      fullPath: '/stripe/connect/refresh'
+      preLoaderRoute: typeof StripeConnectRefreshRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/oneshotclub/Master/admin': {
       id: '/oneshotclub/Master/admin'
@@ -616,6 +690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTenantAssetsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/sync-fpl-results': {
       id: '/api/public/cron/sync-fpl-results'
       path: '/api/public/cron/sync-fpl-results'
@@ -676,10 +757,14 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPanelRoute: AdminPanelRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   OneshotclubMasterRoute: OneshotclubMasterRouteWithChildren,
+  StripeReturnRoute: StripeReturnRoute,
   TenantSlugIndexRoute: TenantSlugIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  StripeConnectRefreshRoute: StripeConnectRefreshRoute,
+  StripeConnectReturnRoute: StripeConnectReturnRoute,
   ApiPublicCronCheckRemindersRoute: ApiPublicCronCheckRemindersRoute,
   ApiPublicCronSyncFplResultsRoute: ApiPublicCronSyncFplResultsRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicTenantAssetsSplatRoute: ApiPublicTenantAssetsSplatRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
@@ -690,13 +775,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -225,6 +225,188 @@ export const joinCompetitionWithEntries = createServerFn({ method: "POST" })
     return { ownerToken: owner.magic_token, ownerId: owner.id };
   });
 
+/**
+ * Stripe Checkout flow: creates the same player + sub-entry + pick rows as
+ * joinCompetitionWithEntries BUT inserts them as `paid: false`, then opens
+ * a Stripe Checkout session with a destination charge routed to the club's
+ * connected account and the platform application fee applied.
+ *
+ * On `checkout.session.completed` the webhook flips paid → true and sends
+ * the confirmation email. We do NOT send confirmation here.
+ */
+export const startStripeCheckoutForEntries = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: {
+      competitionId: string;
+      week: number;
+      origin: string;
+      owner: {
+        fullName: string;
+        email: string;
+        phone: string;
+        team: string;
+      };
+      additional: Array<{
+        fullName: string;
+        team: string;
+        email?: string | null;
+        phone?: string | null;
+        selfManaged?: boolean;
+      }>;
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    const email = data.owner.email?.trim();
+    if (!email) throw new Error("Email is required for card payment");
+
+    // Load competition + tenant to compute fees and resolve the connected
+    // account.
+    const { data: comp, error: cErr } = await supabaseAdmin
+      .from("competitions")
+      .select(
+        "id, tenant_id, entry_fee, application_fee_flat_cents, application_fee_percent_bps, fee_payer",
+      )
+      .eq("id", data.competitionId)
+      .maybeSingle();
+    if (cErr || !comp) throw new Error("Competition not found");
+    const { data: tenant } = await supabaseAdmin
+      .from("tenants")
+      .select("stripe_account_id, stripe_charges_enabled, name")
+      .eq("id", comp.tenant_id as string)
+      .maybeSingle();
+    if (!tenant?.stripe_account_id || !tenant.stripe_charges_enabled) {
+      throw new Error(
+        "This club hasn't completed Stripe onboarding yet — please use another payment method.",
+      );
+    }
+
+    const entries = 1 + data.additional.length;
+    const feeEuros = Number(comp.entry_fee ?? 0);
+    const perEntryCents = Math.round(feeEuros * 100);
+    const subtotalCents = perEntryCents * entries;
+    const flat = Number(comp.application_fee_flat_cents ?? 0);
+    const bps = Number(comp.application_fee_percent_bps ?? 0);
+    const appFeeCents =
+      flat * entries + Math.round((subtotalCents * bps) / 10000);
+    // Rough Stripe-fee passthrough estimate when fee_payer = 'player'.
+    // 1.5% + 25c EEA cards (approx). Adjust later if needed.
+    const stripeFeeEstimate =
+      comp.fee_payer === "player"
+        ? Math.round(subtotalCents * 0.015) + 25 * entries
+        : 0;
+    const unitAmount = perEntryCents + Math.round(stripeFeeEstimate / entries);
+
+    // 1) Insert owner + sub-entries as UNPAID.
+    const { data: owner, error: ownerErr } = await supabaseAdmin
+      .from("players")
+      .insert({
+        competition_id: data.competitionId,
+        full_name: data.owner.fullName,
+        email,
+        phone: data.owner.phone || null,
+        paid: false,
+        alive: true,
+        offline: false,
+      } as never)
+      .select("*")
+      .single();
+    if (ownerErr) throw ownerErr;
+
+    const subPlayers: Array<{ id: string; magic_token: string }> = [];
+    if (data.additional.length > 0) {
+      const { data: subs, error: subErr } = await supabaseAdmin
+        .from("players")
+        .insert(
+          data.additional.map((a) => {
+            const subEmail = a.selfManaged && a.email?.trim() ? a.email.trim() : null;
+            const subPhone = a.selfManaged && a.phone?.trim() ? a.phone.trim() : null;
+            return {
+              competition_id: data.competitionId,
+              full_name: a.fullName,
+              email: subEmail,
+              phone: subPhone,
+              paid: false,
+              alive: true,
+              offline: !subEmail,
+              owner_player_id: owner.id,
+            };
+          }) as never,
+        )
+        .select("id, magic_token");
+      if (subErr) throw subErr;
+      subPlayers.push(...((subs as Array<{ id: string; magic_token: string }>) ?? []));
+    }
+
+    // 2) Pre-insert picks for all entries.
+    const picksRows = [
+      {
+        player_id: owner.id,
+        competition_id: data.competitionId,
+        week: data.week,
+        team: data.owner.team,
+      },
+      ...data.additional.map((a, i) => ({
+        player_id: subPlayers[i].id,
+        competition_id: data.competitionId,
+        week: data.week,
+        team: a.team,
+      })),
+    ];
+    await supabaseAdmin.from("picks").insert(picksRows as never);
+
+    // 3) Create Stripe Checkout session as a destination charge.
+    const { createStripeClient, resolveStripeEnv, getStripeErrorMessage } =
+      await import("@/lib/stripe.server");
+    const stripe = createStripeClient(resolveStripeEnv());
+    try {
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer_email: email,
+        line_items: [
+          {
+            quantity: entries,
+            price_data: {
+              currency: "eur",
+              unit_amount: unitAmount,
+              product_data: {
+                name: `${tenant.name ?? "Last Man Standing"} — entry`,
+                description: `${entries} entry${entries > 1 ? "ies" : ""} · GW${data.week}`,
+              },
+            },
+          },
+        ],
+        payment_intent_data: {
+          application_fee_amount: appFeeCents > 0 ? appFeeCents : undefined,
+          transfer_data: { destination: tenant.stripe_account_id! },
+          description: `${tenant.name ?? "LMS"} entry × ${entries}`,
+          metadata: {
+            owner_player_id: owner.id,
+            competition_id: data.competitionId,
+            week: String(data.week),
+          },
+        },
+        success_url: `${data.origin}/stripe/return?token=${owner.magic_token}&c=${data.competitionId}`,
+        cancel_url: `${data.origin}/pay?c=${data.competitionId}&n=${encodeURIComponent(data.owner.fullName)}&e=${encodeURIComponent(email)}&p=${encodeURIComponent(data.owner.phone ?? "")}&t=${encodeURIComponent(data.owner.team)}`,
+        metadata: {
+          owner_player_id: owner.id,
+          competition_id: data.competitionId,
+          week: String(data.week),
+          tenant_id: comp.tenant_id as string,
+        },
+      });
+      return { checkoutUrl: session.url, ownerToken: owner.magic_token };
+    } catch (err) {
+      // Roll back the unpaid inserts so the user can retry cleanly.
+      await supabaseAdmin
+        .from("players")
+        .delete()
+        .in("id", [owner.id, ...subPlayers.map((s) => s.id)]);
+      throw new Error(getStripeErrorMessage(err));
+    }
+  });
+
+
+
 
 export const getPlayerByToken = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => d)
