@@ -364,6 +364,8 @@ export const submitPickV2 = createServerFn({ method: 'POST' })
       .from('players').select('*').eq('magic_token', data.token).maybeSingle()
     if (!player) throw new Error('Invalid link')
     if (!player.alive) throw new Error("You've been eliminated")
+    if (!player.paid) throw new Error("Payment for this entry hasn't been confirmed yet. Please wait a minute and reload — or contact your club admin if this persists.")
+
 
     const { data: gw } = await supabaseAdmin
       .from('gameweeks').select('*').eq('id', data.gameweekId).maybeSingle()
