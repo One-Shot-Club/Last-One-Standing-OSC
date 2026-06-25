@@ -1901,8 +1901,11 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
   const visible = methods.filter((m) => m.enabled && m.url.trim());
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card className="space-y-4">
+    <div className="space-y-4">
+      <ConnectAndFeesCard compId={compId} pin={pin} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="space-y-4">
+
         <div>
           <h3 className="display text-lg">Payment settings</h3>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -1996,6 +1999,7 @@ function PaymentSettings({ compId, pin }: { compId: string; pin: string }) {
     </div>
   );
 }
+
 
 function PayMethodRow({
   label,
