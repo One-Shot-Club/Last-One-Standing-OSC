@@ -1,3 +1,4 @@
+
 // Real case study content from Castletown Liam Mellows GAA and St. Joseph's AFC.
 // Imported by case study route pages and the homepage proof section.
 // Do not edit the Q&A — these are verbatim quotes from the clubs.
