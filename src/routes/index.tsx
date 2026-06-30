@@ -237,7 +237,7 @@ function HomePage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-accent">
             The problem we fix
           </p>
-          <h2 className="text-balance font-display text-4xl uppercase tracking-wide text-primary md:text-5xl">
+          <h2 className="text-balance font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
             Every committee knows the drill.
           </h2>
           <p className="mt-5 text-lg text-muted-foreground">
@@ -255,7 +255,7 @@ function HomePage() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-accent">
               How it works
             </p>
-            <h2 className="font-display text-4xl uppercase tracking-wide text-primary md:text-5xl">
+            <h2 className="font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
               Three steps. No spreadsheets.
             </h2>
             <p className="mt-4 text-muted-foreground">
@@ -272,7 +272,7 @@ function HomePage() {
                 <div className="font-display text-sm uppercase tracking-[0.2em] text-accent">
                   Step {s.n}
                 </div>
-                <h3 className="mt-2 font-display text-2xl uppercase tracking-wide text-primary">
+                <h3 className="mt-2 font-display text-2xl uppercase tracking-wide text-accent">
                   {s.title}
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -328,7 +328,7 @@ function HomePage() {
           <div className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.25em] text-accent">
             Real Irish clubs. Real results.
           </div>
-          <h2 className="text-center font-display text-4xl uppercase tracking-wide text-primary md:text-5xl">
+          <h2 className="text-center font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
             Early days. Exceptional numbers.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-muted-foreground">
@@ -379,7 +379,7 @@ function HomePage() {
                   </blockquote>
                   <Link
                     to={`/case-studies/${cs.slug}` as never}
-                    className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-primary hover:text-accent"
+                    className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-accent hover:brightness-90"
                   >
                     Read the full case study →
                   </Link>
@@ -397,7 +397,7 @@ function HomePage() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-accent">
               What we build
             </p>
-            <h2 className="font-display text-4xl uppercase tracking-wide text-primary md:text-5xl">
+            <h2 className="font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
               Competitions that actually raise money.
             </h2>
             <p className="mt-4 text-muted-foreground">
@@ -421,7 +421,7 @@ function HomePage() {
                     {c.status}
                   </span>
                 )}
-                <h3 className="font-display text-2xl uppercase tracking-wide text-primary">
+                <h3 className="font-display text-2xl uppercase tracking-wide text-accent">
                   {c.name}
                 </h3>
                 {c.statusNote && (
@@ -434,7 +434,7 @@ function HomePage() {
                 </p>
                 <Link
                   to={c.to as never}
-                  className="mt-5 inline-flex w-fit text-sm font-semibold uppercase tracking-wider text-primary hover:text-accent"
+                  className="mt-5 inline-flex w-fit text-sm font-semibold uppercase tracking-wider text-accent hover:brightness-90"
                 >
                   {c.cta}
                 </Link>
@@ -451,9 +451,9 @@ function HomePage() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-accent">
               Pricing
             </p>
-            <h2 className="font-display text-4xl uppercase tracking-wide text-primary md:text-5xl">
+            <h2 className="font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
               Free to start.{" "}
-              <span className="text-accent">We make money when you do.</span>
+              <span className="text-foreground">We make money when you do.</span>
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
               No setup fee. No subscription. We take a small percentage of what
@@ -494,7 +494,7 @@ function HomePage() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-accent">
               Why OneShotClub
             </p>
-            <h2 className="font-display text-4xl uppercase tracking-wide text-primary md:text-5xl">
+            <h2 className="font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
               Built for the way Irish clubs actually work.
             </h2>
           </div>
@@ -507,7 +507,7 @@ function HomePage() {
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-accent">
                   <Icon className="h-6 w-6" />
                 </div>
-                <h3 className="font-display text-xl uppercase tracking-wide text-primary">
+                <h3 className="font-display text-xl uppercase tracking-wide text-accent">
                   {title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
