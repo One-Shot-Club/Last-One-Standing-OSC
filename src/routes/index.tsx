@@ -163,17 +163,25 @@ function HomePage() {
     <>
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="relative isolate overflow-hidden bg-primary">
+        <img
+          src="/hero-pitch.jpg"
+          alt="Packed stands at an Irish stadium on match day"
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
+          width={1920}
+          height={1080}
+          fetchPriority="high"
+          decoding="async"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/85 to-primary/30" />
-        <div className="container-prose relative grid min-h-[60vh] items-center py-16 md:py-20">
+        <div className="container-prose relative grid min-h-[64vh] items-center py-16 md:py-20">
           <div className="max-w-3xl text-primary-foreground">
-            <h1 className="text-balance font-display text-6xl uppercase leading-[0.95] tracking-wide text-primary-foreground md:text-8xl">
-              Club Fundraising —{" "}
-              <span className="text-accent">Without the Hard Work</span>
+            <h1 className="text-balance font-display text-6xl uppercase leading-[0.95] tracking-wide md:text-8xl">
+              Club Fundraising — Without the Hard Work
             </h1>
             <p className="mt-4 font-display text-xl uppercase tracking-wide text-accent md:text-2xl">
               Fundraising tools built for Irish clubs.
             </p>
-            <p className="mt-6 max-w-xl text-lg text-primary-foreground/85 md:text-xl">
+            <p className="mt-6 max-w-xl text-lg font-semibold text-primary-foreground/85 md:text-xl">
               We sit down with your committee, work out what'll actually raise
               money for your club, then build and run it for you. A partner on
               the end of the phone — not just another platform.
@@ -378,7 +386,8 @@ function HomePage() {
                     </footer>
                   </blockquote>
                   <Link
-                    to={`/case-studies/${cs.slug}` as never}
+                    to="/case-studies/$slug"
+                    params={{ slug: cs.slug }}
                     className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-accent hover:brightness-90"
                   >
                     Read the full case study →
@@ -391,7 +400,7 @@ function HomePage() {
       </section>
 
       {/* ── COMPETITIONS ─────────────────────────────────────────────── */}
-      <section className="bg-muted/60 py-16 md:py-24">
+      <section id="services" className="bg-muted/60 py-16 md:py-24">
         <div className="container-prose">
           <div className="mx-auto max-w-2xl text-center">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-accent">
@@ -453,7 +462,7 @@ function HomePage() {
             </p>
             <h2 className="font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
               Free to start.{" "}
-              <span className="text-foreground">We make money when you do.</span>
+              <span className="text-foreground">We make money when you make money.</span>
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
               No setup fee. No subscription. We take a small percentage of what
@@ -465,6 +474,12 @@ function HomePage() {
               payment processing fee is separate — we'll walk you through the
               exact numbers before anything goes live.
             </p>
+            <Link
+              to="/pricing"
+              className="mt-6 inline-flex text-sm font-semibold uppercase tracking-wider text-accent hover:brightness-90"
+            >
+              See full pricing →
+            </Link>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {[

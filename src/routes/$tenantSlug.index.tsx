@@ -1,8 +1,7 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { getTenantEntryContext } from "@/lib/tenant.functions";
-import { Logo, Shell } from "@/components/oneshot/ui";
-import { TenantEntry } from "@/components/oneshot/TenantEntry";
+import { getTenantEntryContext, resolveTenantBySlug } from "@/lib/tenant.functions";
+import { TenantClubLanding } from "@/components/oneshot/TenantClubLanding";
 import {
   MasterTenantLanding,
   clubsQuery,
@@ -12,88 +11,84 @@ const MASTER_ALIASES = new Set(["oneshotclub", "Master"]);
 const resolveSlug = (slug: string) =>
   MASTER_ALIASES.has(slug) ? "oneshotclub-master" : slug;
 
-const tenantEntryQuery = (slug: string) =>
+const tenantLandingQuery = (slug: string) =>
+  queryOptions({
+    queryKey: ["tenant-landing", resolveSlug(slug)],
+    queryFn: () => resolveTenantBySlug({ data: { slug: resolveSlug(slug) } }),
+  });
+
+const masterEntryQuery = (slug: string) =>
   queryOptions({
     queryKey: ["tenant-entry", resolveSlug(slug)],
     queryFn: () => getTenantEntryContext({ data: { slug: resolveSlug(slug) } }),
   });
 
-type LandingSearch = {
-  add?: string;
-  n?: string;
-  e?: string;
-  p?: string;
-  o?: string;
-};
-
 export const Route = createFileRoute("/$tenantSlug/")({
-  validateSearch: (s: Record<string, unknown>): LandingSearch => ({
-    add: s.add ? String(s.add) : undefined,
-    n: s.n ? String(s.n) : undefined,
-    e: s.e ? String(s.e) : undefined,
-    p: s.p ? String(s.p) : undefined,
-    o: s.o ? String(s.o) : undefined,
-  }),
   loader: async ({ params, context }) => {
+    if (MASTER_ALIASES.has(params.tenantSlug)) {
+      await context.queryClient.ensureQueryData(masterEntryQuery(params.tenantSlug));
+      await context.queryClient.ensureQueryData(clubsQuery);
+      return { mode: "master" as const };
+    }
+
     try {
-      await context.queryClient.ensureQueryData(
-        tenantEntryQuery(params.tenantSlug),
+      const data = await context.queryClient.ensureQueryData(
+        tenantLandingQuery(params.tenantSlug),
       );
-      if (MASTER_ALIASES.has(params.tenantSlug)) {
-        await context.queryClient.ensureQueryData(clubsQuery);
+      if (data.competitions.length === 1) {
+        const only = data.competitions[0]!;
+        throw redirect({
+          to: "/$tenantSlug/$compSlug",
+          params: {
+            tenantSlug: params.tenantSlug,
+            compSlug: only.slug,
+          },
+        });
       }
-    } catch {
+      return { mode: "club" as const, ...data };
+    } catch (e) {
+      if (e && typeof e === "object" && "to" in e) throw e;
       throw notFound();
     }
   },
   head: ({ params }) => ({
     meta: [
-      { title: `${params.tenantSlug} · Last One Standing` },
+      { title: `${params.tenantSlug} · OneShotClub` },
       {
         name: "description",
-        content: `Enter the Last One Standing competition for ${params.tenantSlug}.`,
+        content: `Enter a Last One Standing competition for ${params.tenantSlug}.`,
       },
     ],
   }),
-  component: TenantLanding,
-  errorComponent: () => (
-    <Shell>
-      <Logo />
-      <p className="mt-12 text-sm text-destructive">Tenant not found.</p>
-    </Shell>
-  ),
+  component: TenantClubPage,
   notFoundComponent: () => (
-    <Shell>
-      <Logo />
-      <p className="mt-12 text-sm text-destructive">Tenant not found.</p>
-    </Shell>
+    <div className="container-prose py-16">
+      <p className="text-sm text-destructive">Club not found.</p>
+    </div>
   ),
 });
 
-function TenantLanding() {
+function TenantClubPage() {
   const { tenantSlug } = Route.useParams();
-  const search = Route.useSearch();
-  const { data } = useSuspenseQuery(tenantEntryQuery(tenantSlug));
-  const addMode =
-    search.add === "1" && search.n
-      ? { n: search.n, e: search.e ?? "", p: search.p ?? "", o: search.o }
-      : null;
-  // Master tenants normally show a list of clubs, but when the user is
-  // looping back to add another entry for an in-progress purchase, render
-  // the picker for the master competition instead of bouncing them to the
-  // club list (which feels like landing on the homepage).
-  if (MASTER_ALIASES.has(tenantSlug) && !addMode) {
-    return <MasterTenantLanding tenant={data.tenant} />;
+  const loaderData = Route.useLoaderData();
+  if (loaderData.mode === "master") {
+    return <MasterClubPage tenantSlug={tenantSlug} />;
   }
+  return <ClubLandingPage tenantSlug={tenantSlug} />;
+}
+
+function MasterClubPage({ tenantSlug }: { tenantSlug: string }) {
+  const { data } = useSuspenseQuery(masterEntryQuery(tenantSlug));
+  return <MasterTenantLanding tenant={data.tenant} />;
+}
+
+function ClubLandingPage({ tenantSlug }: { tenantSlug: string }) {
+  const { data } = useSuspenseQuery(tenantLandingQuery(tenantSlug));
   return (
-    <TenantEntry
+    <TenantClubLanding
       tenant={data.tenant}
-      competition={data.competition}
-      gameweek={data.gameweek}
-      fixtures={data.fixtures}
+      competitions={data.competitions}
       tenantSlug={tenantSlug}
-      addMode={addMode}
     />
   );
-
 }

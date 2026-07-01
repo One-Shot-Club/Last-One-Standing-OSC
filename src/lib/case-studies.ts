@@ -28,6 +28,11 @@ export type CaseStudy = {
   seoTitle: string;
   seoDescription: string;
   canonicalUrl: string;
+  crestSrc: string;
+  indexLabel: string;
+  indexSummary: string;
+  indexStatsLine: string;
+  benefitsHeading: string;
   stats: CaseStudyStat[];
   qa: CaseStudyQA[];
   benefits: string[];
@@ -53,6 +58,12 @@ export const CASTLETOWN: CaseStudy = {
     "See how Castletown Liam Mellows GAA Club used OneShotClub's easy online fundraising platform to raise over €1,200 in one week — automated entries, direct club payments, zero spreadsheets. Built for GAA and Irish sports clubs.",
   canonicalUrl:
     "https://www.oneshotclub.ie/case-studies/castletown-liam-mellows",
+  crestSrc: "/castletown-crest.png",
+  indexLabel: "Featured case study",
+  indexSummary:
+    "Easy online fundraising — one panel runs the lot. No spreadsheets, no cash handling, no admin headache.",
+  indexStatsLine: "€1,200+ raised · One panel · 100% automated",
+  benefitsHeading: "Why GAA clubs choose OneShotClub",
   stats: [
     { k: "€1,200+", v: "Raised in just over a week" },
     { k: "1 Panel", v: "To run the whole fundraiser" },
@@ -111,6 +122,12 @@ export const ST_JOSEPHS: CaseStudy = {
   seoDescription:
     "See how St. Joseph's AFC used OneShotClub to raise €1,300 in just 4 days — despite a late start. Easy online fundraising for Irish soccer and GAA clubs.",
   canonicalUrl: "https://www.oneshotclub.ie/case-studies/st-josephs-afc",
+  crestSrc: "/st-josephs-crest.png",
+  indexLabel: "Soccer club case study",
+  indexSummary:
+    "A World Cup Predictor, a late start, and the whole fundraiser run from one simple panel.",
+  indexStatsLine: "€1,300 raised · 4 days · One panel",
+  benefitsHeading: "Why clubs choose OneShotClub",
   stats: [
     { k: "€1,300", v: "Raised in just 4 days" },
     { k: "1 Panel", v: "To run the whole fundraiser" },

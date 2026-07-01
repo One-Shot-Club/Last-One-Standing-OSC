@@ -51,6 +51,172 @@ function newToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+export type ClubSignupPayload = {
+  clubName: string;
+  county: string;
+  clubType: string;
+  competitionInterest: string;
+  adminName: string;
+  email: string;
+  phone: string;
+};
+
+import { generateUniqueTenantSlug } from "@/lib/slug";
+
+function validateClubSignupPayload(
+  d: ClubSignupPayload & { password?: string },
+  requirePassword = false,
+) {
+  if (!d.clubName?.trim()) throw new Error("Club name is required");
+  if (!d.county?.trim()) throw new Error("County is required");
+  if (!d.clubType?.trim()) throw new Error("Club type is required");
+  if (!d.competitionInterest?.trim()) throw new Error("Competition interest is required");
+  if (!d.adminName?.trim()) throw new Error("Your name is required");
+  if (!d.email?.includes("@")) throw new Error("A valid email is required");
+  if (!d.phone?.trim()) throw new Error("Phone number is required");
+  if (requirePassword) {
+    if (!d.password || d.password.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
+  }
+  return {
+    clubName: d.clubName.trim(),
+    county: d.county.trim(),
+    clubType: d.clubType.trim(),
+    competitionInterest: d.competitionInterest.trim(),
+    adminName: d.adminName.trim(),
+    email: d.email.trim().toLowerCase(),
+    phone: d.phone.trim(),
+    password: d.password,
+  };
+}
+
+async function logSignupLead(
+  payload: ClubSignupPayload & { signupPath: string },
+  tenantId?: string,
+) {
+  const { password: _pw, ...safe } = payload as ClubSignupPayload & {
+    signupPath: string;
+    password?: string;
+  };
+  await supabaseAdmin.from("audit_logs").insert({
+    tenant_id: tenantId ?? null,
+    op: "club_signup_lead",
+    table_name: "signup_leads",
+    diff: {
+      ...safe,
+      requestedAt: new Date().toISOString(),
+    },
+  });
+}
+
+async function ensureAuthUserForSignup(
+  email: string,
+  password: string,
+  adminName: string,
+  clubName: string,
+): Promise<string> {
+  const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+    email: email.trim(),
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: adminName, club_name: clubName },
+  });
+  if (!error && created.user) return created.user.id;
+
+  const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+    page: 1,
+    perPage: 200,
+  });
+  if (listErr) throw listErr;
+  const existing = (list?.users ?? []).find(
+    (u) => u.email?.toLowerCase() === email.trim().toLowerCase(),
+  );
+  if (!existing) {
+    throw new Error(error?.message ?? "Could not create login account");
+  }
+  return existing.id;
+}
+
+// Public club signup — creates a pending tenant and admin credentials.
+export const registerClubSignup = createServerFn({ method: "POST" })
+  .inputValidator((d: ClubSignupPayload & { password: string }) => d)
+  .handler(async ({ data }) => {
+    const payload = validateClubSignupPayload(data, true);
+    const slug = await generateUniqueTenantSlug(payload.clubName);
+
+    const { data: tenant, error } = await supabaseAdmin
+      .from("tenants")
+      .insert({
+        slug,
+        name: payload.clubName,
+        status: "pending",
+      })
+      .select("id, slug, name")
+      .single();
+    if (error) throw error;
+
+    const signupMeta = {
+      adminName: payload.adminName,
+      county: payload.county,
+      clubType: payload.clubType,
+      competitionInterest: payload.competitionInterest,
+      signupPath: "account",
+    };
+
+    const { error: settingsErr } = await supabaseAdmin.from("tenant_settings").insert({
+      tenant_id: tenant.id,
+      contact_email: payload.email,
+      contact_phone: payload.phone,
+      intro_copy: JSON.stringify(signupMeta),
+    });
+    if (settingsErr) throw settingsErr;
+
+    const password_hash = await hashPassword(payload.password!);
+    const { error: credErr } = await supabaseAdmin.from("tenant_admin_credentials").insert({
+      tenant_id: tenant.id,
+      username: payload.email,
+      password_hash,
+    });
+    if (credErr) throw credErr;
+
+    const authUserId = await ensureAuthUserForSignup(
+      payload.email,
+      payload.password!,
+      payload.adminName,
+      payload.clubName,
+    );
+    const { error: memberErr } = await supabaseAdmin.from("tenant_members").upsert(
+      {
+        tenant_id: tenant.id,
+        user_id: authUserId,
+        role: "tenant_owner",
+      },
+      { onConflict: "tenant_id,user_id" },
+    );
+    if (memberErr) throw memberErr;
+
+    await logSignupLead({ ...payload, signupPath: "account" }, tenant.id as string);
+
+    return {
+      ok: true as const,
+      tenantSlug: tenant.slug as string,
+      tenantName: tenant.name as string,
+      tenantId: tenant.id as string,
+    };
+  });
+
+// Callback or WhatsApp handoff — records the lead for the OSC team to follow up.
+export const submitClubSignupLead = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: ClubSignupPayload & { signupPath: "callback" | "whatsapp" }) => d,
+  )
+  .handler(async ({ data }) => {
+    const payload = validateClubSignupPayload(data);
+    await logSignupLead({ ...payload, signupPath: data.signupPath });
+    return { ok: true as const };
+  });
+
 // Platform admin or trusted server caller sets / resets credentials for a tenant.
 export const setTenantAdminCredentials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

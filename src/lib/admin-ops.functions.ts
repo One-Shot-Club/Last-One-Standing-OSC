@@ -1,7 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { verifyAdmin } from "@/lib/admin-auth.server";
-import { logAction, assertTenantOwner, type PaymentMethod } from "@/lib/admin-ops.server";
+import { logAction, assertTenantOwner, assertTenantAdminAccess, type PaymentMethod } from "@/lib/admin-ops.server";
+import { seedGameweekInternal } from "@/lib/gameweeks.functions";
+import {
+  getDevPreviewCompetitions,
+  getDevPreviewDashboardStats,
+  getDevPreviewTenantAccess,
+  isDevPreviewMode,
+} from "@/lib/dev-auth.server";
+import { generateUniqueCompetitionSlug } from "@/lib/slug";
 
 // --- Add a manual entrant (admin-entered, offline source) ---
 export const addManualEntrant = createServerFn({ method: "POST" })
@@ -625,6 +633,7 @@ export const getMyTenantAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: Record<string, never>) => d)
   .handler(async ({ context }) => {
+    if (isDevPreviewMode()) return getDevPreviewTenantAccess();
     const { userId } = context as { userId: string };
     const { data: isPlatform } = await supabaseAdmin
       .from("platform_admins")
@@ -665,9 +674,8 @@ export const listMyAdminCompetitions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: Record<string, never>) => d)
   .handler(async ({ context }) => {
+    if (isDevPreviewMode()) return getDevPreviewCompetitions();
     const { userId } = context as { userId: string };
-
-    // Platform admin sees all tenants' competitions
     const { data: isPlatform } = await supabaseAdmin
       .from("platform_admins")
       .select("user_id").eq("user_id", userId).maybeSingle();
@@ -688,19 +696,220 @@ export const listMyAdminCompetitions = createServerFn({ method: "POST" })
 
     const { data: comps } = await supabaseAdmin
       .from("competitions")
-      .select("id, name, tenant_id, tenants(slug, name)")
+      .select(
+        "id, name, slug, tenant_id, entry_fee, stripe_link, revolut_link, payment_link, tenants(slug, name, status, stripe_onboarding_status, stripe_charges_enabled)",
+      )
       .in("tenant_id", tenantIds)
       .order("created_at", { ascending: false });
-    return (comps ?? []).map((c) => {
-      const t = (c as { tenants: { slug: string; name: string } | null }).tenants;
-      return {
-        id: c.id as string,
-        name: c.name as string,
-        tenant_id: c.tenant_id as string,
-        tenant_slug: t?.slug ?? "",
-        tenant_name: t?.name ?? "",
-      };
-    });
+
+    const rows = await Promise.all(
+      (comps ?? []).map(async (c) => {
+        const t = (
+          c as {
+            tenants: {
+              slug: string;
+              name: string;
+              status: string;
+              stripe_onboarding_status: string;
+              stripe_charges_enabled: boolean;
+            } | null;
+          }
+        ).tenants;
+        const { count: entryCount } = await supabaseAdmin
+          .from("competition_entries")
+          .select("id", { count: "exact", head: true })
+          .eq("competition_id", c.id);
+
+        const hasPaymentLink = !!(
+          c.stripe_link ||
+          c.revolut_link ||
+          c.payment_link ||
+          t?.stripe_charges_enabled
+        );
+        let status: "live" | "needs_stripe" | "needs_payments" | "pending" = "live";
+        if (t?.status === "pending") status = "pending";
+        else if (t?.stripe_onboarding_status !== "active" && !hasPaymentLink)
+          status = "needs_stripe";
+        else if (!hasPaymentLink) status = "needs_payments";
+
+        return {
+          id: c.id as string,
+          name: c.name as string,
+          slug: (c.slug as string) ?? "",
+          tenant_id: c.tenant_id as string,
+          tenant_slug: t?.slug ?? "",
+          tenant_name: t?.name ?? "",
+          entry_fee: c.entry_fee as number,
+          entry_count: entryCount ?? 0,
+          status,
+          public_path: t?.slug && c.slug ? `/${t.slug}/${c.slug as string}` : "",
+        };
+      }),
+    );
+    return rows;
+  });
+
+export const getClubDashboardStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: Record<string, never>) => d)
+  .handler(async ({ context }) => {
+    if (isDevPreviewMode()) return getDevPreviewDashboardStats();
+    const { userId } = context as { userId: string };
+
+    const { data: isPlatform } = await supabaseAdmin
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    let tenantIds: string[] = [];
+    if (isPlatform) {
+      const { data } = await supabaseAdmin.from("tenants").select("id");
+      tenantIds = (data ?? []).map((t) => t.id as string);
+    } else {
+      const { data } = await supabaseAdmin
+        .from("tenant_members")
+        .select("tenant_id, role")
+        .eq("user_id", userId)
+        .in("role", ["tenant_owner", "tenant_admin", "tenant_operator"]);
+      tenantIds = (data ?? []).map((m) => m.tenant_id as string);
+    }
+
+    if (tenantIds.length === 0) {
+      return { competitions: 0, entries: 0, tenants: 0 };
+    }
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const [compCount, entryCount] = await Promise.all([
+      supabaseAdmin
+        .from("competitions")
+        .select("id", { count: "exact", head: true })
+        .in("tenant_id", tenantIds),
+      supabaseAdmin
+        .from("competition_entries")
+        .select("id", { count: "exact", head: true })
+        .in("tenant_id", tenantIds)
+        .gte("created_at", monthStart.toISOString()),
+    ]);
+
+    return {
+      competitions: compCount.count ?? 0,
+      entries: entryCount.count ?? 0,
+      tenants: tenantIds.length,
+    };
+  });
+
+export type CompetitionType = "last_man_standing" | "prediction" | "golf_classic";
+
+const COMPETITION_TYPE_LABELS: Record<CompetitionType, string> = {
+  last_man_standing: "Last Man Standing",
+  prediction: "Prediction Competition",
+  golf_classic: "Golf Classic",
+};
+
+export function defaultCompetitionName(
+  type: CompetitionType,
+  clubName: string,
+): string {
+  const base = clubName.trim() || "Your club";
+  return `${base} ${COMPETITION_TYPE_LABELS[type]}`;
+}
+
+export const createClubCompetition = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      tenantId: string;
+      competitionType: CompetitionType;
+      name: string;
+      entryFee: number;
+      prizePool?: number;
+    }) => {
+      if (!d.tenantId) throw new Error("Club required");
+      if (!d.name?.trim()) throw new Error("Competition name required");
+      if (!(d.entryFee >= 0)) throw new Error("Entry fee must be zero or more");
+      return d;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertTenantAdminAccess(userId, data.tenantId);
+
+    const { data: settings } = await supabaseAdmin
+      .from("tenant_settings")
+      .select("logo_url")
+      .eq("tenant_id", data.tenantId)
+      .maybeSingle();
+    const { data: tenant } = await supabaseAdmin
+      .from("tenants")
+      .select("name, slug, status")
+      .eq("id", data.tenantId)
+      .maybeSingle();
+
+    const compSlug = await generateUniqueCompetitionSlug(data.tenantId, data.name.trim());
+
+    const { data: created, error } = await supabaseAdmin
+      .from("competitions")
+      .insert({
+        tenant_id: data.tenantId,
+        slug: compSlug,
+        name: data.name.trim(),
+        entry_fee: data.entryFee,
+        prize_pool: data.prizePool ?? 0,
+        current_week: 1,
+        club_name: (tenant?.name as string) ?? null,
+        club_logo_url: (settings?.logo_url as string) ?? null,
+        application_fee_percent_bps: 500,
+        application_fee_flat_cents: 0,
+        fee_payer: "club",
+        refund_policy_default: "keep_app_fee",
+        cash_enabled: true,
+        payment_enabled: true,
+      } as never)
+      .select("id, name")
+      .single();
+    if (error) throw error;
+
+    if (tenant?.status === "pending") {
+      await supabaseAdmin
+        .from("tenants")
+        .update({ status: "active" })
+        .eq("id", data.tenantId);
+    }
+
+    let gameweekSeeded = false;
+    if (data.competitionType === "last_man_standing") {
+      await seedGameweekInternal(created.id as string, 1);
+      gameweekSeeded = true;
+    }
+
+    await logAction(
+      data.tenantId,
+      "competition.create",
+      "club_dashboard",
+      "competition",
+      created.id as string,
+      {
+        competitionType: data.competitionType,
+        entryFee: data.entryFee,
+        prizePool: data.prizePool ?? 0,
+        gameweekSeeded,
+      },
+    );
+
+    return {
+      id: created.id as string,
+      name: created.name as string,
+      slug: compSlug,
+      competitionType: data.competitionType,
+      tenantSlug: tenant?.slug as string,
+      publicPath: tenant?.slug ? `/${tenant.slug}/${compSlug}` : "",
+      gameweekSeeded,
+      activatedTenant: tenant?.status === "pending",
+    };
   });
 
 // ----- Tenant member management (owner/platform-admin only) -----

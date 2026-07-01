@@ -455,40 +455,65 @@ export const submitGw2Pick = createServerFn({ method: 'POST' })
 
 // ---- Tab-based gameweek admin (seed + set winner) ----
 
+/** Seed gameweek fixtures without admin PIN — for club dashboard publish flow. */
+export async function seedGameweekInternal(
+  competitionId: string,
+  weekNumber: number,
+) {
+  let { data: gw } = await supabaseAdmin
+    .from("gameweeks")
+    .select("*")
+    .eq("competition_id", competitionId)
+    .eq("week_number", weekNumber)
+    .maybeSingle();
+  if (!gw) {
+    const kickoff = new Date(Date.now() + Math.max(1, weekNumber) * 7 * 86400000);
+    const ends = new Date(kickoff.getTime() + 2 * 86400000);
+    const { data: created, error } = await supabaseAdmin
+      .from("gameweeks")
+      .insert({
+        competition_id: competitionId,
+        week_number: weekNumber,
+        week_label: `GW${weekNumber}`,
+        first_kickoff_at: kickoff.toISOString(),
+        last_match_ends_at: ends.toISOString(),
+        deadline_at: kickoff.toISOString(),
+      } as never)
+      .select("*")
+      .single();
+    if (error) throw error;
+    gw = created;
+  }
+  const fixtures = FIXTURES_BY_WEEK[weekNumber] ?? [];
+  if (fixtures.length) {
+    const { data: existing } = await supabaseAdmin
+      .from("results")
+      .select("home_team, away_team")
+      .eq("gameweek_id", gw!.id);
+    const have = new Set(
+      (existing ?? []).map((r: { home_team: string; away_team: string }) =>
+        `${r.home_team}|${r.away_team}`,
+      ),
+    );
+    const toInsert = fixtures
+      .filter((f) => !have.has(`${f.home}|${f.away}`))
+      .map((f) => ({
+        gameweek_id: gw!.id,
+        home_team: f.home,
+        away_team: f.away,
+      }));
+    if (toInsert.length) {
+      await supabaseAdmin.from("results").insert(toInsert);
+    }
+  }
+  return gw;
+}
+
 export const seedGameweek = createServerFn({ method: 'POST' })
   .inputValidator((d: { competitionId: string; pin: string; weekNumber: number }) => d)
   .handler(async ({ data }) => {
     await verifyAdmin(data.competitionId, data.pin)
-    let { data: gw } = await supabaseAdmin
-      .from('gameweeks').select('*')
-      .eq('competition_id', data.competitionId).eq('week_number', data.weekNumber).maybeSingle()
-    if (!gw) {
-      const kickoff = new Date(Date.now() + Math.max(1, data.weekNumber) * 7 * 86400000)
-      const ends = new Date(kickoff.getTime() + 2 * 86400000)
-      const { data: created, error } = await supabaseAdmin.from('gameweeks').insert({
-        competition_id: data.competitionId,
-        week_number: data.weekNumber,
-        week_label: `GW${data.weekNumber}`,
-        first_kickoff_at: kickoff.toISOString(),
-        last_match_ends_at: ends.toISOString(),
-        deadline_at: kickoff.toISOString(),
-      } as never).select('*').single()
-      if (error) throw error
-      gw = created
-    }
-    const fixtures = FIXTURES_BY_WEEK[data.weekNumber] ?? []
-    if (fixtures.length) {
-      const { data: existing } = await supabaseAdmin
-        .from('results').select('home_team, away_team').eq('gameweek_id', gw!.id)
-      const have = new Set((existing ?? []).map((r: any) => `${r.home_team}|${r.away_team}`))
-      const toInsert = fixtures
-        .filter((f) => !have.has(`${f.home}|${f.away}`))
-        .map((f) => ({ gameweek_id: gw!.id, home_team: f.home, away_team: f.away }))
-      if (toInsert.length) {
-        await supabaseAdmin.from('results').insert(toInsert)
-      }
-    }
-    return gw
+    return seedGameweekInternal(data.competitionId, data.weekNumber)
   })
 
 export const setFixtureWinner = createServerFn({ method: 'POST' })

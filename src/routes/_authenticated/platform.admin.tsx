@@ -8,9 +8,12 @@ import {
   createTenant,
   getPlatformOverview,
   listTenantsAdmin,
+  listMarketingLeads,
+  activatePendingTenant,
   setTenantStatus,
   addPlatformAdmin,
   listPlatformAdmins,
+  type MarketingLeadRow,
 } from "@/lib/platform-admin.functions";
 import { Btn, Card, Field, Logo, Shell } from "@/components/oneshot/ui";
 import { EditTenantPanel } from "@/components/platform/EditTenantPanel";
@@ -32,6 +35,7 @@ type TenantRow = {
 };
 type AdminRow = { user_id: string; email: string; created_at: string };
 type Overview = { tenants: number; competitions: number; entries: number; members: number };
+type TenantStatusFilter = "all" | "pending" | "active" | "paused" | "archived";
 
 function PlatformAdmin() {
   const checkMe = useServerFn(amIPlatformAdmin);
@@ -42,11 +46,16 @@ function PlatformAdmin() {
   const statusFn = useServerFn(setTenantStatus);
   const addAdminFn = useServerFn(addPlatformAdmin);
   const listAdminsFn = useServerFn(listPlatformAdmins);
+  const leadsFn = useServerFn(listMarketingLeads);
+  const activatePendingFn = useServerFn(activatePendingTenant);
 
   const [email, setEmail] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "needs-claim" | "ready" | "forbidden">("loading");
   const [overview, setOverview] = useState<Overview | null>(null);
   const [tenants, setTenants] = useState<TenantRow[]>([]);
+  const [leads, setLeads] = useState<MarketingLeadRow[]>([]);
+  const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+  const [tenantFilter, setTenantFilter] = useState<TenantStatusFilter>("all");
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
@@ -58,14 +67,16 @@ function PlatformAdmin() {
   const [newAdminEmail, setNewAdminEmail] = useState("");
 
   async function refresh() {
-    const [ov, ts, ads] = await Promise.all([
+    const [ov, ts, ads, ls] = await Promise.all([
       overviewFn({ data: {} }),
       listFn({ data: {} }),
       listAdminsFn({ data: {} }),
+      leadsFn({ data: {} }),
     ]);
     setOverview(ov as Overview);
     setTenants(ts as TenantRow[]);
     setAdmins(ads as AdminRow[]);
+    setLeads(ls as MarketingLeadRow[]);
   }
 
   useEffect(() => {
@@ -144,6 +155,30 @@ function PlatformAdmin() {
     }
   }
 
+  async function handleActivatePending(tenantId: string) {
+    setErr(null);
+    try {
+      const result = (await activatePendingFn({ data: { tenantId } })) as {
+        linkedAuthUser: boolean;
+        contactEmail: string | null;
+      };
+      await refresh();
+      if (!result.linkedAuthUser && result.contactEmail) {
+        setErr(
+          `Tenant activated, but no Supabase account found for ${result.contactEmail}. Ask them to complete signup first.`,
+        );
+      }
+      setActivatingTenantId(tenantId);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Activation failed");
+    }
+  }
+
+  const filteredTenants =
+    tenantFilter === "all"
+      ? tenants
+      : tenants.filter((t) => t.status === tenantFilter);
+
   if (state === "loading") {
     return (
       <Shell>
@@ -181,7 +216,7 @@ function PlatformAdmin() {
             {email} is not a platform admin. Ask an existing platform admin to grant access.
           </p>
           {err && <p className="mt-2 text-sm text-destructive">{err}</p>}
-          <Link to="/_authenticated/dashboard" className="mt-4 inline-block text-sm underline">
+          <Link to="/dashboard" className="mt-4 inline-block text-sm underline">
             Back to dashboard
           </Link>
         </div>
@@ -194,7 +229,7 @@ function PlatformAdmin() {
       <Logo />
       <div className="mt-10 flex items-baseline justify-between">
         <h1 className="display text-3xl">Platform Admin</h1>
-        <Link to="/_authenticated/dashboard" className="text-xs underline">
+        <Link to="/dashboard" className="text-xs underline">
           Dashboard
         </Link>
       </div>
@@ -217,16 +252,96 @@ function PlatformAdmin() {
         </Card>
       )}
 
-      <h2 className="mt-8 display text-xl">Tenants</h2>
+      <h2 className="mt-8 display text-xl">Recent signups &amp; leads</h2>
       <Card className="mt-3 space-y-2">
-        {tenants.length === 0 && <p className="text-sm text-muted-foreground">No tenants yet.</p>}
-        {tenants.map((t) => (
+        {leads.length === 0 && (
+          <p className="text-sm text-muted-foreground">No signup or waitlist leads yet.</p>
+        )}
+        {leads.map((lead) => (
+          <div key={lead.id} className="rounded-md border border-border p-3">
+            <button
+              type="button"
+              className="w-full text-left"
+              onClick={() =>
+                setExpandedLeadId((id) => (id === lead.id ? null : lead.id))
+              }
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-medium text-sm">{lead.summary}</div>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                    lead.kind === "lms_waitlist"
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-emerald-100 text-emerald-800"
+                  }`}
+                >
+                  {lead.kind === "lms_waitlist" ? "LMS waitlist" : "Club signup"}
+                </span>
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {new Date(lead.created_at).toLocaleString("en-IE")}
+                {lead.detail.signupPath
+                  ? ` · via ${String(lead.detail.signupPath)}`
+                  : ""}
+              </div>
+            </button>
+            {expandedLeadId === lead.id && (
+              <div className="mt-3 space-y-2 border-t border-border pt-3 text-xs">
+                {Object.entries(lead.detail).map(([key, value]) => (
+                  <div key={key} className="grid grid-cols-[8rem_1fr] gap-2">
+                    <span className="font-medium capitalize text-muted-foreground">
+                      {key.replace(/([A-Z])/g, " $1")}
+                    </span>
+                    <span className="break-words">{String(value ?? "—")}</span>
+                  </div>
+                ))}
+                {lead.kind === "signup" && lead.tenant_id && (
+                  <Btn
+                    className="mt-2"
+                    onClick={() => handleActivatePending(lead.tenant_id!)}
+                  >
+                    Activate signup →
+                  </Btn>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </Card>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="display text-xl">Tenants</h2>
+        <div className="flex flex-wrap gap-2">
+          {(["all", "pending", "active", "paused", "archived"] as const).map(
+            (f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setTenantFilter(f)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
+                  tenantFilter === f
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-muted-foreground"
+                }`}
+              >
+                {f}
+              </button>
+            ),
+          )}
+        </div>
+      </div>
+      <Card className="mt-3 space-y-2">
+        {filteredTenants.length === 0 && (
+          <p className="text-sm text-muted-foreground">No tenants in this filter.</p>
+        )}
+        {filteredTenants.map((t) => (
           <TenantCard
             key={t.id}
             tenant={t}
             onStatus={(s) => handleStatus(t.id, s)}
             onEdit={() => setEditingTenantId(t.id)}
             onActivate={() => setActivatingTenantId(t.id)}
+            onActivatePending={() => handleActivatePending(t.id)}
           />
         ))}
       </Card>
@@ -307,11 +422,13 @@ function TenantCard({
   onStatus,
   onEdit,
   onActivate,
+  onActivatePending,
 }: {
   tenant: TenantRow;
   onStatus: (s: "active" | "paused" | "archived") => void;
   onEdit: () => void;
   onActivate: () => void;
+  onActivatePending: () => void;
 }) {
   return (
     <div className="rounded-md border border-border p-3">
@@ -320,12 +437,25 @@ function TenantCard({
           <div className="font-medium">
             {tenant.name}{" "}
             <span className="text-xs text-muted-foreground">/{tenant.slug}</span>
+            {tenant.status === "pending" && (
+              <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
+                Pending signup
+              </span>
+            )}
           </div>
           <div className="text-xs text-muted-foreground">
             {tenant.competitions} comps · {tenant.entries} entries · {tenant.status}
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          {tenant.status === "pending" && (
+            <button
+              className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground"
+              onClick={onActivatePending}
+            >
+              Activate signup
+            </button>
+          )}
           <button
             className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground"
             onClick={onActivate}

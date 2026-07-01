@@ -223,6 +223,7 @@ export type Database = {
           refund_policy_default: string
           revolut_enabled: boolean
           revolut_link: string | null
+          slug: string
           stripe_enabled: boolean
           stripe_link: string | null
           tenant_id: string
@@ -246,6 +247,7 @@ export type Database = {
           refund_policy_default?: string
           revolut_enabled?: boolean
           revolut_link?: string | null
+          slug: string
           stripe_enabled?: boolean
           stripe_link?: string | null
           tenant_id: string
@@ -269,6 +271,7 @@ export type Database = {
           refund_policy_default?: string
           revolut_enabled?: boolean
           revolut_link?: string | null
+          slug?: string
           stripe_enabled?: boolean
           stripe_link?: string | null
           tenant_id?: string

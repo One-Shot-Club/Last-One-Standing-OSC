@@ -16,16 +16,18 @@ function ConnectReturn() {
       <Card className="mt-12 space-y-4 text-center">
         <h1 className="display text-2xl text-primary">Stripe onboarding complete</h1>
         <p className="text-sm text-muted-foreground">
-          Your club's payout details have been submitted to Stripe. Verification
-          usually completes in a few minutes — once approved, the "Pay with card"
-          option will appear on your club's pay screen.
+          Your club&apos;s payout details have been submitted to Stripe. Verification
+          usually completes in a few minutes — once approved, members can pay by card
+          on your competition pages.
         </p>
-        <p className="text-xs text-muted-foreground">
-          You can close this tab now.
-        </p>
-        <Link to="/" className="inline-block">
-          <Btn variant="ghost">Back to home</Btn>
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link to="/onboarding" search={{ complete: "1" }}>
+            <Btn>Continue setup →</Btn>
+          </Link>
+          <Link to="/dashboard">
+            <Btn variant="ghost">Go to dashboard</Btn>
+          </Link>
+        </div>
       </Card>
     </Shell>
   );

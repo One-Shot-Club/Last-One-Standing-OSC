@@ -11,24 +11,34 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PickRouteImport } from './routes/pick'
 import { Route as PayRouteImport } from './routes/pay'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as LastManStandingRouteImport } from './routes/last-man-standing'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as DetailsAddRouteImport } from './routes/details-add'
 import { Route as DetailsRouteImport } from './routes/details'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CaseStudiesIndexRouteImport } from './routes/case-studies.index'
 import { Route as TenantSlugIndexRouteImport } from './routes/$tenantSlug.index'
 import { Route as StripeReturnRouteImport } from './routes/stripe.return'
 import { Route as OneshotclubMasterRouteImport } from './routes/oneshotclub.Master'
+import { Route as LastManStandingThanksRouteImport } from './routes/last-man-standing.thanks'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as DevLoginRouteImport } from './routes/dev.login'
+import { Route as CaseStudiesSlugRouteImport } from './routes/case-studies.$slug'
 import { Route as AdminPanelRouteImport } from './routes/admin.panel'
 import { Route as AdminNextGameweekPreviewRouteImport } from './routes/admin.next-gameweek-preview'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as TenantSlugSelectionsTrackerRouteImport } from './routes/$tenantSlug.selections-tracker'
 import { Route as TenantSlugAdminRouteImport } from './routes/$tenantSlug.admin'
 import { Route as OneshotclubMasterIndexRouteImport } from './routes/oneshotclub.Master.index'
+import { Route as TenantSlugCompSlugIndexRouteImport } from './routes/$tenantSlug.$compSlug.index'
 import { Route as StripeConnectReturnRouteImport } from './routes/stripe.connect.return'
 import { Route as StripeConnectRefreshRouteImport } from './routes/stripe.connect.refresh'
 import { Route as OneshotclubMasterAdminRouteImport } from './routes/oneshotclub.Master.admin'
@@ -43,6 +53,7 @@ import { Route as ApiPublicTenantAssetsSplatRouteImport } from './routes/api/pub
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicCronSyncFplResultsRouteImport } from './routes/api/public/cron/sync-fpl-results'
 import { Route as ApiPublicCronCheckRemindersRouteImport } from './routes/api/public/cron/check-reminders'
+import { Route as AuthenticatedDashboardCompetitionsNewRouteImport } from './routes/_authenticated/dashboard.competitions.new'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -54,6 +65,16 @@ const UnsubscribeRoute = UnsubscribeRouteImport.update({
   path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PickRoute = PickRouteImport.update({
   id: '/pick',
   path: '/pick',
@@ -62,6 +83,16 @@ const PickRoute = PickRouteImport.update({
 const PayRoute = PayRouteImport.update({
   id: '/pay',
   path: '/pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LastManStandingRoute = LastManStandingRouteImport.update({
+  id: '/last-man-standing',
+  path: '/last-man-standing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HowItWorksRoute = HowItWorksRouteImport.update({
@@ -93,6 +124,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaseStudiesIndexRoute = CaseStudiesIndexRouteImport.update({
+  id: '/case-studies/',
+  path: '/case-studies/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TenantSlugIndexRoute = TenantSlugIndexRouteImport.update({
   id: '/$tenantSlug/',
   path: '/$tenantSlug/',
@@ -108,9 +144,24 @@ const OneshotclubMasterRoute = OneshotclubMasterRouteImport.update({
   path: '/oneshotclub/Master',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LastManStandingThanksRoute = LastManStandingThanksRouteImport.update({
+  id: '/thanks',
+  path: '/thanks',
+  getParentRoute: () => LastManStandingRoute,
+} as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevLoginRoute = DevLoginRouteImport.update({
+  id: '/dev/login',
+  path: '/dev/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaseStudiesSlugRoute = CaseStudiesSlugRouteImport.update({
+  id: '/case-studies/$slug',
+  path: '/case-studies/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPanelRoute = AdminPanelRouteImport.update({
@@ -124,6 +175,11 @@ const AdminNextGameweekPreviewRoute =
     path: '/admin/next-gameweek-preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -144,6 +200,11 @@ const OneshotclubMasterIndexRoute = OneshotclubMasterIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => OneshotclubMasterRoute,
+} as any)
+const TenantSlugCompSlugIndexRoute = TenantSlugCompSlugIndexRouteImport.update({
+  id: '/$tenantSlug/$compSlug/',
+  path: '/$tenantSlug/$compSlug/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StripeConnectReturnRoute = StripeConnectReturnRouteImport.update({
   id: '/stripe/connect/return',
@@ -223,6 +284,12 @@ const ApiPublicCronCheckRemindersRoute =
     path: '/api/public/cron/check-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedDashboardCompetitionsNewRoute =
+  AuthenticatedDashboardCompetitionsNewRouteImport.update({
+    id: '/competitions/new',
+    path: '/competitions/new',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -230,25 +297,36 @@ export interface FileRoutesByFullPath {
   '/details': typeof DetailsRoute
   '/details-add': typeof DetailsAddRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/last-man-standing': typeof LastManStandingRouteWithChildren
+  '/login': typeof LoginRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
+  '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/$tenantSlug/selections-tracker': typeof TenantSlugSelectionsTrackerRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
+  '/case-studies/$slug': typeof CaseStudiesSlugRoute
+  '/dev/login': typeof DevLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/last-man-standing/thanks': typeof LastManStandingThanksRoute
   '/oneshotclub/Master': typeof OneshotclubMasterRouteWithChildren
   '/stripe/return': typeof StripeReturnRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
+  '/case-studies/': typeof CaseStudiesIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
   '/stripe/connect/refresh': typeof StripeConnectRefreshRoute
   '/stripe/connect/return': typeof StripeConnectReturnRoute
+  '/$tenantSlug/$compSlug/': typeof TenantSlugCompSlugIndexRoute
   '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
+  '/dashboard/competitions/new': typeof AuthenticatedDashboardCompetitionsNewRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -265,24 +343,35 @@ export interface FileRoutesByTo {
   '/details': typeof DetailsRoute
   '/details-add': typeof DetailsAddRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/last-man-standing': typeof LastManStandingRouteWithChildren
+  '/login': typeof LoginRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
+  '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/$tenantSlug/selections-tracker': typeof TenantSlugSelectionsTrackerRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
+  '/case-studies/$slug': typeof CaseStudiesSlugRoute
+  '/dev/login': typeof DevLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/last-man-standing/thanks': typeof LastManStandingThanksRoute
   '/stripe/return': typeof StripeReturnRoute
   '/$tenantSlug': typeof TenantSlugIndexRoute
+  '/case-studies': typeof CaseStudiesIndexRoute
   '/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
   '/stripe/connect/refresh': typeof StripeConnectRefreshRoute
   '/stripe/connect/return': typeof StripeConnectReturnRoute
+  '/$tenantSlug/$compSlug': typeof TenantSlugCompSlugIndexRoute
   '/oneshotclub/Master': typeof OneshotclubMasterIndexRoute
+  '/dashboard/competitions/new': typeof AuthenticatedDashboardCompetitionsNewRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -301,25 +390,36 @@ export interface FileRoutesById {
   '/details': typeof DetailsRoute
   '/details-add': typeof DetailsAddRoute
   '/how-it-works': typeof HowItWorksRoute
+  '/last-man-standing': typeof LastManStandingRouteWithChildren
+  '/login': typeof LoginRoute
   '/pay': typeof PayRoute
   '/pick': typeof PickRoute
+  '/pricing': typeof PricingRoute
+  '/signup': typeof SignupRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/$tenantSlug/admin': typeof TenantSlugAdminRoute
   '/$tenantSlug/selections-tracker': typeof TenantSlugSelectionsTrackerRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/admin/next-gameweek-preview': typeof AdminNextGameweekPreviewRoute
   '/admin/panel': typeof AdminPanelRoute
+  '/case-studies/$slug': typeof CaseStudiesSlugRoute
+  '/dev/login': typeof DevLoginRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/last-man-standing/thanks': typeof LastManStandingThanksRoute
   '/oneshotclub/Master': typeof OneshotclubMasterRouteWithChildren
   '/stripe/return': typeof StripeReturnRoute
   '/$tenantSlug/': typeof TenantSlugIndexRoute
+  '/case-studies/': typeof CaseStudiesIndexRoute
   '/_authenticated/platform/admin': typeof AuthenticatedPlatformAdminRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oneshotclub/Master/admin': typeof OneshotclubMasterAdminRoute
   '/stripe/connect/refresh': typeof StripeConnectRefreshRoute
   '/stripe/connect/return': typeof StripeConnectReturnRoute
+  '/$tenantSlug/$compSlug/': typeof TenantSlugCompSlugIndexRoute
   '/oneshotclub/Master/': typeof OneshotclubMasterIndexRoute
+  '/_authenticated/dashboard/competitions/new': typeof AuthenticatedDashboardCompetitionsNewRoute
   '/api/public/cron/check-reminders': typeof ApiPublicCronCheckRemindersRoute
   '/api/public/cron/sync-fpl-results': typeof ApiPublicCronSyncFplResultsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -338,25 +438,36 @@ export interface FileRouteTypes {
     | '/details'
     | '/details-add'
     | '/how-it-works'
+    | '/last-man-standing'
+    | '/login'
     | '/pay'
     | '/pick'
+    | '/pricing'
+    | '/signup'
     | '/unsubscribe'
     | '/welcome'
     | '/$tenantSlug/admin'
     | '/$tenantSlug/selections-tracker'
     | '/dashboard'
+    | '/onboarding'
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
+    | '/case-studies/$slug'
+    | '/dev/login'
     | '/email/unsubscribe'
+    | '/last-man-standing/thanks'
     | '/oneshotclub/Master'
     | '/stripe/return'
     | '/$tenantSlug/'
+    | '/case-studies/'
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
     | '/stripe/connect/refresh'
     | '/stripe/connect/return'
+    | '/$tenantSlug/$compSlug/'
     | '/oneshotclub/Master/'
+    | '/dashboard/competitions/new'
     | '/api/public/cron/check-reminders'
     | '/api/public/cron/sync-fpl-results'
     | '/api/public/payments/webhook'
@@ -373,24 +484,35 @@ export interface FileRouteTypes {
     | '/details'
     | '/details-add'
     | '/how-it-works'
+    | '/last-man-standing'
+    | '/login'
     | '/pay'
     | '/pick'
+    | '/pricing'
+    | '/signup'
     | '/unsubscribe'
     | '/welcome'
     | '/$tenantSlug/admin'
     | '/$tenantSlug/selections-tracker'
     | '/dashboard'
+    | '/onboarding'
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
+    | '/case-studies/$slug'
+    | '/dev/login'
     | '/email/unsubscribe'
+    | '/last-man-standing/thanks'
     | '/stripe/return'
     | '/$tenantSlug'
+    | '/case-studies'
     | '/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
     | '/stripe/connect/refresh'
     | '/stripe/connect/return'
+    | '/$tenantSlug/$compSlug'
     | '/oneshotclub/Master'
+    | '/dashboard/competitions/new'
     | '/api/public/cron/check-reminders'
     | '/api/public/cron/sync-fpl-results'
     | '/api/public/payments/webhook'
@@ -408,25 +530,36 @@ export interface FileRouteTypes {
     | '/details'
     | '/details-add'
     | '/how-it-works'
+    | '/last-man-standing'
+    | '/login'
     | '/pay'
     | '/pick'
+    | '/pricing'
+    | '/signup'
     | '/unsubscribe'
     | '/welcome'
     | '/$tenantSlug/admin'
     | '/$tenantSlug/selections-tracker'
     | '/_authenticated/dashboard'
+    | '/_authenticated/onboarding'
     | '/admin/next-gameweek-preview'
     | '/admin/panel'
+    | '/case-studies/$slug'
+    | '/dev/login'
     | '/email/unsubscribe'
+    | '/last-man-standing/thanks'
     | '/oneshotclub/Master'
     | '/stripe/return'
     | '/$tenantSlug/'
+    | '/case-studies/'
     | '/_authenticated/platform/admin'
     | '/lovable/email/suppression'
     | '/oneshotclub/Master/admin'
     | '/stripe/connect/refresh'
     | '/stripe/connect/return'
+    | '/$tenantSlug/$compSlug/'
     | '/oneshotclub/Master/'
+    | '/_authenticated/dashboard/competitions/new'
     | '/api/public/cron/check-reminders'
     | '/api/public/cron/sync-fpl-results'
     | '/api/public/payments/webhook'
@@ -445,21 +578,29 @@ export interface RootRouteChildren {
   DetailsRoute: typeof DetailsRoute
   DetailsAddRoute: typeof DetailsAddRoute
   HowItWorksRoute: typeof HowItWorksRoute
+  LastManStandingRoute: typeof LastManStandingRouteWithChildren
+  LoginRoute: typeof LoginRoute
   PayRoute: typeof PayRoute
   PickRoute: typeof PickRoute
+  PricingRoute: typeof PricingRoute
+  SignupRoute: typeof SignupRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
   TenantSlugAdminRoute: typeof TenantSlugAdminRoute
   TenantSlugSelectionsTrackerRoute: typeof TenantSlugSelectionsTrackerRoute
   AdminNextGameweekPreviewRoute: typeof AdminNextGameweekPreviewRoute
   AdminPanelRoute: typeof AdminPanelRoute
+  CaseStudiesSlugRoute: typeof CaseStudiesSlugRoute
+  DevLoginRoute: typeof DevLoginRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   OneshotclubMasterRoute: typeof OneshotclubMasterRouteWithChildren
   StripeReturnRoute: typeof StripeReturnRoute
   TenantSlugIndexRoute: typeof TenantSlugIndexRoute
+  CaseStudiesIndexRoute: typeof CaseStudiesIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   StripeConnectRefreshRoute: typeof StripeConnectRefreshRoute
   StripeConnectReturnRoute: typeof StripeConnectReturnRoute
+  TenantSlugCompSlugIndexRoute: typeof TenantSlugCompSlugIndexRoute
   ApiPublicCronCheckRemindersRoute: typeof ApiPublicCronCheckRemindersRoute
   ApiPublicCronSyncFplResultsRoute: typeof ApiPublicCronSyncFplResultsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -487,6 +628,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pick': {
       id: '/pick'
       path: '/pick'
@@ -499,6 +654,20 @@ declare module '@tanstack/react-router' {
       path: '/pay'
       fullPath: '/pay'
       preLoaderRoute: typeof PayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/last-man-standing': {
+      id: '/last-man-standing'
+      path: '/last-man-standing'
+      fullPath: '/last-man-standing'
+      preLoaderRoute: typeof LastManStandingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/how-it-works': {
@@ -543,6 +712,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/case-studies/': {
+      id: '/case-studies/'
+      path: '/case-studies'
+      fullPath: '/case-studies/'
+      preLoaderRoute: typeof CaseStudiesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$tenantSlug/': {
       id: '/$tenantSlug/'
       path: '/$tenantSlug'
@@ -564,11 +740,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OneshotclubMasterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/last-man-standing/thanks': {
+      id: '/last-man-standing/thanks'
+      path: '/thanks'
+      fullPath: '/last-man-standing/thanks'
+      preLoaderRoute: typeof LastManStandingThanksRouteImport
+      parentRoute: typeof LastManStandingRoute
+    }
     '/email/unsubscribe': {
       id: '/email/unsubscribe'
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/login': {
+      id: '/dev/login'
+      path: '/dev/login'
+      fullPath: '/dev/login'
+      preLoaderRoute: typeof DevLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/case-studies/$slug': {
+      id: '/case-studies/$slug'
+      path: '/case-studies/$slug'
+      fullPath: '/case-studies/$slug'
+      preLoaderRoute: typeof CaseStudiesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/panel': {
@@ -584,6 +781,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/next-gameweek-preview'
       preLoaderRoute: typeof AdminNextGameweekPreviewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -612,6 +816,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/oneshotclub/Master/'
       preLoaderRoute: typeof OneshotclubMasterIndexRouteImport
       parentRoute: typeof OneshotclubMasterRoute
+    }
+    '/$tenantSlug/$compSlug/': {
+      id: '/$tenantSlug/$compSlug/'
+      path: '/$tenantSlug/$compSlug'
+      fullPath: '/$tenantSlug/$compSlug/'
+      preLoaderRoute: typeof TenantSlugCompSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/stripe/connect/return': {
       id: '/stripe/connect/return'
@@ -711,21 +922,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronCheckRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/dashboard/competitions/new': {
+      id: '/_authenticated/dashboard/competitions/new'
+      path: '/competitions/new'
+      fullPath: '/dashboard/competitions/new'
+      preLoaderRoute: typeof AuthenticatedDashboardCompetitionsNewRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
+interface AuthenticatedDashboardRouteChildren {
+  AuthenticatedDashboardCompetitionsNewRoute: typeof AuthenticatedDashboardCompetitionsNewRoute
+}
+
+const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
+  {
+    AuthenticatedDashboardCompetitionsNewRoute:
+      AuthenticatedDashboardCompetitionsNewRoute,
+  }
+
+const AuthenticatedDashboardRouteWithChildren =
+  AuthenticatedDashboardRoute._addFileChildren(
+    AuthenticatedDashboardRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlatformAdminRoute: typeof AuthenticatedPlatformAdminRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlatformAdminRoute: AuthenticatedPlatformAdminRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface LastManStandingRouteChildren {
+  LastManStandingThanksRoute: typeof LastManStandingThanksRoute
+}
+
+const LastManStandingRouteChildren: LastManStandingRouteChildren = {
+  LastManStandingThanksRoute: LastManStandingThanksRoute,
+}
+
+const LastManStandingRouteWithChildren = LastManStandingRoute._addFileChildren(
+  LastManStandingRouteChildren,
+)
 
 interface OneshotclubMasterRouteChildren {
   OneshotclubMasterAdminRoute: typeof OneshotclubMasterAdminRoute
@@ -747,21 +994,29 @@ const rootRouteChildren: RootRouteChildren = {
   DetailsRoute: DetailsRoute,
   DetailsAddRoute: DetailsAddRoute,
   HowItWorksRoute: HowItWorksRoute,
+  LastManStandingRoute: LastManStandingRouteWithChildren,
+  LoginRoute: LoginRoute,
   PayRoute: PayRoute,
   PickRoute: PickRoute,
+  PricingRoute: PricingRoute,
+  SignupRoute: SignupRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
   TenantSlugAdminRoute: TenantSlugAdminRoute,
   TenantSlugSelectionsTrackerRoute: TenantSlugSelectionsTrackerRoute,
   AdminNextGameweekPreviewRoute: AdminNextGameweekPreviewRoute,
   AdminPanelRoute: AdminPanelRoute,
+  CaseStudiesSlugRoute: CaseStudiesSlugRoute,
+  DevLoginRoute: DevLoginRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   OneshotclubMasterRoute: OneshotclubMasterRouteWithChildren,
   StripeReturnRoute: StripeReturnRoute,
   TenantSlugIndexRoute: TenantSlugIndexRoute,
+  CaseStudiesIndexRoute: CaseStudiesIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   StripeConnectRefreshRoute: StripeConnectRefreshRoute,
   StripeConnectReturnRoute: StripeConnectReturnRoute,
+  TenantSlugCompSlugIndexRoute: TenantSlugCompSlugIndexRoute,
   ApiPublicCronCheckRemindersRoute: ApiPublicCronCheckRemindersRoute,
   ApiPublicCronSyncFplResultsRoute: ApiPublicCronSyncFplResultsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,

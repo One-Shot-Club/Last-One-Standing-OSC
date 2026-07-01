@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isDevPreviewMode } from "@/lib/dev-auth.server";
+import { linkAuthUserToTenant } from "@/lib/admin-ops.server";
 
 async function assertPlatformAdmin(userId: string) {
   const { data } = await supabaseAdmin
@@ -40,6 +42,9 @@ export const amIPlatformAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: Record<string, never>) => d)
   .handler(async ({ context }) => {
+    if (isDevPreviewMode()) {
+      return { isPlatformAdmin: false, totalAdmins: 0 };
+    }
     const { userId } = context as { userId: string };
     const { data } = await supabaseAdmin
       .from("platform_admins")
@@ -528,4 +533,110 @@ export const launchTenant = createServerFn({ method: "POST" })
     });
 
     return { ok: true };
+  });
+
+export type MarketingLeadRow = {
+  id: string;
+  kind: "signup" | "lms_waitlist";
+  created_at: string;
+  tenant_id: string | null;
+  summary: string;
+  detail: Record<string, unknown>;
+};
+
+export const listMarketingLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: Record<string, never>) => d)
+  .handler(async ({ context }) => {
+    const { userId } = context as { userId: string };
+    await assertPlatformAdmin(userId);
+
+    const { data, error } = await supabaseAdmin
+      .from("audit_logs")
+      .select("id, op, created_at, tenant_id, diff")
+      .in("op", ["club_signup_lead", "lms_waitlist"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw error;
+
+    return (data ?? []).map((row) => {
+      const diff = (row.diff ?? {}) as Record<string, unknown>;
+      const clubName = String(diff.clubName ?? "Unknown club");
+      const contact = String(diff.adminName ?? diff.contactName ?? "");
+      const email = String(diff.email ?? "");
+      const path = String(diff.signupPath ?? "");
+      return {
+        id: row.id as string,
+        kind: row.op === "lms_waitlist" ? ("lms_waitlist" as const) : ("signup" as const),
+        created_at: row.created_at as string,
+        tenant_id: row.tenant_id as string | null,
+        summary: `${clubName}${contact ? ` · ${contact}` : ""}${email ? ` · ${email}` : ""}`,
+        detail: {
+          ...diff,
+          signupPath: path || undefined,
+        },
+      };
+    });
+  });
+
+export const activatePendingTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { tenantId: string }) => {
+    if (!d.tenantId) throw new Error("tenantId required");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    await assertPlatformAdmin(userId);
+
+    const { data: tenant, error: tErr } = await supabaseAdmin
+      .from("tenants")
+      .select("id, slug, name, status")
+      .eq("id", data.tenantId)
+      .maybeSingle();
+    if (tErr || !tenant) throw new Error("Tenant not found");
+
+    const { data: settings } = await supabaseAdmin
+      .from("tenant_settings")
+      .select("contact_email")
+      .eq("tenant_id", data.tenantId)
+      .maybeSingle();
+
+    let linked = false;
+    let linkedEmail: string | null = null;
+    if (settings?.contact_email) {
+      const result = await linkAuthUserToTenant(
+        data.tenantId,
+        settings.contact_email as string,
+        "tenant_owner",
+      );
+      linked = result.linked;
+      linkedEmail = settings.contact_email as string;
+    }
+
+    const { error } = await supabaseAdmin
+      .from("tenants")
+      .update({ status: "active" })
+      .eq("id", data.tenantId);
+    if (error) throw error;
+
+    await supabaseAdmin.from("audit_logs").insert({
+      tenant_id: data.tenantId,
+      actor_id: userId,
+      op: "activate_pending_signup",
+      table_name: "tenants",
+      row_id: data.tenantId,
+      diff: {
+        previousStatus: tenant.status,
+        linkedAuthUser: linked,
+        contactEmail: linkedEmail,
+      },
+    });
+
+    return {
+      ok: true as const,
+      tenantSlug: tenant.slug as string,
+      linkedAuthUser: linked,
+      contactEmail: linkedEmail,
+    };
   });

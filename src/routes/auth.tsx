@@ -25,7 +25,7 @@ function AuthPage() {
   // If already signed in, bounce out.
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) nav({ to: redirect || "/admin/panel" });
+      if (data.user) nav({ to: redirect || "/dashboard" });
     });
   }, [nav, redirect]);
 
@@ -44,7 +44,7 @@ function AuthPage() {
         });
         if (error) throw error;
       }
-      nav({ to: redirect || "/admin/panel" });
+      nav({ to: redirect || "/dashboard" });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Auth failed");
     } finally {
@@ -55,14 +55,14 @@ function AuthPage() {
   async function googleSignIn() {
     setErr(null);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + (redirect || "/admin/panel"),
+      redirect_uri: window.location.origin + (redirect || "/dashboard"),
     });
     if (result.error) {
       setErr("Google sign-in failed");
       return;
     }
     if (result.redirected) return;
-    nav({ to: redirect || "/admin/panel" });
+    nav({ to: redirect || "/dashboard" });
   }
 
   return (

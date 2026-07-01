@@ -3,12 +3,22 @@ import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
+import { devPreviewUserId, isDevPreviewMode } from '@/lib/dev-auth.server'
 
 
 
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
-    
+    if (isDevPreviewMode()) {
+      return next({
+        context: {
+          supabase: null as unknown as ReturnType<typeof createClient<Database>>,
+          userId: devPreviewUserId(),
+          claims: { sub: devPreviewUserId() },
+        },
+      });
+    }
+
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 

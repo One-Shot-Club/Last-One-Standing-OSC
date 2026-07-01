@@ -25,6 +25,8 @@ export type TenantBranding = {
 export type TenantCompetition = {
   id: string;
   name: string;
+  slug: string;
+  entry_fee: number;
 };
 
 export type TenantPublicData = {
@@ -53,7 +55,7 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
 
     const { data: comps } = await supabaseAdmin
       .from("competitions")
-      .select("id, name")
+      .select("id, name, slug, entry_fee")
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false });
 
@@ -78,6 +80,8 @@ export const resolveTenantBySlug = createServerFn({ method: "GET" })
       competitions: (comps ?? []).map((c) => ({
         id: c.id as string,
         name: c.name as string,
+        slug: c.slug as string,
+        entry_fee: Number(c.entry_fee ?? 0),
       })),
     };
   });
@@ -95,6 +99,7 @@ export type TenantEntryContext = {
   competition: {
     id: string;
     name: string;
+    slug: string;
     entry_fee: number | string | null;
     prize_pool: number | string | null;
     club_name: string | null;
@@ -105,7 +110,7 @@ export type TenantEntryContext = {
 };
 
 export const getTenantEntryContext = createServerFn({ method: "GET" })
-  .inputValidator((d: { slug: string }) => d)
+  .inputValidator((d: { slug: string; competitionSlug?: string }) => d)
   .handler(async ({ data }): Promise<TenantEntryContext> => {
     const { data: tenant, error } = await supabaseAdmin
       .from("tenants")
@@ -123,13 +128,20 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
       .eq("tenant_id", tenant.id)
       .maybeSingle();
 
-    const { data: comp } = await supabaseAdmin
+    let compQuery = supabaseAdmin
       .from("competitions")
-      .select("id, name, entry_fee, prize_pool, club_name, club_logo_url")
-      .eq("tenant_id", tenant.id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .select("id, name, slug, entry_fee, prize_pool, club_name, club_logo_url")
+      .eq("tenant_id", tenant.id);
+
+    if (data.competitionSlug) {
+      compQuery = compQuery.eq("slug", data.competitionSlug);
+    } else {
+      compQuery = compQuery.order("created_at", { ascending: true }).limit(1);
+    }
+
+    const { data: comp, error: compErr } = await compQuery.maybeSingle();
+    if (compErr) throw compErr;
+    if (data.competitionSlug && !comp) throw new Error("Competition not found");
 
     // Pick the gameweek to display fixtures for: prefer the next gameweek with
     // a future deadline; otherwise fall back to the earliest gameweek.
@@ -205,6 +217,7 @@ export const getTenantEntryContext = createServerFn({ method: "GET" })
         ? {
             id: comp.id as string,
             name: comp.name as string,
+            slug: comp.slug as string,
             entry_fee: (comp.entry_fee as number | string | null) ?? null,
             prize_pool: (comp.prize_pool as number | string | null) ?? null,
             club_name: (comp.club_name as string | null) ?? null,
