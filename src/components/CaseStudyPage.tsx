@@ -114,8 +114,8 @@ export function CaseStudyPage({
           {study.ctaHeadline}
         </h3>
         <p className="mt-3 max-w-2xl text-primary-foreground/85">
-          Free to start — 5% on your first 100 entries, 3% after. We'll have
-          your fundraiser live in 72 hours.
+          Free to start — we only make money when you do. We'll have your
+          fundraiser live in 72 hours.
         </p>
         <div className="mt-6">
           <CtaPair variant="onDark" />

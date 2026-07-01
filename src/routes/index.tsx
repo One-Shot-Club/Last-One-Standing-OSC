@@ -163,16 +163,18 @@ function HomePage() {
     <>
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="relative isolate overflow-hidden bg-primary">
-        <img
-          src="/hero-pitch.jpg"
-          alt="Packed stands at an Irish stadium on match day"
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
-          width={1920}
-          height={1080}
-          fetchPriority="high"
-          decoding="async"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/85 to-primary/30" />
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src="/hero-stadium.jpg"
+            alt="Packed stands at an Irish stadium on match day"
+            className="absolute inset-0 h-full w-full scale-105 object-cover opacity-50 blur-[2.5px]"
+            width={1920}
+            height={1080}
+            fetchPriority="high"
+            decoding="async"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/40" />
         <div className="container-prose relative grid min-h-[64vh] items-center py-16 md:py-20">
           <div className="max-w-3xl text-primary-foreground">
             <h1 className="text-balance font-display text-6xl uppercase leading-[0.95] tracking-wide md:text-8xl">
@@ -207,7 +209,7 @@ function HomePage() {
               {[
                 ["Free to start", "No setup fee"],
                 ["72hrs", "From sign-up to live"],
-                ["5% then 3%", "Platform fee, nothing else"],
+                ["Aligned", "We only make money when you do"],
               ].map(([k, v]) => (
                 <div key={v}>
                   <dt className="font-display text-3xl text-accent md:text-4xl">
@@ -453,39 +455,38 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ── PRICING ──────────────────────────────────────────────────── */}
+      {/* ── FREE TO START ────────────────────────────────────────────── */}
       <section className="container-prose py-16 md:py-20">
         <div className="grid items-center gap-10 md:grid-cols-[1.2fr_1fr]">
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-accent">
-              Pricing
+              Free to start
             </p>
             <h2 className="font-display text-4xl uppercase tracking-wide text-accent md:text-5xl">
-              Free to start.{" "}
-              <span className="text-foreground">We make money when you make money.</span>
+              We only make money{" "}
+              <span className="text-foreground">when you do.</span>
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
-              No setup fee. No subscription. We take a small percentage of what
-              your competition raises — so we're only ever incentivised to help
-              you raise as much as possible.
+              No setup fee. No subscription. No card required to sign up. We take
+              a small share of each entry only when your competition is raising
+              money — so we're always on your side.
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              5% on your first 100 entries, then 3% after that. Stripe's own
-              payment processing fee is separate — we'll walk you through the
-              exact numbers before anything goes live.
+              We'll walk you through the exact numbers before anything goes live.
+              Stripe's payment processing fee is separate and transparent.
             </p>
             <Link
-              to="/pricing"
+              to="/signup"
               className="mt-6 inline-flex text-sm font-semibold uppercase tracking-wider text-accent hover:brightness-90"
             >
-              See full pricing →
+              Sign up your club — it's free →
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {[
               { val: "€0", lbl: "To get started" },
-              { val: "5%", lbl: "Entries 1–100" },
-              { val: "3%", lbl: "Entries 101+" },
+              { val: "Aligned", lbl: "We win when you win" },
+              { val: "Simple", lbl: "Fee per entry only" },
               { val: "72hrs", lbl: "From go-ahead to live" },
             ].map(({ val, lbl }) => (
               <div
@@ -564,7 +565,7 @@ function HomePage() {
                 WhatsApp us first
               </a>
               <p className="text-xs text-primary-foreground/40">
-                Free to start · 5% on first 100 entries · 3% after
+                Free to start · No setup fee · We only make money when you do
               </p>
             </div>
           </div>

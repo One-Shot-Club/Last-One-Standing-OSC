@@ -558,8 +558,8 @@ function SignupPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          No card required · 5% on first 100 entries · 3% after · Money goes
-          directly to your club
+          No card required · Free to start · We only make money when you do ·
+          Money goes directly to your club
         </p>
       </div>
     </MarketingLayout>

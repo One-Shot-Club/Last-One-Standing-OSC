@@ -7,8 +7,8 @@ const CANONICAL = "https://www.oneshotclub.ie/pricing";
 
 const tiers = [
   { val: "€0", lbl: "To get started" },
-  { val: "5%", lbl: "Entries 1–100" },
-  { val: "3%", lbl: "Entries 101+" },
+  { val: "Aligned", lbl: "We win when you win" },
+  { val: "Simple", lbl: "Fee per entry only" },
   { val: "72hrs", lbl: "From go-ahead to live" },
 ];
 
@@ -46,13 +46,13 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Free to start. OneShotClub takes a small percentage of what your competition raises — 5% on your first 100 entries, then 3%. No setup fee, no subscription.",
+          "Free to start. No setup fee, no subscription. We only make money when your club raises money.",
       },
       { property: "og:title", content: "Pricing — OneShotClub" },
       {
         property: "og:description",
         content:
-          "Free to start. We make money when you make money — 5% on entries 1–100, 3% after that.",
+          "Free to start. We only make money when you do — a small fee per entry, nothing upfront.",
       },
       { property: "og:url", content: CANONICAL },
     ],
@@ -71,7 +71,7 @@ function PricingPage() {
           </p>
           <h1 className="text-balance font-display text-4xl uppercase tracking-wide md:text-5xl">
             Free to start.{" "}
-            <span className="text-accent">We make money when you make money.</span>
+            <span className="text-accent">We only make money when you do.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-primary-foreground/85">
             No setup fee. No subscription. We take a small percentage of what
@@ -88,14 +88,13 @@ function PricingPage() {
               Simple, aligned pricing
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
-              Your club keeps the vast majority of every entry. The platform fee
-              is deducted automatically — no invoices, no chasing, no treasurer
-              headache.
+              Your club keeps the vast majority of every entry. We only take a
+              small share when money comes in — no invoices, no chasing, no
+              treasurer headache.
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              5% on your first 100 entries, then 3% after that. Stripe's own
-              payment processing fee is separate — we'll walk you through the
-              exact numbers before anything goes live.
+              We'll walk you through the exact numbers before anything goes live.
+              Stripe's payment processing fee is separate and transparent.
             </p>
             <div className="mt-8">
               <CtaPair />

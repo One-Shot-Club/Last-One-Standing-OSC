@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = {
-  to: "/" | "/signup" | "/pricing" | "/case-studies" | "/last-man-standing";
+  to: "/" | "/signup" | "/case-studies" | "/last-man-standing";
   label: string;
   hash?: string;
 };
@@ -14,7 +14,6 @@ const nav: readonly NavItem[] = [
   { to: "/", label: "What We Build", hash: "services" },
   { to: "/last-man-standing", label: "Last Man Standing" },
   { to: "/case-studies", label: "Case Studies" },
-  { to: "/pricing", label: "Pricing" },
 ] as const;
 
 export function SiteHeader() {
@@ -60,16 +59,14 @@ export function SiteHeader() {
               {n.label}
             </Link>
           ))}
-          <Link
-            to="/dashboard"
-            className={
-              signedIn
-                ? "rounded-md border border-primary/30 px-4 py-2 text-center text-sm font-semibold uppercase tracking-wide text-primary transition hover:bg-primary/5"
-                : "text-sm font-medium uppercase tracking-wide text-foreground/80 transition hover:text-primary"
-            }
-          >
-            Dashboard
-          </Link>
+          {signedIn && (
+            <Link
+              to="/dashboard"
+              className="rounded-md border border-primary/30 px-4 py-2 text-center text-sm font-semibold uppercase tracking-wide text-primary transition hover:bg-primary/5"
+            >
+              Dashboard
+            </Link>
+          )}
           {!signedIn && (
             <Link
               to="/login"
@@ -114,15 +111,15 @@ export function SiteHeader() {
                 {n.label}
               </Link>
             ))}
-            <Link
-              to="/dashboard"
-              onClick={closeMobile}
-              className={`py-2 text-sm font-semibold uppercase tracking-wide ${
-                signedIn ? "text-primary" : "text-foreground/80"
-              }`}
-            >
-              Dashboard
-            </Link>
+            {signedIn && (
+              <Link
+                to="/dashboard"
+                onClick={closeMobile}
+                className="py-2 text-sm font-semibold uppercase tracking-wide text-primary"
+              >
+                Dashboard
+              </Link>
+            )}
             {!signedIn && (
               <>
                 <Link
